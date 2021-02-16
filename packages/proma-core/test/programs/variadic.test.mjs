@@ -7,7 +7,7 @@ import {
   outputData,
   wire,
 } from '../../core/index.mjs';
-import { js, chipJS } from '../utils.mjs';
+import { js, chipCompile } from '../utils.mjs';
 import { Start, Log, Literal } from '../../lib/index.mjs';
 
 describe('[programs/variadic] variadic ports', async (assert) => {
@@ -24,14 +24,14 @@ describe('[programs/variadic] variadic ports', async (assert) => {
   // assert({
   //   given: 'a variadic input data outlet',
   //   should: 'compile as expected',
-  //   actual: chipJS(Sum),
+  //   actual: chipCompile(Sum),
   //   expected: js``,
   // });
 
   assert({
     given: 'a variadic chip instance',
     should: 'compile as expected',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const sum = Sum(1, 2, 3);
       sum.id = 'Sum';
       sum.in.B = 20;

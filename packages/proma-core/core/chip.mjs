@@ -42,7 +42,7 @@ export class Chip {
         enumerable: true,
         value: chipInfo.name,
       },
-      toJS: {
+      compile: {
         value: (wrapper) => {
           const compilation = new Compilation(this);
           return compilation.compile(wrapper);

@@ -33,6 +33,9 @@
 - [x] variadic input ports
 - [x] execution without compilation
 - [ ] editability
+- [ ] delegates/terminals/plate? to make events like blueprint
+- [ ] how to have a library of loaded chips to be created by name?
+- [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
       chip builder params could be used to send chip instances of special
       chips like mount, destroy, ... - `WebComponent.initChip` is a `chip.preset({ chips: { mount: chip(...) } })` that can be used to construct

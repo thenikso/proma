@@ -7,14 +7,14 @@ import {
   outputData,
   wire,
 } from '../../core/index.mjs';
-import { js, chipJS, withChipClass } from '../utils.mjs';
+import { js, chipCompile, withChipClass } from '../utils.mjs';
 import { Start, Log } from '../../lib/index.mjs';
 
 describe('[programs/connections] input flow (execs) multi-connections', async (assert) => {
   assert({
     given: 'multiple connections to an input flow inlet',
     should: 'compile as a function',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const exec = inputFlow('exec');
       const start = Start();
       const log = Log();
@@ -46,7 +46,7 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
   assert({
     given: 'multiple connections to an output flow outlet',
     should: 'compile to call the continaution outlet',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const exec = inputFlow('exec');
       const start = Start();
       const then = outputFlow('then');
@@ -98,7 +98,7 @@ describe('[programs/connections] output data multi-connections', async (assert) 
   assert({
     given: 'multiple connections from an output data inlet',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const start = Start();
       const msg = Greet('test');
       msg.id = 'Greet';
@@ -149,7 +149,7 @@ describe('[programs/connections] output data multi-connections', async (assert) 
   assert({
     given: 'multiple connections from an input data outlet',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const exec = inputFlow('exec');
       const input = inputData('input');
 

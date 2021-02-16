@@ -7,7 +7,7 @@ import {
   outputData,
   wire,
 } from '../../core/index.mjs';
-import { chipJS, js } from '../utils.mjs';
+import { chipCompile, js } from '../utils.mjs';
 
 import { Literal } from '../../lib/index.mjs';
 
@@ -15,7 +15,7 @@ describe('[lib/Literal] Literal chip', async (assert) => {
   assert({
     given: 'a Literal chip',
     should: 'compile',
-    actual: new Literal('test').toJS(),
+    actual: new Literal('test').compile(),
     expected: js`
     class Literal {
       constructor(value = "test") {

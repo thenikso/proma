@@ -7,14 +7,14 @@ import {
   outputData,
   wire,
 } from '../../core/index.mjs';
-import { js, chipJS, withChipClass } from '../utils.mjs';
+import { js, chipCompile, withChipClass } from '../utils.mjs';
 import { Start, Split, Log, Literal } from '../../lib/index.mjs';
 
 describe('[programs/outputs] pure outputs', async (assert) => {
   assert({
     given: 'a pure output',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const A = inputData('A');
       const B = inputData('B');
       const value = outputData('value', () => A() + B());
@@ -48,7 +48,7 @@ describe('[programs/outputs] executed outputs', async (assert) => {
   assert({
     given: 'an output set in the exec',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const exec = inputFlow('exec', () => {
         value(Math.random());
         then();
@@ -122,7 +122,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'an output connected with array of output flow',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const start = Start();
       const msg = Literal('hello world');
       const log = Log();
@@ -140,7 +140,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'an output connected with just one output flow',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const start = Start();
       const msg = Literal('hello world');
       const log = Log();
@@ -158,7 +158,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'an output connected with nothing (auto-connection)',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const start = Start();
       const msg = Literal('hello world');
       const log = Log();
@@ -185,7 +185,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'a Pass chip',
     should: 'compile',
-    actual: chipJS(Pass),
+    actual: chipCompile(Pass),
     expected: js`
     class Pass {
       constructor() {
@@ -242,7 +242,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'a chip instance with connected outputs (inlet)',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const start = Start();
       const msg = Literal('hello world');
       const log = Log();
@@ -267,7 +267,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'a complex inlet usage',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const start = inputFlow('start');
       const msg = inputData('msg');
       const log = Log();
@@ -326,7 +326,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'a connected output with a compute',
     should: 'compile',
-    actual: chipJS(() => {
+    actual: chipCompile(() => {
       const exec = inputFlow('exec');
       const input = inputData('input');
       const then = outputFlow('then');

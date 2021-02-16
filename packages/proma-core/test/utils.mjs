@@ -9,20 +9,20 @@ import {
 } from '../core/index.mjs';
 import EMITTERS_ONLY from '../core/wrappers/EmittersWrapper.mjs';
 
-export function chipJS(build, init, wrapper) {
+export function chipCompile(build, init, wrapper) {
   const C = build instanceof ChipMaker ? build : chip('TestChip', build);
   const c = C(init);
-  return c.toJS(wrapper);
+  return c.compile(wrapper);
 }
 
 export function withChipClass(chip, run) {
-  const makeChipClass = new Function('return (' + chip.toJS() +')');
+  const makeChipClass = new Function('return (' + chip.compile() +')');
   const ChipClass = makeChipClass();
   return run(ChipClass);
 }
 
 export function chipEmitters(build) {
-  return chipJS(build, null, EMITTERS_ONLY);
+  return chipCompile(build, null, EMITTERS_ONLY);
 }
 
 export function js(strings, ...data) {
