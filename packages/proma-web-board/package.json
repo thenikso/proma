@@ -1,5 +1,5 @@
 {
-  "name": "proma-web-board",
+  "name": "@proma/web-board",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "svelte": "src/index.js",

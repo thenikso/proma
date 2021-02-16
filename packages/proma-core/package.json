@@ -1,5 +1,5 @@
 {
-  "name": "proma-core",
+  "name": "@proma/core",
   "version": "0.1.0",
   "description": "Core engine of Proma",
   "main": "core/index.mjs",
