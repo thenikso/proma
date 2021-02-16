@@ -1,0 +1,93 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proma 3</title>
+  </head>
+  <body>
+    <script type="module">
+      import {
+        chip,
+        inputFlow,
+        inputData,
+        outputFlow,
+        outputData,
+        wire,
+      } from './core/index.mjs';
+
+      import { Start, Log, Literal } from './lib/index.mjs';
+
+      const Random = chip('Random', () => {
+        const exec = inputFlow('exec', () => {
+          value(Math.random());
+          then();
+        });
+        const then = outputFlow('then');
+        const value = outputData('value');
+      });
+
+      const Pass = chip('Pass', () => {
+        const exec = inputFlow('exec');
+        const input = inputData('input');
+        const then = outputFlow('then');
+        const output = outputData('output', then);
+        wire(exec, then);
+        wire(input, output);
+      });
+
+      const Greet = chip('Greet', () => {
+        const name = inputData('name', { canonical: true });
+        const value = outputData('value', () => {
+          let greet = 'Hello ';
+          greet += name();
+          return greet + '!';
+        });
+      });
+
+      const Sum = chip('Sum', () => {
+        const numbers = inputData('numbers', {
+          variadic: '{letter}',
+          canonical: true,
+        });
+        const value = outputData('value', () => {
+          return numbers().reduce((acc, n) => acc + n, 0);
+        });
+      });
+
+      const MyChip = chip('MyChip', () => {
+        const exec = inputFlow('exec');
+        const one = inputData('one', { defaultValue: 0, canonical: true });
+        const two = inputData('two', { defaultValue: 0, canonical: true });
+
+        const sum = Sum();
+        wire(one, sum.in.A);
+        wire(two, sum.in.B);
+
+        const log = Log();
+        wire(exec, log.in.exec);
+        wire(sum.out.value, log.in.message);
+
+        const then = outputFlow('then');
+        wire(log.out.then, then);
+
+        const res = outputData('res');
+        wire(sum.out.value, res);
+      });
+
+      window.chip = Pass();
+      console.log(window.chip);
+      // window.chip.in.exec()
+
+      // const c = MyChip();
+      // const code = c.toJS();
+      // console.group('Code');
+      // console.log(code);
+      // console.groupEnd();
+      // console.group('Code execution');
+      // const func = new Function('return (' + code + ')');
+      // window.Chip = func();
+      // window.chip = new window.Chip();
+      // console.groupEnd();
+    </script>
+  </body>
+</html>

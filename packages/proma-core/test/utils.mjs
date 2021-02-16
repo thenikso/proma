@@ -1,0 +1,89 @@
+import {
+  ChipMaker,
+  chip,
+  inputFlow,
+  inputData,
+  outputFlow,
+  outputData,
+  wire,
+} from '../core/index.mjs';
+import EMITTERS_ONLY from '../core/wrappers/EmittersWrapper.mjs';
+
+export function chipJS(build, init, wrapper) {
+  const C = build instanceof ChipMaker ? build : chip('TestChip', build);
+  const c = C(init);
+  return c.toJS(wrapper);
+}
+
+export function withChipClass(chip, run) {
+  const makeChipClass = new Function('return (' + chip.toJS() +')');
+  const ChipClass = makeChipClass();
+  return run(ChipClass);
+}
+
+export function chipEmitters(build) {
+  return chipJS(build, null, EMITTERS_ONLY);
+}
+
+export function js(strings, ...data) {
+  let res = strings[0];
+  for (let i = 0, l = data.length; i < l; i++) {
+    res += String(data[i]) + strings[i + 1];
+  }
+  return dedent(res);
+}
+
+// https://github.com/dmnd/dedent
+export function dedent(strings) {
+  // $FlowFixMe: Flow doesn't undestand .raw
+  var raw = typeof strings === 'string' ? [strings] : strings.raw;
+
+  // first, perform interpolation
+  var result = '';
+  for (var i = 0; i < raw.length; i++) {
+    result += raw[i]
+      // join lines when there is a suppressed newline
+      .replace(/\\\n[ \t]*/g, '')
+      // handle escaped backticks
+      .replace(/\\`/g, '`');
+
+    if (i < (arguments.length <= 1 ? 0 : arguments.length - 1)) {
+      result += arguments.length <= i + 1 ? undefined : arguments[i + 1];
+    }
+  }
+
+  // now strip indentation
+  var lines = result.split('\n');
+  var mindent = null;
+  lines.forEach(function (l) {
+    var m = l.match(/^(\s+)\S+/);
+    if (m) {
+      var indent = m[1].length;
+      if (!mindent) {
+        // this is the first indented line
+        mindent = indent;
+      } else {
+        mindent = Math.min(mindent, indent);
+      }
+    }
+  });
+
+  if (mindent !== null) {
+    (function () {
+      var m = mindent; // appease Flow
+      result = lines
+        .map(function (l) {
+          return l[0] === ' ' ? l.slice(m) : l;
+        })
+        .join('\n');
+    })();
+  }
+
+  return (
+    result
+      // dedent eats leading and trailing whitespace too
+      .trim()
+      // handle escaped newlines at the end to ensure they don't get stripped too
+      .replace(/\\n/g, '\n')
+  );
+}

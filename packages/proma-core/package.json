@@ -1,0 +1,8 @@
+{
+  "name": "proma-core",
+  "version": "0.1.0",
+  "description": "Core engine of Proma",
+  "main": "core/index.mjs",
+  "author": "Nicola Peduzzi <thenikso@gmail.com>",
+  "license": "MIT"
+}

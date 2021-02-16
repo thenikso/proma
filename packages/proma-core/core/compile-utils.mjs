@@ -1,0 +1,187 @@
+import recast from '../vendor/recast.mjs';
+
+const {
+  parse,
+  types: { namedTypes, visit, builders },
+} = recast;
+
+export function literalCompiler(value) {
+  switch (typeof value) {
+    case 'string':
+      return builders.stringLiteral(value);
+    case 'number':
+    case 'boolean':
+      return builders.literal(value);
+    case 'object':
+      if (!value) {
+        return builders.nullLiteral();
+      }
+      if (Array.isArray(value)) {
+        return builders.arrayExpression(value.map(literalCompiler));
+      }
+    default:
+      throw new Error(`Can not compile literal: ${value}`);
+  }
+}
+
+export function getFunctionBody(funcAst) {
+  if (namedTypes.FunctionDeclaration.check(funcAst)) {
+    return funcAst.body;
+  } else if (
+    namedTypes.ExpressionStatement.check(funcAst) &&
+    namedTypes.ArrowFunctionExpression.check(funcAst.expression)
+  ) {
+    return funcAst.expression.body;
+  }
+  return null;
+}
+
+export function pathFromNodePath(nodePath) {
+  const res = [];
+  while (nodePath && nodePath.name !== null && nodePath.name !== 'root') {
+    res.unshift(nodePath.name);
+    nodePath = nodePath.parentPath;
+  }
+  return res;
+}
+
+export function getPath(obj, path) {
+  let cursor = obj;
+  for (let i = 0, l = path.length; i < l; i++) {
+    const segment = path[i];
+    if (!cursor) return cursor;
+    cursor = cursor[segment];
+  }
+  return cursor;
+}
+
+export function replaceAstPath(obj, path, value) {
+  if (!path || path.length === 0) {
+    return value;
+  }
+  let cursor = obj;
+  for (let i = 0, l = path.length; i < l; i++) {
+    const segment = path[i];
+    if (i === l - 1) {
+      cursor[segment] = value;
+      break;
+    }
+    cursor = cursor[segment];
+  }
+  return obj;
+}
+
+export function makeAstBuilder(portInfo, sourceProp = 'execute') {
+  const chipInfo = portInfo.chipInfo;
+
+  const replaceInputData = {};
+  const replaceOutputFlows = {};
+  const replaceOutputData = {};
+
+  const getAst = () =>
+    getFunctionBody(parse(String(portInfo[sourceProp])).program.body[0]);
+
+  visit(getAst(), {
+    visitCallExpression(path) {
+      const callee = path.value.callee;
+      if (namedTypes.Identifier.check(callee)) {
+        // TODO consider name shadowing!
+        const portName = callee.name;
+        // Collect input data
+        let sourcePortInfo = chipInfo.getInputPortInfo(portName);
+        if (sourcePortInfo) {
+          if (sourcePortInfo.isFlow) {
+            throw new Error('Can not execute input flows!');
+          }
+          replaceInputData[portName] = {
+            path: pathFromNodePath(path),
+            block: path.value,
+          };
+          return false;
+        }
+        // Collect output flows and data
+        sourcePortInfo = chipInfo.getOutputPortInfo(portName);
+        if (sourcePortInfo) {
+          // TODO may need to save call args and/or compile it first
+          if (sourcePortInfo.isFlow) {
+            // TODO check that it is used as a continuation, not an expression
+            replaceOutputFlows[portName] = {
+              path: pathFromNodePath(path),
+              block: path.value,
+            };
+            return false;
+          }
+          replaceOutputData[portName] = {
+            path: pathFromNodePath(path),
+            block: path.value.arguments[0],
+          };
+          return false;
+        }
+      }
+      this.traverse(path);
+    },
+  });
+
+  return function astBuilder({
+    compileInputData,
+    compileOutputFlow,
+    compileOutputData,
+  }) {
+    let ast = getAst();
+
+    for (const portName in replaceInputData) {
+      const { path } = replaceInputData[portName];
+      const res = compileInputData(portName) || builders.noop();
+      ast = replaceAstPath(ast, path, res);
+    }
+
+    for (const portName in replaceOutputFlows) {
+      const { path } = replaceOutputFlows[portName];
+      const res = compileOutputFlow(portName) || builders.noop();
+      ast = replaceAstPath(ast, path, res);
+    }
+
+    for (const portName in replaceOutputData) {
+      const { path, block } = replaceOutputData[portName];
+      const res = compileOutputData(portName, block) || builders.noop();
+      ast = replaceAstPath(ast, path, res);
+    }
+
+    return cleanAst(ast);
+  };
+}
+
+export function cleanAst(ast) {
+  visit(ast, {
+    visitNoop(path) {
+      // Replace noop by removing parent expression
+      const parentValue = path.parentPath.value;
+      if (Array.isArray(parentValue)) {
+        const noopIndex = parentValue.indexOf(path.value);
+        path.parentPath.replace([
+          ...parentValue.slice(0, noopIndex),
+          ...parentValue.slice(noopIndex + 1),
+        ]);
+        return false;
+      }
+      if (namedTypes.ExpressionStatement.check(parentValue)) {
+        path.parentPath.replace();
+        return false;
+      }
+      console.warn(' TODO may need to clean more');
+      this.traverse(path);
+    },
+    visitBlockStatement(path) {
+      // replace expression > block > expression to just expression
+      if (
+        path.value.body.length === 1 &&
+        namedTypes.ExpressionStatement.check(path.parentPath.value)
+      ) {
+        path.parentPath.replace(path.value.body[0]);
+        return false;
+      }
+      this.traverse(path);
+    },
+  });
+  return ast;
+}
