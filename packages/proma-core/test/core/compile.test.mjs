@@ -21,12 +21,12 @@ describe('[core/compile] findChildEmitters', async (assert) => {
     given: 'A chip with a generator',
     should: 'find the generator',
     actual: findChildEmitters(
-      chip(() => {
-        const start = Start();
-        const log = Log();
+      new (chip(() => {
+        const start = new Start();
+        const log = new Log();
         log.in.message = 'hello world';
         wire(start.out.then, log.in.exec);
-      })(),
+      }))(),
     ).map(toLiteral),
     expected: [{ chipPathLenght: 2, port: 'then' }],
   });
@@ -35,16 +35,16 @@ describe('[core/compile] findChildEmitters', async (assert) => {
     given: 'A chip with a nested generator directly connected',
     should: 'find the generator',
     actual: findChildEmitters(
-      chip(() => {
-        const start = chip(() => {
-          const start = Start();
+      new (chip(() => {
+        const start = new (chip(() => {
+          const start = new Start();
           const then = outputFlow('then');
           wire(start.out.then, then);
-        })();
-        const log = Log();
+        }))();
+        const log = new Log();
         log.in.message = 'hello world';
         wire(start.out.then, log.in.exec);
-      })(),
+      }))(),
     ).map(toLiteral),
     expected: [{ chipPathLenght: 3, port: 'then' }],
   });
@@ -53,18 +53,18 @@ describe('[core/compile] findChildEmitters', async (assert) => {
     given: 'A chip with a nested generator masked by a split',
     should: 'find the generator',
     actual: findChildEmitters(
-      chip(() => {
-        const start = chip(() => {
-          const start = Start();
-          const split = Split();
+      new (chip(() => {
+        const start = new (chip(() => {
+          const start = new Start();
+          const split = new Split();
           const then = outputFlow('then');
           wire(start.out.then, split.in.exec);
           wire(split.out.then2, then);
-        })();
-        const log = Log();
+        }))();
+        const log = new Log();
         log.in.message = 'hello world';
         wire(start.out.then, log.in.exec);
-      })(),
+      }))(),
     ).map(toLiteral),
     expected: [{ chipPathLenght: 3, port: 'then' }],
   });

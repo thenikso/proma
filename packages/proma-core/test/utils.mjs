@@ -1,22 +1,22 @@
 import {
-  ChipMaker,
   chip,
   inputFlow,
   inputData,
   outputFlow,
   outputData,
   wire,
+  Chip,
 } from '../core/index.mjs';
 import EMITTERS_ONLY from '../core/wrappers/EmittersWrapper.mjs';
 
 export function chipCompile(build, init, wrapper) {
-  const C = build instanceof ChipMaker ? build : chip('TestChip', build);
-  const c = C(init);
+  const C = build.__proto__ === Chip ? build : chip('TestChip', build);
+  const c = new C(...(init || []));
   return c.compile(wrapper);
 }
 
 export function withChipClass(chip, run) {
-  const makeChipClass = new Function('return (' + chip.compile() +')');
+  const makeChipClass = new Function('return (' + chip.compile() + ')');
   const ChipClass = makeChipClass();
   return run(ChipClass);
 }

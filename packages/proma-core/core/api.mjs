@@ -1,8 +1,6 @@
 import { context } from './utils.mjs';
 import { Chip, ChipInfo } from './chip.mjs';
 
-export class ChipMaker extends Function {}
-
 export function chip(name, build) {
   if (typeof name !== 'string') {
     build = name;
@@ -17,19 +15,18 @@ export function chip(name, build) {
   // TODO validate chip:
   // - if input data but not flow it may not do what you expect
   // - if not using all input data in outputs/execs
-  function chipMaker(...configValues) {
-    const chip = new Chip(chipInfo, configValues);
-    // Add to current chip `build` execution
-    const parentChipInfo = context();
-    if (parentChipInfo instanceof ChipInfo) {
-      parentChipInfo.addChip(chip);
+  class ChipState extends Chip {
+    constructor(...configValues) {
+      super(chipInfo, configValues);
+      // Add to current chip `build` execution
+      const parentChipInfo = context();
+      if (parentChipInfo instanceof ChipInfo) {
+        parentChipInfo.addChip(this);
+      }
     }
-    return chip;
   }
 
-  chipMaker.__proto__ = ChipMaker.prototype;
-
-  return chipMaker;
+  return ChipState;
 }
 
 export function inputFlow(name, config) {

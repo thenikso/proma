@@ -32,13 +32,13 @@ describe('[programs/variadic] variadic ports', async (assert) => {
     given: 'a variadic chip instance',
     should: 'compile as expected',
     actual: chipCompile(() => {
-      const sum = Sum(1, 2, 3);
+      const sum = new Sum(1, 2, 3);
       sum.id = 'Sum';
       sum.in.B = 20;
-      const num = Literal(100);
+      const num = new Literal(100);
 
-      const start = Start();
-      const log = Log();
+      const start = new Start();
+      const log = new Log();
 
       wire(start.out.then, log.in.exec);
       wire(log.in.message, sum.out.value);

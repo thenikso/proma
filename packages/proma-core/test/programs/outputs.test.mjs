@@ -123,9 +123,9 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
     given: 'an output connected with array of output flow',
     should: 'compile',
     actual: chipCompile(() => {
-      const start = Start();
-      const msg = Literal('hello world');
-      const log = Log();
+      const start = new Start();
+      const msg = new Literal('hello world');
+      const log = new Log();
       const then = outputFlow('then');
       const output = outputData('output', [then]);
 
@@ -141,9 +141,9 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
     given: 'an output connected with just one output flow',
     should: 'compile',
     actual: chipCompile(() => {
-      const start = Start();
-      const msg = Literal('hello world');
-      const log = Log();
+      const start = new Start();
+      const msg = new Literal('hello world');
+      const log = new Log();
       const then = outputFlow('then');
       const output = outputData('output', then);
 
@@ -159,9 +159,9 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
     given: 'an output connected with nothing (auto-connection)',
     should: 'compile',
     actual: chipCompile(() => {
-      const start = Start();
-      const msg = Literal('hello world');
-      const log = Log();
+      const start = new Start();
+      const msg = new Literal('hello world');
+      const log = new Log();
       const then = outputFlow('then');
       const output = outputData('output');
 
@@ -226,7 +226,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'a Pass chip instance',
     should: 'work as expected',
-    actual: withChipClass(Pass(), (Pass) => {
+    actual: withChipClass(new Pass(), (Pass) => {
       const res = [];
       const chip = new Pass();
       res.push(chip.out.output);
@@ -243,10 +243,10 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
     given: 'a chip instance with connected outputs (inlet)',
     should: 'compile',
     actual: chipCompile(() => {
-      const start = Start();
-      const msg = Literal('hello world');
-      const log = Log();
-      const pass = Pass();
+      const start = new Start();
+      const msg = new Literal('hello world');
+      const log = new Log();
+      const pass = new Pass();
       pass.id = 'Pass';
 
       wire(start.out.then, pass.in.exec);
@@ -270,8 +270,8 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
     actual: chipCompile(() => {
       const start = inputFlow('start');
       const msg = inputData('msg');
-      const log = Log();
-      const pass = Pass();
+      const log = new Log();
+      const pass = new Pass();
       pass.id = 'Pass';
       const then = outputFlow('then');
       const output = outputData('output');

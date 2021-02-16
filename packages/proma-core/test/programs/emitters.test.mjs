@@ -15,8 +15,8 @@ describe('[programs/emitters] emitter base flow', async (assert) => {
     given: 'a direct emitter based program',
     should: 'compile',
     actual: chipEmitters(() => {
-      const start = Start();
-      const log = Log();
+      const start = new Start();
+      const log = new Log();
       log.in.message = 'hello world';
       wire(start.out.then, log.in.exec);
     }),
@@ -27,8 +27,8 @@ describe('[programs/emitters] emitter base flow', async (assert) => {
     given: 'wrapped chips',
     should: 'reduce to non wrapped versions',
     actual: chipEmitters(() => {
-      const start = WStart();
-      const log = WLog();
+      const start = new WStart();
+      const log = new WLog();
       log.in.message = 'hello world';
       wire(start.out.then, log.in.exec);
     }),
@@ -39,12 +39,12 @@ describe('[programs/emitters] emitter base flow', async (assert) => {
     given: 'a sequence',
     should: 'compile both branch sequentially',
     actual: chipEmitters(() => {
-      const start = Start();
-      const log1 = Log();
+      const start = new Start();
+      const log1 = new Log();
       log1.in.message = 'one';
-      const log2 = WLog();
+      const log2 = new WLog();
       log2.in.message = 'two';
-      const split = Split();
+      const split = new Split();
       wire(start.out.then, split.in.exec);
       wire(split.out.then1, log1.in.exec);
       wire(split.out.then2, log2.in.exec);
@@ -59,7 +59,7 @@ describe('[programs/emitters] emitter base flow', async (assert) => {
 const WStart = chip('WStart', () => {
   const then = outputFlow('then');
 
-  const start = Start();
+  const start = new Start();
 
   wire(start.out.then, then);
 });
@@ -68,7 +68,7 @@ const WLog = chip('WLog', () => {
   const exec = inputFlow('exec');
   const message = inputData('message');
 
-  const log = Log();
+  const log = new Log();
 
   const then = outputFlow('then');
 

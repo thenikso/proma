@@ -16,8 +16,8 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
     should: 'compile as a function',
     actual: chipCompile(() => {
       const exec = inputFlow('exec');
-      const start = Start();
-      const log = Log();
+      const start = new Start();
+      const log = new Log();
       log.id = 'Log';
 
       wire(exec, log.in.exec);
@@ -48,7 +48,7 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
     should: 'compile to call the continaution outlet',
     actual: chipCompile(() => {
       const exec = inputFlow('exec');
-      const start = Start();
+      const start = new Start();
       const then = outputFlow('then');
 
       wire(exec, then);
@@ -99,10 +99,10 @@ describe('[programs/connections] output data multi-connections', async (assert) 
     given: 'multiple connections from an output data inlet',
     should: 'compile',
     actual: chipCompile(() => {
-      const start = Start();
-      const msg = Greet('test');
+      const start = new Start();
+      const msg = new Greet('test');
       msg.id = 'Greet';
-      const log = Log();
+      const log = new Log();
 
       const then = outputFlow('then');
       const output = outputData('output');
@@ -153,8 +153,8 @@ describe('[programs/connections] output data multi-connections', async (assert) 
       const exec = inputFlow('exec');
       const input = inputData('input');
 
-      const start = Start();
-      const log = Log();
+      const start = new Start();
+      const log = new Log();
       log.id = 'Log';
 
       const then = outputFlow('then');

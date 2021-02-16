@@ -61,11 +61,11 @@
         const one = inputData('one', { defaultValue: 0, canonical: true });
         const two = inputData('two', { defaultValue: 0, canonical: true });
 
-        const sum = Sum();
+        const sum = new Sum();
         wire(one, sum.in.A);
         wire(two, sum.in.B);
 
-        const log = Log();
+        const log = new Log();
         wire(exec, log.in.exec);
         wire(sum.out.value, log.in.message);
 
@@ -76,7 +76,7 @@
         wire(sum.out.value, res);
       });
 
-      window.chip = Pass();
+      window.chip = new MyChip();
       console.log(window.chip);
       // window.chip.in.exec()
 
@@ -90,6 +90,8 @@
       // window.Chip = func();
       // window.chip = new window.Chip();
       // console.groupEnd();
+
+      // const EventPlate = plate('event')
     </script>
   </body>
 </html>
