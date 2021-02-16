@@ -2,7 +2,9 @@
   export let fromPoint;
   export let toPoint;
   export let type = 'any';
-  export let color = type === 'exec' ? '#E7E7E7' : '#00A7EF';
+  export let color = undefined;
+
+  $: actualColor = color || (type === 'exec' ? '#E7E7E7' : '#00A7EF');
 
   function connectionMakePath(fromPoint, toPoint) {
     const { x: x1, y: y1 } = toPoint;
@@ -35,7 +37,7 @@
 <path
   {d}
   class="WirePath WirePathType-{type}"
-  stroke={color}
+  stroke={actualColor}
   stroke-width="3"
   stroke-linecap="round"
   stroke-linejoin="round"

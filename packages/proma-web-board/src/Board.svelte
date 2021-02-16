@@ -271,6 +271,7 @@
         Object.assign(wire, wirePoints(wire));
       }
     }
+    updateWiresLimit = null;
     // To force redraw
     // TODO make more efficient
     wires = [...wires];
@@ -577,6 +578,8 @@
     overflow: hidden;
     width: 100%;
     height: 100%;
+    min-width: 200px;
+    min-height: 200px;
     overscroll-behavior: contain;
 
     color: white;

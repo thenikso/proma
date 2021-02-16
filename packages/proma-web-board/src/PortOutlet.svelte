@@ -1,7 +1,9 @@
 <script>
   export let type = 'exec';
   export let connected = false;
-  export let color = type === 'exec' ? '#E7E7E7' : '#00A7EF';
+  export let color = undefined;
+
+  $: actualColor = color || (type === 'exec' ? '#E7E7E7' : '#00A7EF');
 </script>
 
 {#if type === 'exec'}
@@ -29,8 +31,8 @@
       2.98474865,0.5 2,0.5 C1.17157288,0.5 0.5,1.17157288 0.5,2 L0.5,12
       C0.5,12.8284271 1.17157288,13.5 2,13.5 C2.98474865,13.5 2.98474865,13.5
       3.9694973,13.5 C4.87867967,13.5 4.94844725,13.5 5.72880191,13.5 Z"
-      stroke={color}
-      fill={connected ? color : 'transparent'}
+      stroke={actualColor}
+      fill={connected ? actualColor : 'transparent'}
     />
   </svg>
 {:else}
@@ -56,14 +58,14 @@
       C11.0908335,2.50248994 10.1651473,1.91706372 9.113188,1.54498359
       C8.97869719,1.49743144 8.90823658,1.34984831 8.9558043,1.21536302
       C8.99121266,1.11525513 9.08428086,1.04701755 9.1904031,1.04335524 Z"
-      fill={color}
+      fill={actualColor}
       transform="translate(9.190403, 5.997331) rotate(-315.000000)
       translate(-9.190403, -5.997331) "
     />
     <circle
       class="OutletSocket"
-      stroke={color}
-      fill={connected ? color : 'transparent'}
+      stroke={actualColor}
+      fill={connected ? actualColor : 'transparent'}
       cx="6"
       cy="6"
       r="5.5"
