@@ -330,7 +330,18 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
       const exec = inputFlow('exec');
       const input = inputData('input');
       const then = outputFlow('then');
-      const output = outputData('output', () => input() + 1);
+      const output = outputData('output', {
+        computeOn: then,
+        compute: () => input() + 1,
+        // TODO support this
+        // compute() {
+        //   return input() + 1;
+        // },
+        // TODO and this
+        // compute: () => {
+        //   return input() + 1;
+        // }
+      });
 
       wire(exec, then);
     }),
@@ -372,6 +383,6 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   });
 });
 
-// TODO test non connected output
+// TODO test non connected output (ie: no computeOn and not used by execs) should throw
 
 // TODO test compute with multiple lines

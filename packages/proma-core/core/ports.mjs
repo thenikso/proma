@@ -222,8 +222,6 @@ export class OutputDataSourcePortInfo extends PortInfo {
   constructor(chipInfo, name, config = {}) {
     super(chipInfo, name);
 
-    // TODO config can be an array of output flow, becoming `computeOn`
-
     if (config instanceof Port) {
       throw new Error('Can only compute on outlets');
     } else if (config instanceof PortOutlet) {
@@ -238,17 +236,6 @@ export class OutputDataSourcePortInfo extends PortInfo {
       config = {
         compute: config,
       };
-    }
-
-    // If this output data must compute and we are not in a pure chip,
-    // add `computeOn` automatically if not set.
-    if (
-      config.compute &&
-      !config.computeOn &&
-      chipInfo.outputFlowPorts.length > 0
-    ) {
-      const computeOn = chipInfo.outputFlowPorts.slice();
-      config.computeOn = computeOn;
     }
 
     this.compute = config.compute;
@@ -273,6 +260,7 @@ export class OutputDataSourcePortInfo extends PortInfo {
               );
             }
           }
+          if (!Array.isArray(value)) value = [value];
           value = value.map((o) => (o instanceof PortInfo ? o : info(o)));
           computeOn = value;
           for (const computeOnOutletInfo of value) {
