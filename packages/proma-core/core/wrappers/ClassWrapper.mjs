@@ -265,7 +265,7 @@ export default class ClassWrapper {
         );
         body.push(outputGetters);
       }
-      if (!this.chipInfo.isPure) {
+      if (!this.chipInfo.isFlowless) {
         // Add `this.out` values
         replaceAstPath(
           program,

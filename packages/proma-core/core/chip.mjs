@@ -91,11 +91,11 @@ export class ChipInfo {
     };
   }
 
-  get isPure() {
+  get isFlowless() {
     if (this.inputFlowPorts.length > 0 || this.outputFlowPorts.length > 0) {
       return false;
     }
-    if (this.chips.some((c) => !info(c).isPure)) {
+    if (this.chips.some((c) => !info(c).isFlowless)) {
       return false;
     }
     return true;

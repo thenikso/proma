@@ -40,8 +40,8 @@ export class Compilation {
       codeWrapper.compileBegin(this.rootChip, rootInfo);
     }
 
-    if (rootInfo.isPure) {
-      // Pure chips
+    if (rootInfo.isFlowless) {
+      // "Pure" chips
 
       // Outputs
 
