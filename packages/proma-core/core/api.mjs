@@ -56,7 +56,7 @@ export function wire(portA, portB) {
 
 export function inputConfig(name, defaultValue) {
   const chipInfo = context(ChipInfo);
-  chipInfo.addInputDataPort(name, {
+  return chipInfo.addInputDataPort(name, {
     canonical: true,
     conceiled: true,
     defaultValue,

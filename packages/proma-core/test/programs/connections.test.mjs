@@ -7,10 +7,15 @@ import {
   outputData,
   wire,
 } from '../../core/index.mjs';
-import { js, chipCompile, withChipClass } from '../utils.mjs';
+import {
+  js,
+  chipCompile,
+  compileAndRun,
+  compileAndRunResult,
+} from '../utils.mjs';
 import { Start, Log } from '../../lib/index.mjs';
 
-describe('[compile/connections] input flow (execs) multi-connections', async (assert) => {
+describe('[programs/connections] input flow (execs) multi-connections', async (assert) => {
   assert({
     given: 'multiple connections to an input flow inlet',
     should: 'compile as a function',
@@ -30,15 +35,16 @@ describe('[compile/connections] input flow (execs) multi-connections', async (as
           console.log();
         };
 
-        Log__exec();
-
-        Object.defineProperties(this, {
+        Object.defineProperties(this.in = {}, {
           exec: {
             value: () => {
               Log__exec();
             }
           }
         });
+
+        Object.freeze(this.in);
+        Log__exec();
       }
     }`,
   });
@@ -57,27 +63,35 @@ describe('[compile/connections] input flow (execs) multi-connections', async (as
     expected: js`
     class TestChip {
       constructor() {
-        this.cont = Object.seal({
+        this.$out = Object.seal({
           then: undefined
         });
 
-        Object.defineProperties(this.$cont = {}, {
-          then: {
-            value: () => {
-              (this.cont.then || (() => {}))();
-            }
-          }
-        });
-
-        this.$cont.then();
-
-        Object.defineProperties(this, {
+        Object.defineProperties(this.in = {}, {
           exec: {
             value: () => {
-              this.$cont.then();
+              this.out.then();
             }
           }
         });
+
+        Object.freeze(this.in);
+
+        Object.defineProperties(this.out = {}, {
+          then: {
+            value: value => {
+              if (typeof value !== "undefined") {
+                this.$out.then = value;
+                return;
+              }
+
+              (this.$out.then || (() => {}))();
+            }
+          }
+        });
+
+        Object.seal(this.out);
+        this.out.then();
       }
     }`,
   });
@@ -85,7 +99,7 @@ describe('[compile/connections] input flow (execs) multi-connections', async (as
 
 // TODO multi cons from output data
 // TODO multi cons from input data outlet
-describe('[compile/connections] output data multi-connections', async (assert) => {
+describe('[programs/connections] output data multi-connections', async (assert) => {
   const Greet = chip('Greet', () => {
     const name = inputData('name', { canonical: true });
     const value = outputData('value', () => {
@@ -115,11 +129,8 @@ describe('[compile/connections] output data multi-connections', async (assert) =
     expected: js`
     class TestChip {
       constructor() {
-        this.out = {
-          output: undefined
-        };
-
-        this.cont = Object.seal({
+        this.$out = Object.seal({
+          output: undefined,
           then: undefined
         });
 
@@ -129,19 +140,27 @@ describe('[compile/connections] output data multi-connections', async (assert) =
           return greet + "!";
         };
 
-        Object.seal(this.out);
+        Object.defineProperties(this.out = {}, {
+          output: {
+            value: () => this.$out.output
+          },
 
-        Object.defineProperties(this.$cont = {}, {
           then: {
-            value: () => {
-              this.out.output = Greet__value();
-              (this.cont.then || (() => {}))();
+            value: value => {
+              if (typeof value !== "undefined") {
+                this.$out.then = value;
+                return;
+              }
+
+              this.$out.output = Greet__value();
+              (this.$out.then || (() => {}))();
             }
           }
         });
 
+        Object.seal(this.out);
         console.log(Greet__value());
-        this.$cont.then();
+        this.out.then();
       }
     }`,
   });
@@ -169,43 +188,58 @@ describe('[compile/connections] output data multi-connections', async (assert) =
     expected: js`
     class TestChip {
       constructor() {
-        this.in = Object.seal({
+        this.$in = Object.seal({
           input: undefined
         });
 
-        this.out = {
-          output: undefined
-        };
-
-        this.cont = Object.seal({
+        this.$out = Object.seal({
+          output: undefined,
           then: undefined
         });
 
         const Log__exec = () => {
-          console.log(this.in.input);
-          this.$cont.then();
+          console.log(this.$in.input);
+          this.out.then();
         };
 
-        Object.seal(this.out);
+        Object.defineProperties(this.in = {}, {
+          input: {
+            get: () => () => this.$in.input,
 
-        Object.defineProperties(this.$cont = {}, {
-          then: {
-            value: () => {
-              this.out.output = this.in.input;
-              (this.cont.then || (() => {}))();
+            set: value => {
+              this.$in.input = value;
             }
-          }
-        });
+          },
 
-        Log__exec();
-
-        Object.defineProperties(this, {
           exec: {
             value: () => {
               Log__exec();
             }
           }
         });
+
+        Object.freeze(this.in);
+
+        Object.defineProperties(this.out = {}, {
+          output: {
+            value: () => this.$out.output
+          },
+
+          then: {
+            value: value => {
+              if (typeof value !== "undefined") {
+                this.$out.then = value;
+                return;
+              }
+
+              this.$out.output = this.$in.input;
+              (this.$out.then || (() => {}))();
+            }
+          }
+        });
+
+        Object.seal(this.out);
+        Log__exec();
       }
     }`,
   });

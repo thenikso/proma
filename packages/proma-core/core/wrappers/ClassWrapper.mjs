@@ -46,16 +46,16 @@ export default class ClassWrapper {
   }
   compileInputDataOutlet(portInfo) {
     return memberExpression(
-      memberExpression(thisExpression(), identifier('in')),
+      memberExpression(thisExpression(), identifier('$in')),
       identifier(portInfo.name),
     );
   }
   // Generate a call to a continuation wrapper:
-  //     this.$cont.then()
+  //     this.out.then()
   compileOutputFlowOutlet(portInfo) {
     return callExpression(
       memberExpression(
-        memberExpression(thisExpression(), identifier('$cont')),
+        memberExpression(thisExpression(), identifier('out')),
         identifier(portInfo.name),
       ),
       [],
@@ -67,7 +67,7 @@ export default class ClassWrapper {
     return assignmentExpression(
       '=',
       memberExpression(
-        memberExpression(thisExpression(), identifier('out')),
+        memberExpression(thisExpression(), identifier('$out')),
         identifier(portInfo.name),
       ),
       assignExpressionBlock,
@@ -137,15 +137,11 @@ export default class ClassWrapper {
     const program = parse(`
       class ${this.chipInfo.name} {
         constructor() {
-          this.in = Object.seal({});
-          this.out = {};
-          this.cont = Object.seal({});
+          this.$in = Object.seal({});
+          this.$out = Object.seal({});
         }
       }
     `);
-
-    // console.log(program);
-    // return program;
 
     const classPath = ['program', 'body', 0, 'body', 'body'];
     const constructorPath = [...classPath, 0, 'value'];
@@ -153,15 +149,37 @@ export default class ClassWrapper {
     const constructorParams = [...constructorPath, 'params'];
     const inPath = [...constructorBodyPath, 0];
     const outPath = [...constructorBodyPath, 1];
-    const contPath = [...constructorBodyPath, 2];
-    const objPath = ['expression', 'right', 'properties'];
     const sealObjPath = ['expression', 'right', 'arguments', 0, 'properties'];
 
     const body = getPath(program, constructorBodyPath);
 
-    if (this.chipInfo.inputDataPorts.length === 0) {
-      replaceAstPath(program, inPath, noop());
-    } else {
+    //
+    // Inlets
+    //
+
+    if (this.inletsByPort.size > 0) {
+      for (const { declaration } of this.inletsByPort.values()) {
+        body.push(declaration);
+      }
+    }
+
+    //
+    // Inputs
+    //
+
+    const thisIn = parse('Object.defineProperties((this.in = {}), {});').program
+      .body[0];
+    const thisInBody = getPath(thisIn, [
+      'expression',
+      'arguments',
+      1,
+      'properties',
+    ]);
+
+    let hasInData = false;
+    let hasInAccess = false;
+
+    if (this.chipInfo.inputDataPorts.length > 0) {
       const canonical = [];
       replaceAstPath(
         program,
@@ -208,7 +226,32 @@ export default class ClassWrapper {
           return res;
         }),
       );
-      // TODO Actually we want getter/setter for input to return default value
+      hasInData = true;
+
+      // Input accessors
+      thisInBody.push(
+        ...this.chipInfo.inputDataPorts.map((portInfo) => {
+          return property(
+            'init',
+            identifier(portInfo.name),
+            objectExpression([
+              property(
+                'init',
+                identifier('get'),
+                parse(`() => () => this.$in.${portInfo.name}`).program.body[0]
+                  .expression,
+              ),
+              property(
+                'init',
+                identifier('set'),
+                parse(`(value) => { this.$in.${portInfo.name} = value }`).program.body[0]
+                  .expression,
+              ),
+            ]),
+          );
+        }),
+      );
+      hasInAccess = true;
 
       // Add canonical constructor arguments
       if (canonical.length > 0) {
@@ -228,146 +271,11 @@ export default class ClassWrapper {
       }
     }
 
-    // Inlets
-
-    if (this.inletsByPort.size > 0) {
-      for (const { declaration } of this.inletsByPort.values()) {
-        body.push(declaration);
-      }
-    }
-
-    // Outputs
-
-    if (this.chipInfo.outputDataPorts.length === 0) {
-      replaceAstPath(program, outPath, noop());
-    } else {
-      const compiledOutputPortsEntries = Object.entries(compiledOutputPorts);
-      if (compiledOutputPortsEntries.length > 0) {
-        const outputGetters = parse('Object.defineProperties(this.out, {});')
-          .program.body[0];
-        replaceAstPath(
-          outputGetters,
-          ['expression', 'arguments', 1, 'properties'],
-          compiledOutputPortsEntries.map(([portName, block]) =>
-            property(
-              'init',
-              identifier(portName),
-              objectExpression([
-                property('init', identifier('enumerable'), literal(true)),
-                property(
-                  'init',
-                  identifier('get'),
-                  arrowFunctionExpression([], block),
-                ),
-              ]),
-            ),
-          ),
-        );
-        body.push(outputGetters);
-      }
-      if (!this.chipInfo.isFlowless) {
-        // Add `this.out` values
-        replaceAstPath(
-          program,
-          [...outPath, ...objPath],
-          this.chipInfo.outputDataPorts
-            .filter((portInfo) => !compiledOutputPorts[portInfo.name])
-            .map((portInfo) => {
-              return property(
-                'init',
-                identifier(portInfo.name),
-                identifier('undefined'),
-              );
-            }),
-        );
-      }
-      // Seal this.out
-      body.push(parse('Object.seal(this.out)').program.body[0]);
-    }
-
-    // Output flows
-
-    if (this.chipInfo.outputFlowPorts.length === 0) {
-      replaceAstPath(program, contPath, noop());
-    } else {
-      // Add continuations inits in `this.cont = { ... }`
-      replaceAstPath(
-        program,
-        [...contPath, ...sealObjPath],
-        this.chipInfo.outputFlowPorts.map((portInfo) => {
-          return property(
-            'init',
-            identifier(portInfo.name),
-            identifier('undefined'),
-          );
-        }),
-      );
-
-      // Add `$cont` functions to wrap continuations
-      const $$contGetters = parse(
-        'Object.defineProperties((this.$cont = {}), {});',
-      ).program.body[0];
-      replaceAstPath(
-        $$contGetters,
-        ['expression', 'arguments', 1, 'properties'],
-        this.chipInfo.outputFlowPorts.map((portInfo) =>
-          property(
-            'init',
-            identifier(portInfo.name),
-            objectExpression([
-              property(
-                'init',
-                identifier('value'),
-                arrowFunctionExpression(
-                  [],
-                  blockStatement([
-                    // Update output ports with `computeOn` connected to this
-                    // flow outlet
-                    ...(compiledUpdatesOnPorts[portInfo.name] || []).map((b) =>
-                      expressionStatement(b),
-                    ),
-                    // TODO add output updates here
-                    expressionStatement(
-                      callExpression(
-                        logicalExpression(
-                          '||',
-                          memberExpression(
-                            memberExpression(
-                              thisExpression(),
-                              identifier('cont'),
-                            ),
-                            identifier(portInfo.name),
-                          ),
-                          arrowFunctionExpression([], blockStatement([])),
-                        ),
-                        [],
-                      ),
-                    ),
-                  ]),
-                ),
-              ),
-            ]),
-          ),
-        ),
-      );
-      body.push($$contGetters);
-    }
-
-    // Emitters
-
-    for (const emitterBlock of compiledEmitters) {
-      body.push(emitterBlock);
-    }
-
     // Input flows (execs)
 
     if (this.chipInfo.inputFlowPorts.length > 0) {
-      // TODO
-      const execs = parse('Object.defineProperties(this, {});').program.body[0];
-      replaceAstPath(
-        execs,
-        ['expression', 'arguments', 1, 'properties'],
-        this.chipInfo.inputFlowPorts.map((portInfo) => {
+      thisInBody.push(
+        ...this.chipInfo.inputFlowPorts.map((portInfo) => {
           let flowBlock = compiledFlowPorts[portInfo.name];
           if (!flowBlock) {
             // TODO connected flow?
@@ -392,7 +300,174 @@ export default class ClassWrapper {
           );
         }),
       );
-      body.push(execs);
+      hasInAccess = true;
+    }
+
+    // No input storage
+    if (!hasInData) {
+      replaceAstPath(program, inPath, noop());
+    }
+
+    // Add input accessors to prorgam
+    if (hasInAccess) {
+      body.push(thisIn);
+      body.push(parse('Object.freeze(this.in)').program.body[0]);
+    }
+
+    //
+    // Outputs
+    //
+
+    const thisOut = parse('Object.defineProperties((this.out = {}), {});')
+      .program.body[0];
+    const thisOutBody = getPath(thisOut, [
+      'expression',
+      'arguments',
+      1,
+      'properties',
+    ]);
+    const this$OutBody = getPath(program, [...outPath, ...sealObjPath]);
+
+    let hasOutData = false;
+    let hasOutAccess = false;
+
+    // Data outputs with no compute (aka output data storage)
+    const plainOutputDataPorts = this.chipInfo.outputDataPorts.filter(
+      (portInfo) => !compiledOutputPorts[portInfo.name],
+    );
+    if (plainOutputDataPorts.length > 0) {
+      // Regular outputs
+      this$OutBody.push(
+        ...plainOutputDataPorts.map((portInfo) => {
+          return property(
+            'init',
+            identifier(portInfo.name),
+            identifier('undefined'),
+          );
+        }),
+      );
+      hasOutData = true;
+
+      // Input accessors
+      thisOutBody.push(
+        ...plainOutputDataPorts.map((portInfo) => {
+          return property(
+            'init',
+            identifier(portInfo.name),
+            objectExpression([
+              property(
+                'init',
+                identifier('value'),
+                parse(`() => this.$out.${portInfo.name}`).program.body[0]
+                  .expression,
+              ),
+            ]),
+          );
+        }),
+      );
+    }
+
+    // Computed outputs
+    const compiledOutputPortsEntries = Object.entries(compiledOutputPorts);
+    if (compiledOutputPortsEntries.length > 0) {
+      thisOutBody.push(
+        ...compiledOutputPortsEntries.map(([portName, block]) =>
+          property(
+            'init',
+            identifier(portName),
+            objectExpression([
+              property('init', identifier('enumerable'), literal(true)),
+              property(
+                'init',
+                identifier('value'),
+                arrowFunctionExpression([], block),
+              ),
+            ]),
+          ),
+        ),
+      );
+      hasOutAccess = true;
+    }
+
+    // Output flows
+    if (this.chipInfo.outputFlowPorts.length > 0) {
+      // Add continuations inits in `this.$out = { ... }`
+      this$OutBody.push(
+        ...this.chipInfo.outputFlowPorts.map((portInfo) => {
+          return property(
+            'init',
+            identifier(portInfo.name),
+            identifier('undefined'),
+          );
+        }),
+      );
+      hasOutData = true;
+
+      // Add this.out` functions to wrap continuations
+      thisOutBody.push(
+        ...this.chipInfo.outputFlowPorts.map((portInfo) =>
+          property(
+            'init',
+            identifier(portInfo.name),
+            objectExpression([
+              property(
+                'init',
+                identifier('value'),
+                arrowFunctionExpression(
+                  [identifier('value')],
+                  blockStatement([
+                    //
+                    parse(`() => { if (typeof value !== "undefined") {
+                      this.$out.${portInfo.name} = value;
+                      return;
+                    }}`).program.body[0].expression.body.body[0],
+                    // Update output ports with `computeOn` connected to this
+                    // flow outlet
+                    ...(compiledUpdatesOnPorts[portInfo.name] || []).map((b) =>
+                      expressionStatement(b),
+                    ),
+                    // TODO add output updates here
+                    expressionStatement(
+                      callExpression(
+                        logicalExpression(
+                          '||',
+                          memberExpression(
+                            memberExpression(
+                              thisExpression(),
+                              identifier('$out'),
+                            ),
+                            identifier(portInfo.name),
+                          ),
+                          arrowFunctionExpression([], blockStatement([])),
+                        ),
+                        [],
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      );
+      hasOutAccess = true;
+    }
+
+    // Fix output storage
+    if (!hasOutData) {
+      replaceAstPath(program, outPath, noop());
+    }
+
+    // Add output access
+    if (hasOutAccess) {
+      body.push(thisOut);
+      body.push(parse('Object.seal(this.out)').program.body[0]);
+    }
+
+    // Emitters
+
+    for (const emitterBlock of compiledEmitters) {
+      body.push(emitterBlock);
     }
 
     return cleanAst(program);

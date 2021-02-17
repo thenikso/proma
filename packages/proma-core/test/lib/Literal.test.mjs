@@ -7,7 +7,7 @@ import {
   outputData,
   wire,
 } from '../../core/index.mjs';
-import { chipCompile, js } from '../utils.mjs';
+import { compileAndRun, compileAndRunResult, js } from '../utils.mjs';
 
 import { Literal } from '../../lib/index.mjs';
 
@@ -15,25 +15,44 @@ describe('[lib/Literal] Literal chip', async (assert) => {
   assert({
     given: 'a Literal chip',
     should: 'compile',
-    actual: new Literal('test').compile(),
-    expected: js`
-    class Literal {
-      constructor(value = "test") {
-        this.in = Object.seal({
-          value
-        });
+    actual: compileAndRun(
+      Literal,
+      (chip) => {
+        return chip.out.value();
+      },
+      ['test'],
+    ),
+    expected: compileAndRunResult(
+      js`
+      class Literal {
+        constructor(value = "test") {
+          this.$in = Object.seal({
+            value
+          });
 
-        this.out = {};
+          Object.defineProperties(this.in = {}, {
+            value: {
+              get: () => () => this.$in.value,
 
-        Object.defineProperties(this.out, {
-          value: {
-            enumerable: true,
-            get: () => this.in.value
-          }
-        });
+              set: value => {
+                this.$in.value = value;
+              }
+            }
+          });
 
-        Object.seal(this.out);
-      }
-    }`,
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            value: {
+              enumerable: true,
+              value: () => this.$in.value
+            }
+          });
+
+          Object.seal(this.out);
+        }
+      }`,
+      'test',
+    ),
   });
 });

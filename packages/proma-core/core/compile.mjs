@@ -493,6 +493,9 @@ function makeOutputFlowSinkCompiler(portInfo) {
         if (namedTypes.BlockStatement.check(continuation)) {
           continuationSequence.push(...continuation.body);
         } else {
+          if (!namedTypes.ExpressionStatement.check(continuation)) {
+            continuation = builders.expressionStatement(continuation);
+          }
           continuationSequence.push(continuation);
         }
       }

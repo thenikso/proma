@@ -21,6 +21,12 @@
 
       import { Start, Log, Literal } from './lib/index.mjs';
 
+      const Add = chip('Add', () => {
+        const A = inputData('A');
+        const B = inputData('B');
+        const value = outputData('value', () => A() + B());
+      });
+
       const Random = chip('Random', () => {
         const exec = inputFlow('exec', () => {
           value(Math.random());
@@ -163,12 +169,12 @@
         wire(evt.out.event, log.in.message);
       });
 
-      window.chip = new Evt();
+      window.chip = new Add();
       window.code = window.chip.compile();
       console.log(window.code);
-      // const func = new Function('return (' + code + ')');
-      // window.ChipCompiled = func();
-      // window.chipComp = new window.ChipCompiled();
+      const func = new Function('return (' + code + ')');
+      window.ChipCompiled = func();
+      window.chipComp = new window.ChipCompiled();
     </script>
   </body>
 </html>

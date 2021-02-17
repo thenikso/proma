@@ -2,12 +2,10 @@ import './runner/tap-console.mjs';
 
 import './core/compile.test.mjs';
 
-import './compile/emitters.test.mjs';
-import './compile/outputs.test.mjs';
-import './compile/connections.test.mjs';
-import './compile/variadic.test.mjs';
-import './compile/handlers.test.mjs';
-
-import './run/handlers.test.mjs';
+import './programs/emitters.test.mjs';
+import './programs/outputs.test.mjs';
+import './programs/connections.test.mjs';
+import './programs/variadic.test.mjs';
+import './programs/handlers.test.mjs';
 
 import './lib/Literal.test.mjs';

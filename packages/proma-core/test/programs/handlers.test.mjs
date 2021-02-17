@@ -1,0 +1,190 @@
+import { describe } from '../runner/riteway.mjs';
+import {
+  chip,
+  inputFlow,
+  inputData,
+  outputFlow,
+  outputData,
+  outputHandler,
+  wire,
+} from '../../core/index.mjs';
+import {
+  js,
+  compileAndRun,
+  compileAndRunResult,
+} from '../utils.mjs';
+
+const Evt = chip('Evt', () => {
+  const ref = outputHandler('ref', (e) => {
+    event(e);
+    then();
+  });
+  const then = outputFlow('then');
+  const event = outputData('event');
+});
+
+const BindTest = chip('BindTest', () => {
+  const exec = inputFlow('exec', () => {
+    const t = document.getElementById(target());
+    t.addEventListener('test-event', event());
+    then();
+  });
+  const target = inputData('target', { canonical: true });
+  const event = inputData('event');
+  const then = outputFlow('then');
+});
+
+const Pass = chip('Pass', () => {
+  const exec = inputFlow('exec');
+  const input = inputData('input');
+  const then = outputFlow('then');
+  const output = outputData('output', then);
+  wire(exec, then);
+  wire(input, output);
+});
+
+describe('[programs/handlers] handlers for events', async (assert) => {
+  assert({
+    given: 'a handler chip',
+    should: 'compile',
+    actual: compileAndRun(Evt, (chip) => {
+      let val;
+      chip.out.then(() => {
+        val = chip.out.event();
+      });
+      const res = [val];
+      chip.out.ref()(9);
+      res.push(val);
+      return res;
+    }),
+    expected: compileAndRunResult(
+      js`
+      class Evt {
+        constructor() {
+          this.$out = Object.seal({
+            event: undefined,
+            then: undefined
+          });
+
+          Object.defineProperties(this.out = {}, {
+            event: {
+              value: () => this.$out.event
+            },
+
+            ref: {
+              enumerable: true,
+
+              value: () => e => {
+                this.$out.event = e;
+                this.out.then();
+              }
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  this.$out.then = value;
+                  return;
+                }
+
+                (this.$out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.seal(this.out);
+        }
+      }`,
+      [undefined, 9],
+    ),
+  });
+
+  assert({
+    given: 'a handler used for event binding',
+    should: 'compile',
+    actual: compileAndRun(
+      () => {
+        const exec = inputFlow('exec');
+        const bind = new BindTest('run-handlers-1');
+        const evt = new Evt();
+        const pass = new Pass();
+        const then = outputFlow('then');
+        const val = outputData('val', then);
+
+        wire(exec, bind.in.exec);
+        wire(evt.out.ref, bind.in.event);
+        wire(evt.out.then, pass.in.exec);
+        wire(evt.out.event, pass.in.input);
+        wire(pass.out.then, then);
+        wire(pass.out.output, val);
+      },
+      (chip) => {
+        const btn = document.createElement('button');
+        btn.id = 'run-handlers-1';
+        document.body.appendChild(btn);
+        let val;
+        chip.out.then(() => {
+          val = chip.out.val();
+        });
+        chip.in.exec();
+        const evt = new CustomEvent('test-event');
+        btn.dispatchEvent(evt);
+        btn.remove();
+        return val === evt;
+      },
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          this.$out = Object.seal({
+            val: undefined,
+            then: undefined
+          });
+
+          let Pass_1__output;
+
+          Object.defineProperties(this.in = {}, {
+            exec: {
+              value: () => {
+                const t = document.getElementById("run-handlers-1");
+
+                t.addEventListener("test-event", e => {
+                  let event = e;
+
+                  {
+                    Pass_1__output = event;
+                    this.out.then();
+                  };
+                });
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            val: {
+              value: () => this.$out.val
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  this.$out.then = value;
+                  return;
+                }
+
+                this.$out.val = Pass_1__output;
+                (this.$out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.seal(this.out);
+        }
+      }`,
+      true,
+    ),
+  });
+});

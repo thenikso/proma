@@ -9,16 +9,11 @@ import {
 } from '../core/index.mjs';
 import EMITTERS_ONLY from '../core/wrappers/EmittersWrapper.mjs';
 
+// TODO deprecate in favor of compileAndRun
 export function chipCompile(build, init, wrapper) {
   const C = build.__proto__ === Chip ? build : chip('TestChip', build);
   const c = new C(...(init || []));
   return c.compile(wrapper);
-}
-
-export function withChipClass(chip, run) {
-  const makeChipClass = new Function('return (' + chip.compile() + ')');
-  const ChipClass = makeChipClass();
-  return run(ChipClass);
 }
 
 export function chipEmitters(build) {
@@ -29,6 +24,30 @@ export function chipRun(build, run) {
   const C = build.__proto__ === Chip ? build : chip('TestChip', build);
   const c = new C();
   return run(c);
+}
+
+export function compileAndRun(build, run, initData) {
+  const C = build.__proto__ === Chip ? build : chip('TestChip', build);
+  const c = new C(...(initData || []));
+  const code = c.compile();
+  const makeClass = new Function('return (' + code + ')');
+  const CClass = makeClass();
+  const cComp = new CClass(...(initData || []));
+  const live = run(c);
+  const comp = run(cComp);
+  return {
+    code,
+    live,
+    comp,
+  };
+}
+
+export function compileAndRunResult(code, value) {
+  return {
+    code,
+    live: value,
+    comp: value,
+  };
 }
 
 export function js(strings, ...data) {
