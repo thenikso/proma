@@ -45,10 +45,9 @@
 - [ ] how to have a library of loaded chips to be created by name?
 - [ ] save/restore JSON of a chip
 - [ ] use this? or have a self? inputs that take it as default?
+- [x] chip builder params could be used to send chip instances of special
+      chips like mount, destroy, ... - `WebComponent.initChip` is a `chip.preset({ chips: { mount: chip(...) } })` that can be used to construct new chips that get preset chips as params
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
-      chip builder params could be used to send chip instances of special
-      chips like mount, destroy, ... - `WebComponent.initChip` is a `chip.preset({ chips: { mount: chip(...) } })` that can be used to construct
-      new chips that get preset chips as params
 - [ ] types
 - [ ] variadic output ports
 - [ ] variadic outlets compilation with proxy an all?

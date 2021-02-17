@@ -45,7 +45,16 @@ const Pass = chip('Pass', () => {
   wire(input, output);
 });
 
-describe('[programs/handlers] handlers for events', async (assert) => {
+describe('[programs/handles] handles usage', async (assert) => {
+  // assert({
+  //   given: 'a handler port',
+  //   should: 'define a isHandle property',
+  //   actual: compileAndRun(Evt, (chip) => {
+  //     return chip.out.ref.isHandle;
+  //   }),
+  //   expected: true,
+  // });
+
   assert({
     given: 'a handler chip',
     should: 'compile',
@@ -107,7 +116,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
     actual: compileAndRun(
       () => {
         const exec = inputFlow('exec');
-        const bind = new BindTest('run-handlers-1');
+        const bind = new BindTest('run-handles-1');
         const evt = new Evt();
         const pass = new Pass();
         pass.id = 'Pass';
@@ -123,7 +132,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
       },
       (chip) => {
         const btn = new EventTarget();
-        bindTargets['run-handlers-1'] = btn;
+        bindTargets['run-handles-1'] = btn;
         let val;
         chip.out.then(() => {
           val = chip.out.val();
@@ -148,7 +157,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
           Object.defineProperties(this.in = {}, {
             exec: {
               value: () => {
-                const t = bindTargets["run-handlers-1"];
+                const t = bindTargets["run-handles-1"];
 
                 t.addEventListener("test-event", e => {
                   let event = e;

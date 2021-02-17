@@ -1,41 +1,73 @@
 import { context, assert } from './utils.mjs';
-import { Chip, ChipInfo } from './chip.mjs';
+import { Chip as ChipBase, ChipInfo } from './chip.mjs';
 import { runIngresses } from './run.mjs';
 
 export const OnCreateIngress = ingress('OnCreateIngress');
 
-export function chip(name, build) {
-  if (typeof name !== 'string') {
-    build = name;
-    name = undefined;
-  }
-  const chipInfo = new ChipInfo(name);
-  if (typeof build === 'function') {
-    context.push(chipInfo);
-    const onCreate = new OnCreateIngress();
-    build.call(undefined, { onCreate });
-    context.pop();
-  }
-  // TODO validate chip:
-  // - if input data but not flow it may not do what you expect
-  // - if not using all input data in outputs/execs
-  class ChipState extends Chip {
-    constructor(...configValues) {
-      super(chipInfo, configValues);
-      const parentChipInfo = context();
-      // Add to current chip `build` execution
-      if (parentChipInfo instanceof ChipInfo) {
-        parentChipInfo.addChip(this);
-      }
-      // Run `OnCreateIngress`es of this and all child chips
-      else {
-        runIngresses(this, (i) => i instanceof OnCreateIngress);
+function makeChipFactory($buildIngresses, $constructed) {
+  function chip(name, build) {
+    if (typeof name !== 'string') {
+      build = name;
+      name = undefined;
+    }
+    const chipInfo = new ChipInfo(name);
+    if (typeof build === 'function') {
+      context.push(chipInfo);
+      const ingresses =
+        (typeof $buildIngresses === 'function' && $buildIngresses()) ||
+        $buildIngresses ||
+        {};
+      build.call(undefined, ingresses);
+      context.pop();
+    }
+    // TODO validate chip:
+    // - if input data but not flow it may not do what you expect
+    // - if not using all input data in outputs/execs
+    class Chip extends ChipBase {
+      constructor(...configValues) {
+        super(chipInfo, configValues);
+        const parentChipInfo = context();
+        // Add to current chip `build` execution
+        if (parentChipInfo instanceof ChipInfo) {
+          parentChipInfo.addChip(this);
+        }
+        // Run `constructed`
+        else if (typeof $constructed === 'function') {
+          $constructed(this);
+        }
       }
     }
-  }
 
-  return ChipState;
+    return Chip;
+  }
+  chip.extend = function extendChip(buildIngresses, constructed) {
+    return makeChipFactory(
+      () =>
+        Object.assign(
+          {},
+          (typeof $buildIngresses === 'function' && $buildIngresses()) ||
+            $buildIngresses,
+          (typeof buildIngresses === 'function' && buildIngresses()) ||
+            buildIngresses,
+        ),
+      (chip) => {
+        if (typeof $constructed === 'function') $constructed(chip);
+        if (typeof constructed === 'function') constructed(chip);
+      },
+    );
+  };
+  return chip;
 }
+
+export const chip = makeChipFactory(
+  () => {
+    const onCreate = new OnCreateIngress();
+    return { onCreate };
+  },
+  (chip) => {
+    runIngresses(chip, (i) => i instanceof OnCreateIngress);
+  },
+);
 
 export function inputFlow(name, config) {
   const chipInfo = context(ChipInfo);
@@ -93,7 +125,7 @@ export function ingress(name, ...ports) {
   // TODO ports
   context.pop();
 
-  class IngressChip extends Chip {
+  class IngressChip extends ChipBase {
     constructor() {
       super(ingressInfo);
       // Add to current chip `build` execution
@@ -101,6 +133,10 @@ export function ingress(name, ...ports) {
       if (parentChipInfo instanceof ChipInfo) {
         parentChipInfo.ingresses.push(this);
       }
+    }
+
+    get isIngress() {
+      return true;
     }
   }
 
