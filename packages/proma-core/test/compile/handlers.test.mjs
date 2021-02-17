@@ -11,27 +11,7 @@ import {
 import { chipCompile, js } from '../utils.mjs';
 import { Start, Log } from '../../lib/index.mjs';
 
-const Evt = chip('Evt', () => {
-  const ref = outputHandler('ref', (e) => {
-    event(e);
-    then();
-  });
-  const then = outputFlow('then');
-  const event = outputData('event');
-});
-
-const BindClick = chip('BindClick', () => {
-  const exec = inputFlow('exec', () => {
-    const t = document.getElementById(target());
-    t.addEventListener('click', event());
-    then();
-  });
-  const target = inputData('target', { canonical: true });
-  const event = inputData('event');
-  const then = outputFlow('then');
-});
-
-describe('[programs/handlers] handlers for events', async (assert) => {
+describe('[compile/handlers] handlers for events', async (assert) => {
   assert({
     given: 'a handler chip',
     should: 'compile',
@@ -97,4 +77,24 @@ describe('[programs/handlers] handlers for events', async (assert) => {
       }
     }`,
   });
+});
+
+const Evt = chip('Evt', () => {
+  const ref = outputHandler('ref', (e) => {
+    event(e);
+    then();
+  });
+  const then = outputFlow('then');
+  const event = outputData('event');
+});
+
+const BindClick = chip('BindClick', () => {
+  const exec = inputFlow('exec', () => {
+    const t = document.getElementById(target());
+    t.addEventListener('click', event());
+    then();
+  });
+  const target = inputData('target', { canonical: true });
+  const event = inputData('event');
+  const then = outputFlow('then');
 });

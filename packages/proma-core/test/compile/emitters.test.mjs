@@ -10,7 +10,7 @@ import {
 import { chipEmitters, js } from '../utils.mjs';
 import { Start, Split, Log } from '../../lib/index.mjs';
 
-describe('[programs/emitters] emitter base flow', async (assert) => {
+describe('[compile/emitters] emitter base flow', async (assert) => {
   assert({
     given: 'a direct emitter based program',
     should: 'compile',

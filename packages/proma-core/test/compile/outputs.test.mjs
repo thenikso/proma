@@ -10,7 +10,7 @@ import {
 import { js, chipCompile, withChipClass } from '../utils.mjs';
 import { Start, Split, Log, Literal } from '../../lib/index.mjs';
 
-describe('[programs/outputs] pure outputs', async (assert) => {
+describe('[compile/outputs] pure outputs', async (assert) => {
   assert({
     given: 'a pure output',
     should: 'compile',
@@ -44,7 +44,7 @@ describe('[programs/outputs] pure outputs', async (assert) => {
   // TODO can only have input ports
 });
 
-describe('[programs/outputs] executed outputs', async (assert) => {
+describe('[compile/outputs] executed outputs', async (assert) => {
   assert({
     given: 'an output set in the exec',
     should: 'compile',
@@ -92,7 +92,7 @@ describe('[programs/outputs] executed outputs', async (assert) => {
   // TODO output port should not have its out compile
 });
 
-describe('[programs/outputs] connected outputs (and inlets)', async (assert) => {
+describe('[compile/outputs] connected outputs (and inlets)', async (assert) => {
   const connectedOutputExpected = js`class TestChip {
     constructor() {
       this.out = {

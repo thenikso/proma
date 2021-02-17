@@ -10,7 +10,7 @@ import {
 import { js, chipCompile, withChipClass } from '../utils.mjs';
 import { Start, Log } from '../../lib/index.mjs';
 
-describe('[programs/connections] input flow (execs) multi-connections', async (assert) => {
+describe('[compile/connections] input flow (execs) multi-connections', async (assert) => {
   assert({
     given: 'multiple connections to an input flow inlet',
     should: 'compile as a function',
@@ -85,7 +85,7 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
 
 // TODO multi cons from output data
 // TODO multi cons from input data outlet
-describe('[programs/connections] output data multi-connections', async (assert) => {
+describe('[compile/connections] output data multi-connections', async (assert) => {
   const Greet = chip('Greet', () => {
     const name = inputData('name', { canonical: true });
     const value = outputData('value', () => {

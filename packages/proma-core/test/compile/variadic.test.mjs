@@ -10,7 +10,7 @@ import {
 import { js, chipCompile } from '../utils.mjs';
 import { Start, Log, Literal } from '../../lib/index.mjs';
 
-describe('[programs/variadic] variadic ports', async (assert) => {
+describe('[compile/variadic] variadic ports', async (assert) => {
   const Sum = chip('Sum', () => {
     const numbers = inputData('numbers', {
       variadic: '{letter}',
