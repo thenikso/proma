@@ -11,6 +11,9 @@ import {
   cleanAst,
 } from './compile-utils.mjs';
 
+// TODO remove after debug done
+window.recast = recast;
+
 const {
   prettyPrint,
   types: { namedTypes, builders },
@@ -170,16 +173,20 @@ function compiler(portInfo) {
   return portInfo.compiler;
 }
 
-function computeCompiler(portInfo) {
-  if (portInfo.computeCompiler) return portInfo.computeCompiler;
+function computeCompiler(
+  portInfo,
+  prop = 'compute',
+  compilerProp = 'computeCompiler',
+) {
+  if (portInfo[compilerProp]) return portInfo[compilerProp];
 
   // Creating the ast for the `compute` function of the output port. Note that
   // this should be pure, aka it should return a deterministic value based on
   // any combination of input ports.
   // TODO we need to check for purity (ie: can only use inputs)
-  const astBuilder = makeAstBuilder(portInfo, 'compute');
+  const astBuilder = makeAstBuilder(portInfo, prop);
 
-  portInfo.computeCompiler = function compileCompute(
+  portInfo[compilerProp] = function compileCompute(
     portInstance,
     outterScope,
     codeWrapper,
@@ -198,21 +205,25 @@ function computeCompiler(portInfo) {
         throw new Error('Can not use output flow ports in a compute');
       },
       // This should not happen
-      compileOutputData(portName) {
+      compileOutputData(portName, assignExpressionBlock) {
         throw new Error('Can not use output data ports in a compute');
       },
     });
   };
 
-  return portInfo.computeCompiler;
+  return portInfo[compilerProp];
 }
 
-function executeCompiler(portInfo) {
-  if (portInfo.executeCompiler) return portInfo.executeCompiler;
+function executeCompiler(
+  portInfo,
+  prop = 'execute',
+  compilerProp = 'executeCompiler',
+) {
+  if (portInfo[compilerProp]) return portInfo[compilerProp];
 
-  const astBuilder = makeAstBuilder(portInfo, 'execute');
+  const astBuilder = makeAstBuilder(portInfo, prop);
 
-  portInfo.executeCompiler = function compileExecute(
+  portInfo[compilerProp] = function compileExecute(
     portInstance,
     outterScope,
     codeWrapper,
@@ -258,6 +269,7 @@ function executeCompiler(portInfo) {
       compileOutputData(portName, assignExpressionBlock) {
         const port = chip.out[portName];
         const portInfo = info(port);
+
         if (isOutlet(portInfo, outterScope)) {
           return codeWrapper.compileOutputDataOutlet(
             portInfo,
@@ -265,13 +277,45 @@ function executeCompiler(portInfo) {
           );
         }
 
-        // TODO probably this should never be reached?
-        throw new Error('unimplemented');
+        // Generate assignment of local variable
+        //    let portName = <assignExpressionBlock>;
+
+        const parentChip = scope[0];
+        assert(parentChip, `Port "${port.fullName}" should be an outlet`);
+
+        const conns = info(parentChip).getConnectedPorts(port, parentChip);
+        assert(conns.length <= 1, 'unimplemented multi-conns');
+        const conn = conns[0];
+
+        if (conn) {
+          let outputIdentifier;
+          if (conn.chip !== scope[0]) {
+            outputIdentifier = compile(
+              conn,
+              [conn.chip, ...scope],
+              codeWrapper,
+            );
+          } else {
+            outputIdentifier = compile(conn, scope, codeWrapper);
+          }
+
+          assert(
+            namedTypes.Identifier.check(outputIdentifier),
+            `Expected identifier got: ${outputIdentifier}`,
+          );
+
+          return builders.variableDeclaration('let', [
+            builders.variableDeclarator(
+              outputIdentifier,
+              assignExpressionBlock,
+            ),
+          ]);
+        }
       },
     });
   };
 
-  return portInfo.executeCompiler;
+  return portInfo[compilerProp];
 }
 
 function emitterCompiler(portInfo) {
@@ -581,10 +625,6 @@ function makeInputDataSinkCompiler(portInfo) {
       return variadicValues;
     }
 
-    if (typeof portInstance.value !== 'undefined') {
-      return literalCompiler(portInstance.value);
-    }
-
     assert(
       parentChip,
       `Invalid scope while compiling port "${portInstance.name}"`,
@@ -599,6 +639,10 @@ function makeInputDataSinkCompiler(portInfo) {
         return compile(conn, [conn.chip, ...scope], codeWrapper);
       }
       return compile(conn, scope, codeWrapper);
+    }
+
+    if (typeof portInstance.value !== 'undefined') {
+      return literalCompiler(portInstance.value);
     }
   };
 }
@@ -615,8 +659,17 @@ function makeOutputDataSourceCompiler(portInfo) {
   );
 
   if (!portInfo.compute && portInfo.computeOn.length === 0) {
-    // TODO nothing to do?
-    throw new Error('unimplemented');
+    // TODO nothing to do? maybe check that it is used by an exec?
+    // throw new Error('unimplemented');
+    return function assignOutputValueCompiler(
+      portInstance,
+      outterScope,
+      codeWrapper,
+    ) {
+      // TODO get unique name from codeWrapper instead
+      // (deterministic with portInstance.name and outterScope)
+      return builders.identifier(portInstance.name);
+    };
   }
 
   // This case is that of an output port connected to an input in a chip with
@@ -680,7 +733,10 @@ function makeOutputDataSourceCompiler(portInfo) {
 
   // We use the output data compute function
   return function useComputeCompiler(portInstance, outterScope, codeWrapper) {
-    const outputExpression = computeCompiler(portInfo)(
+    const makeCompute = portInfo.allowSideEffects
+      ? executeCompiler(portInfo, 'compute', 'computeCompiler')
+      : computeCompiler(portInfo);
+    const outputExpression = makeCompute(
       portInstance,
       outterScope,
       codeWrapper,

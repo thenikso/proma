@@ -7,6 +7,7 @@
   <body>
     <input type="text" placeholder="Your name" id="name" />
     <h2>Hello <span id="res">{name}</span></h2>
+    <button type="button" id="button">Click me</button>
     <script type="module">
       import {
         chip,
@@ -14,6 +15,7 @@
         inputData,
         outputFlow,
         outputData,
+        outputHandler,
         wire,
       } from './core/index.mjs';
 
@@ -76,8 +78,8 @@
         wire(sum.out.value, res);
       });
 
-      window.chip = new MyChip();
-      console.log(window.chip);
+      // window.chip = new MyChip();
+      // console.log(window.chip);
       // window.chip.in.exec()
 
       // const c = MyChip();
@@ -91,7 +93,80 @@
       // window.chip = new window.Chip();
       // console.groupEnd();
 
-      // const EventPlate = plate('event')
+      //
+      // Ideas
+      //
+
+      // const eventPlate = plate('event')
+      // const bind = new Bind(self, 'click');
+      // wire(eventPlate, bind.in.event)
+      // wire(eventPlate.out.exec, log.in.exec);
+      // wire(eventPlate.out.event, log.in.message);
+
+      // const CustomEvent = chip(() => {
+      //   const exec = inputFlow('exec');
+      //   const event = inputData('event');
+      // });
+
+      // plates: no `in`, with `ref` -> `const p = plate('event')`
+      // emitters: only one `in.plate` -> `const e = emitter((plate) => plate()())`
+      // `wire(plate.out.ref, e.in.plate)`
+
+      // Plate:
+      // Could be just `handle` and provide both in and out?
+      // const ref = outputHandle('ref', (e) => {
+      //   event(e);
+      //   then();
+      // });
+      // const then = outputFlow('then');
+      // const event = outputData('event');
+
+      // Using plate:
+      // const exec = inputFlow('exec', () => {
+      //   event()();
+      // });
+      // // or
+      // // emitter(() => { event()() }); just a conceiled inputFlow with an `autoExec: true`?
+      // const event = inputData('event');
+
+      const Evt = chip('Evt', () => {
+        const ref = outputHandler('ref', (e) => {
+          event(e);
+          then();
+        });
+        const then = outputFlow('then');
+        const event = outputData('event');
+      });
+
+      const BindClick = chip('BindClick', () => {
+        const exec = inputFlow('exec', () => {
+          const t = document.getElementById(target());
+          t.addEventListener('click', event());
+          then();
+        });
+        const target = inputData('target', { canonical: true });
+        const event = inputData('event');
+        const then = outputFlow('then');
+      });
+
+      const MyChip2 = chip('MyChip2', () => {
+        const start = new Start();
+        const bind = new BindClick('button');
+        const evt = new Evt();
+        const log = new Log('clicked!');
+
+        wire(start.out.then, bind.in.exec);
+        wire(evt.out.ref, bind.in.event);
+        wire(evt.out.then, log.in.exec);
+        wire(evt.out.event, log.in.message);
+      });
+
+      const c = new MyChip2();
+      const code = c.compile();
+      console.log(code);
+      const func = new Function('return (' + code + ')');
+      window.Chip = func();
+      window.chip = new window.Chip();
     </script>
   </body>
 </html>

@@ -74,7 +74,7 @@ export class Chip {
 
 export class ChipInfo {
   constructor(name) {
-    this.name = name || shortUID();
+    this.name = name || 'Chip_' + shortUID();
     this.chips = [];
     this.inputs = [];
     this.outputs = [];

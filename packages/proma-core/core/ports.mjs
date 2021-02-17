@@ -242,6 +242,7 @@ export class OutputDataSourcePortInfo extends PortInfo {
     this.computeCompiler = config.computeCompiler;
     this.compiler = undefined;
     this.inline = undefined;
+    this.allowSideEffects = config.allowSideEffects || false;
 
     let computeOn;
 

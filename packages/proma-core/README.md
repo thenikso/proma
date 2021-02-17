@@ -33,7 +33,8 @@
 - [x] variadic input ports
 - [x] execution without compilation
 - [ ] editability
-- [ ] delegates/terminals/plate? to make events like blueprint
+- [x] delegates/terminals/plate? to make events like blueprint
+      Handle/ref output ports hat can be used to execute an output flow?
 - [ ] how to have a library of loaded chips to be created by name?
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?

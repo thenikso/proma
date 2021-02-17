@@ -1,4 +1,4 @@
-import { context } from './utils.mjs';
+import { context, assert } from './utils.mjs';
 import { Chip, ChipInfo } from './chip.mjs';
 
 export function chip(name, build) {
@@ -60,5 +60,16 @@ export function inputConfig(name, defaultValue) {
     canonical: true,
     conceiled: true,
     defaultValue,
+  });
+}
+
+export function outputHandler(name, execHandle) {
+  assert(
+    typeof execHandle === 'function',
+    'A handler should specify a function',
+  );
+  return outputData(name, {
+    compute: new Function('return () => ' + String(execHandle))(),
+    allowSideEffects: true,
   });
 }
