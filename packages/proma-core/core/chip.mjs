@@ -78,6 +78,8 @@ export class ChipInfo {
     this.chips = [];
     this.inputs = [];
     this.outputs = [];
+    // TODO describe
+    this.ingresses = [];
     // Wire map from source -> [sink]. Souces can have multiple sinks.
     // Also forwards PortOutlet sinks to [sinks] by saving their PortInfo.
     this.sourceConnections = new Map();
@@ -169,8 +171,8 @@ export class ChipInfo {
     return new PortOutlet(portInfo);
   }
 
-  addOutputFlowPort(name, config) {
-    const portInfo = new OutputFlowSinkPortInfo(this, name, config);
+  addOutputFlowPort(name) {
+    const portInfo = new OutputFlowSinkPortInfo(this, name);
     this.outputs.push(portInfo);
     return new PortOutlet(portInfo);
   }
@@ -192,14 +194,20 @@ export class ChipInfo {
         }`,
       );
     }
-    const infoA = info(portA);
-    const infoB = info(portB);
+    // Include used ingresses in chip
+    if (this.ingresses.includes(portA.chip)) {
+      this.chips.push(portA.chip);
+    } else if (this.ingresses.includes(portB.chip)) {
+      this.chips.push(portB.chip);
+    }
     if (
       !(isOutletA || this.chips.includes(portA.chip)) ||
       !(isOutletB || this.chips.includes(portB.chip))
     ) {
       throw new Error('Both ports must be in the chip body');
     }
+    const infoA = info(portA);
+    const infoB = info(portB);
     if (infoA.isFlow !== infoB.isFlow) {
       throw new Error('Can not wire flow port with data port');
     }

@@ -15,11 +15,11 @@
         inputData,
         outputFlow,
         outputData,
-        outputHandler,
+        outputHandle,
         wire,
       } from './core/index.mjs';
 
-      import { Start, Log, Literal } from './lib/index.mjs';
+      import { Log, Literal } from './lib/index.mjs';
 
       const Add = chip('Add', () => {
         const A = inputData('A');
@@ -84,59 +84,8 @@
         wire(sum.out.value, res);
       });
 
-      // window.chip = new MyChip();
-      // console.log(window.chip);
-      // window.chip.in.exec()
-
-      // const c = MyChip();
-      // const code = c.compile();
-      // console.group('Code');
-      // console.log(code);
-      // console.groupEnd();
-      // console.group('Code execution');
-      // const func = new Function('return (' + code + ')');
-      // window.Chip = func();
-      // window.chip = new window.Chip();
-      // console.groupEnd();
-
-      //
-      // Ideas
-      //
-
-      // const eventPlate = plate('event')
-      // const bind = new Bind(self, 'click');
-      // wire(eventPlate, bind.in.event)
-      // wire(eventPlate.out.exec, log.in.exec);
-      // wire(eventPlate.out.event, log.in.message);
-
-      // const CustomEvent = chip(() => {
-      //   const exec = inputFlow('exec');
-      //   const event = inputData('event');
-      // });
-
-      // plates: no `in`, with `ref` -> `const p = plate('event')`
-      // emitters: only one `in.plate` -> `const e = emitter((plate) => plate()())`
-      // `wire(plate.out.ref, e.in.plate)`
-
-      // Plate:
-      // Could be just `handle` and provide both in and out?
-      // const ref = outputHandle('ref', (e) => {
-      //   event(e);
-      //   then();
-      // });
-      // const then = outputFlow('then');
-      // const event = outputData('event');
-
-      // Using plate:
-      // const exec = inputFlow('exec', () => {
-      //   event()();
-      // });
-      // // or
-      // // emitter(() => { event()() }); just a conceiled inputFlow with an `autoExec: true`?
-      // const event = inputData('event');
-
       const Evt = chip('Evt', () => {
-        const ref = outputHandler('ref', (e) => {
+        const ref = outputHandle('ref', (e) => {
           event(e);
           then();
         });
@@ -169,12 +118,29 @@
         wire(evt.out.event, log.in.message);
       });
 
-      window.chip = new Add();
+      const MyIngressChip = chip('MyIngressChip', ({ onCreate }) => {
+        const exec = inputFlow('exec');
+        const log = new Log();
+        log.id = 'Log';
+
+        wire(exec, log.in.exec);
+        wire(onCreate.out.then, log.in.exec);
+      });
+
+      console.group('Instance (window.chip)');
+      window.chip = new MyIngressChip();
+      console.log(window.chip);
+      console.groupEnd();
+      console.group('Code (window.code)');
       window.code = window.chip.compile();
       console.log(window.code);
+      console.groupEnd();
+      console.group('Compiled instance (window.chipComp)');
       const func = new Function('return (' + code + ')');
       window.ChipCompiled = func();
       window.chipComp = new window.ChipCompiled();
+      console.log(window.chipComp);
+      console.groupEnd();
     </script>
   </body>
 </html>

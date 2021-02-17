@@ -24,7 +24,7 @@ export class Compilation {
     this.rootChip = rootChip;
     this.outputBlocksByPort = {};
     this.executeBlocksByPort = {};
-    this.emitterBlocks = [];
+    this.ingressBlocksByPort = new Map();
     this.updateBlocksByPort = {};
     this.CodeWrapper = CodeWrapper || ClassWrapper;
   }
@@ -50,7 +50,7 @@ export class Compilation {
         this.outputBlocksByPort[portInfo.name] = block;
       }
     } else {
-      // Chips with flow may have emitters or executions
+      // Chips with flow may have ingresses or executions
 
       // Output data with compute but no computeOn will be initialized once
       // This covers stuff like handlers
@@ -80,34 +80,20 @@ export class Compilation {
         this.executeBlocksByPort[portInfo.name] = block;
       }
 
-      // Emitters
-      const emitters = findChildEmitters(this.rootChip);
-
-      // For each found emitter we will create a new root script.
-      // Note that the found emitters may be deep within chip instances.
-      for (const { port, scope } of emitters) {
-        this.emitterBlocks.push(compile(port, scope, codeWrapper));
+      // Ingresses
+      for (const { port, scope } of usedIngresses(this.rootChip)) {
+        this.ingressBlocksByPort.set(
+          info(port.chip).name,
+          compile(port, scope, codeWrapper),
+        );
       }
-
-      // Clean blocks
-      this.emitterBlocks = this.emitterBlocks.reduce((acc, b) => {
-        if (namedTypes.BlockStatement.check(b)) {
-          acc.push(...b.body);
-        } else {
-          acc.push(builders.expressionStatement(b));
-        }
-        return acc;
-      }, []);
-
-      // TODO rootChip own emitter output flow mush be handled in a different way
-      // ie: emitter something that given a handler triggers it
     }
 
     // Build the final program
     const program = codeWrapper.compileEnd({
       chip: this.rootChip,
       chipInfo: rootInfo,
-      compiledEmitters: this.emitterBlocks,
+      compiledIngresses: this.ingressBlocksByPort,
       compiledFlowPorts: this.executeBlocksByPort,
       compiledOutputPorts: this.outputBlocksByPort,
       compiledUpdatesOnPorts: this.updateBlocksByPort,
@@ -125,29 +111,29 @@ export class Compilation {
 // Visiting
 //
 
-// Emitters are output flow ports that have, or connected to an
-// output flow port that has, a `emitter`
-export function findChildEmitters(rootChip, currentScope) {
-  if (!currentScope) {
-    currentScope = [rootChip];
+function usedIngresses(chip, scope) {
+  if (!scope) {
+    scope = [chip];
   }
-  const emitters = [];
-  for (const chip of info(rootChip).chips) {
-    const scope = [chip, ...currentScope];
-    const outFlowPorts = chip.out.filter((port) => info(port).isFlow);
-    for (const port of outFlowPorts) {
-      const portInfo = info(port);
-      if (portInfo.emitter) {
-        emitters.push({
-          port,
-          scope,
-        });
-      }
+  const ingresses = [];
+  const chipInfo = info(chip);
+  for (const ingress of chipInfo.ingresses) {
+    if (!chipInfo.chips.includes(ingress)) {
+      continue;
     }
-    // Recurse
-    emitters.push(...findChildEmitters(chip, scope));
+    const newScope = [ingress, ...scope];
+    const outFlowPorts = ingress.out.filter((port) => info(port).isFlow);
+    for (const port of outFlowPorts) {
+      ingresses.push({
+        port,
+        scope: newScope,
+      });
+    }
   }
-  return emitters;
+  for (const subChip of chipInfo.chips) {
+    ingresses.push(...usedIngresses(subChip, [subChip, ...scope]));
+  }
+  return ingresses;
 }
 
 function isOutlet(portInfo, scope) {
@@ -336,61 +322,10 @@ function executeCompiler(
   return portInfo[compilerProp];
 }
 
-function emitterCompiler(portInfo) {
-  if (portInfo.emitterCompiler) return portInfo.emitterCompiler;
-
-  // TODO what can and can not be used in term of ports?
-  const astBuilder = makeAstBuilder(portInfo, 'emitter');
-
-  portInfo.emitterCompiler = function emitterCompiler(
-    portInstance,
-    outterScope,
-    codeWrapper,
-  ) {
-    const [chip, ...scope] = outterScope;
-
-    assertInfo(chip, portInfo.chipInfo);
-
-    return astBuilder({
-      compileInputData(portName) {
-        throw new Error('unimplemented');
-      },
-      compileOutputFlow(portName) {
-        // Follow port connections until an exec port it found
-        const port = chip.out[portName];
-        // TODO verify port? how?
-
-        const parentChip = scope[0];
-        assert(parentChip, `Port "${port.fullName}" should be an outlet`);
-
-        const conns = info(parentChip).getConnectedPorts(port, parentChip);
-        assert(conns.length <= 1, 'unimplemented multi-conns');
-        const conn = conns[0];
-
-        if (conn) {
-          // If moving forward, into another chip, we add it to the scope
-          if (scope[0] !== conn.chip) {
-            return compile(conn, [conn.chip, ...scope], codeWrapper);
-          }
-          return compile(conn, scope, codeWrapper);
-        }
-      },
-    });
-  };
-
-  return portInfo.emitterCompiler;
-}
-
 // Output flows ("then" ports)
-// These can be connected to a single input flow or have an emitter.
-// Emitters are output flow ports with a `emitter` method connected to them.
-// They can call connected input flows without the need of an execution.
-// These are used for events or interrupts.
-// This function takes such ports and make sure the `emitter` is ready to be
-// compiled.
+// These can be connected to a single input flow.
 //
 //     const then = outputFlow('then');
-//     const then = outputFlow('then', () => then());
 //
 function makeOutputFlowSinkCompiler(portInfo) {
   assert(
@@ -398,19 +333,7 @@ function makeOutputFlowSinkCompiler(portInfo) {
     'Can only create compiler for output flow ports',
   );
 
-  if (portInfo.emitter) {
-    return function useEmitterCompiler(port, outterScope, codeWrapper) {
-      const emitterExpression = emitterCompiler(portInfo)(
-        port,
-        outterScope,
-        codeWrapper,
-      );
-
-      return emitterExpression;
-    };
-  }
-
-  // An output flow without an emitter could be a forwarding outlet.
+  // An output flow could be a forwarding outlet.
   // We follow that up the scope chain to the next connected port or generate a
   // noop if there is no connection.
   // In here we also handle the case of output flows used to update an output

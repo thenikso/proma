@@ -94,6 +94,7 @@ class EditableChip {
   removeOutputPort(name) {}
   movePort(port, beforePort) {}
 
+  // TODO rememeber to disable ingress?
   removeConnection(portA, portB) {}
 
   //

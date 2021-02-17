@@ -5,7 +5,7 @@ import {
   inputData,
   outputFlow,
   outputData,
-  outputHandler,
+  outputHandle,
   wire,
 } from '../../core/index.mjs';
 import {
@@ -15,7 +15,7 @@ import {
 } from '../utils.mjs';
 
 const Evt = chip('Evt', () => {
-  const ref = outputHandler('ref', (e) => {
+  const ref = outputHandle('ref', (e) => {
     event(e);
     then();
   });
@@ -108,6 +108,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
         const bind = new BindTest('run-handlers-1');
         const evt = new Evt();
         const pass = new Pass();
+        pass.id = 'Pass';
         const then = outputFlow('then');
         const val = outputData('val', then);
 
@@ -142,7 +143,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
             then: undefined
           });
 
-          let Pass_1__output;
+          let Pass__output;
 
           Object.defineProperties(this.in = {}, {
             exec: {
@@ -153,7 +154,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
                   let event = e;
 
                   {
-                    Pass_1__output = event;
+                    Pass__output = event;
                     this.out.then();
                   };
                 });
@@ -175,7 +176,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
                   return;
                 }
 
-                this.$out.val = Pass_1__output;
+                this.$out.val = Pass__output;
                 (this.$out.then || (() => {}))();
               }
             }

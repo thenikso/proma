@@ -1,5 +1,20 @@
 import { context, info, assertInfo, assert } from './utils.mjs';
 
+export function runIngresses(chip, filterIngress = () => true) {
+  const scope = Scope.current;
+  scope.with(chip, () => {
+    const chipInfo = info(chip);
+    for (const ingress of chipInfo.ingresses) {
+      if (filterIngress(ingress)) {
+        scope.with(ingress.out.then.chip, ingress.out.then);
+      }
+    }
+    for (const subChip of chipInfo.chips) {
+      runIngresses(subChip, filterIngress);
+    }
+  });
+}
+
 export function makePortRun(portInfo, isOutlet) {
   let port;
   if (portInfo.isInput) {
@@ -109,8 +124,6 @@ export function makePortRun(portInfo, isOutlet) {
           return chip.out[portInfo.name]();
         }
 
-        // TODO emitters?
-
         // ComputeOn
         if (portInfo.computeOutputs.length > 0) {
           for (const name of portInfo.computeOutputs.map((p) => p.name)) {
@@ -147,8 +160,8 @@ export function makePortRun(portInfo, isOutlet) {
 }
 
 class Scope {
-  constructor() {
-    this.chips = [];
+  constructor(chips) {
+    this.chips = chips || [];
   }
 
   get root() {

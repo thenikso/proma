@@ -1,5 +1,8 @@
 import { context, assert } from './utils.mjs';
 import { Chip, ChipInfo } from './chip.mjs';
+import { runIngresses } from './run.mjs';
+
+export const OnCreateIngress = ingress('OnCreateIngress');
 
 export function chip(name, build) {
   if (typeof name !== 'string') {
@@ -9,7 +12,8 @@ export function chip(name, build) {
   const chipInfo = new ChipInfo(name);
   if (typeof build === 'function') {
     context.push(chipInfo);
-    build.call();
+    const onCreate = new OnCreateIngress();
+    build.call(undefined, { onCreate });
     context.pop();
   }
   // TODO validate chip:
@@ -18,10 +22,14 @@ export function chip(name, build) {
   class ChipState extends Chip {
     constructor(...configValues) {
       super(chipInfo, configValues);
-      // Add to current chip `build` execution
       const parentChipInfo = context();
+      // Add to current chip `build` execution
       if (parentChipInfo instanceof ChipInfo) {
         parentChipInfo.addChip(this);
+      }
+      // Run `OnCreateIngress`es of this and all child chips
+      else {
+        runIngresses(this, (i) => i instanceof OnCreateIngress);
       }
     }
   }
@@ -39,9 +47,9 @@ export function inputData(name, config) {
   return chipInfo.addInputDataPort(name, config);
 }
 
-export function outputFlow(name, config) {
+export function outputFlow(name) {
   const chipInfo = context(ChipInfo);
-  return chipInfo.addOutputFlowPort(name, config);
+  return chipInfo.addOutputFlowPort(name);
 }
 
 export function outputData(name, config) {
@@ -63,7 +71,7 @@ export function inputConfig(name, defaultValue) {
   });
 }
 
-export function outputHandler(name, execHandle) {
+export function outputHandle(name, execHandle) {
   assert(
     typeof execHandle === 'function',
     'A handler should specify a function',
@@ -74,4 +82,27 @@ export function outputHandler(name, execHandle) {
     compute,
     allowSideEffects: true,
   });
+}
+
+export function ingress(name, ...ports) {
+  const ingressInfo = new ChipInfo(name);
+  context.push(ingressInfo);
+  // TODO funciton with ports and toString
+  const handle = outputHandle('handle', () => then());
+  const then = outputFlow('then');
+  // TODO ports
+  context.pop();
+
+  class IngressChip extends Chip {
+    constructor() {
+      super(ingressInfo);
+      // Add to current chip `build` execution
+      const parentChipInfo = context();
+      if (parentChipInfo instanceof ChipInfo) {
+        parentChipInfo.ingresses.push(this);
+      }
+    }
+  }
+
+  return IngressChip;
 }

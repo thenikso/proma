@@ -362,17 +362,9 @@ export class InputDataSinkPortInfo extends PortInfo {
 }
 
 export class OutputFlowSinkPortInfo extends PortInfo {
-  constructor(chipInfo, name, config = {}) {
+  constructor(chipInfo, name) {
     super(chipInfo, name);
 
-    if (typeof config === 'function') {
-      config = {
-        emitter: config,
-      };
-    }
-
-    this.emitter = config.emitter;
-    this.emitterCompiler = config.emitterCompiler;
     this.compiler = undefined;
     this.computeOutputs = [];
   }

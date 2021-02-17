@@ -7,34 +7,39 @@ import {
   wire,
   Chip,
 } from '../core/index.mjs';
-import EMITTERS_ONLY from '../core/wrappers/EmittersWrapper.mjs';
-
-// TODO deprecate in favor of compileAndRun
-export function chipCompile(build, init, wrapper) {
-  const C = build.__proto__ === Chip ? build : chip('TestChip', build);
-  const c = new C(...(init || []));
-  return c.compile(wrapper);
-}
-
-export function chipEmitters(build) {
-  return chipCompile(build, null, EMITTERS_ONLY);
-}
-
-export function chipRun(build, run) {
-  const C = build.__proto__ === Chip ? build : chip('TestChip', build);
-  const c = new C();
-  return run(c);
-}
 
 export function compileAndRun(build, run, initData) {
+  // Default run to capture console.log
+  const originalLog = console.log;
+  // Prepare for live logs capture
+  const liveLogs = [];
+  console.log = (msg) => liveLogs.push(msg);
+  // Create chip
   const C = build.__proto__ === Chip ? build : chip('TestChip', build);
   const c = new C(...(initData || []));
+  // Prepare for compiled logs capture
+  const compLogs = [];
+  console.log = (msg) => compLogs.push(msg);
+  // Create compiled chip
   const code = c.compile();
   const makeClass = new Function('return (' + code + ')');
   const CClass = makeClass();
   const cComp = new CClass(...(initData || []));
-  const live = run(c);
-  const comp = run(cComp);
+  // Run tests
+  let live;
+  let comp;
+  if (typeof run === 'function') {
+    console.log = (msg) => liveLogs.push(msg);
+    live = run(c, liveLogs);
+    console.log = (msg) => compLogs.push(msg);
+    comp = run(cComp, compLogs);
+  } else {
+    live = liveLogs;
+    comp = compLogs;
+  }
+  // Cleanup
+  console.log = originalLog;
+  // Return results
   return {
     code,
     live,

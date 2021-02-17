@@ -9,11 +9,10 @@ import {
 } from '../../core/index.mjs';
 import {
   js,
-  chipCompile,
   compileAndRun,
   compileAndRunResult,
 } from '../utils.mjs';
-import { Start, Split, Log, Literal } from '../../lib/index.mjs';
+import { Log, Literal } from '../../lib/index.mjs';
 
 describe('[programs/outputs] pure outputs', async (assert) => {
   assert({
@@ -177,55 +176,52 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'an output connected with array of output flow',
     should: 'compile',
-    actual: chipCompile(() => {
-      const start = new Start();
+    actual: compileAndRun(({ onCreate }) => {
       const msg = new Literal('hello world');
       const log = new Log();
       const then = outputFlow('then');
       const output = outputData('output', [then]);
 
-      wire(start.out.then, log.in.exec);
+      wire(onCreate.out.then, log.in.exec);
       wire(msg.out.value, log.in.message);
       wire(log.out.then, then);
       wire(msg.out.value, output);
     }),
-    expected: connectedOutputExpected,
+    expected: compileAndRunResult(connectedOutputExpected, ['hello world']),
   });
 
   assert({
     given: 'an output connected with just one output flow',
     should: 'compile',
-    actual: chipCompile(() => {
-      const start = new Start();
+    actual: compileAndRun(({ onCreate }) => {
       const msg = new Literal('hello world');
       const log = new Log();
       const then = outputFlow('then');
       const output = outputData('output', then);
 
-      wire(start.out.then, log.in.exec);
+      wire(onCreate.out.then, log.in.exec);
       wire(msg.out.value, log.in.message);
       wire(log.out.then, then);
       wire(msg.out.value, output);
     }),
-    expected: connectedOutputExpected,
+    expected: compileAndRunResult(connectedOutputExpected, ['hello world']),
   });
 
   assert({
     given: 'an output connected with nothing (auto-connection)',
     should: 'compile',
-    actual: chipCompile(() => {
-      const start = new Start();
+    actual: compileAndRun(({ onCreate }) => {
       const msg = new Literal('hello world');
       const log = new Log();
       const then = outputFlow('then');
       const output = outputData('output');
 
-      wire(start.out.then, log.in.exec);
+      wire(onCreate.out.then, log.in.exec);
       wire(msg.out.value, log.in.message);
       wire(log.out.then, then);
       wire(msg.out.value, output);
     }),
-    expected: connectedOutputExpected,
+    expected: compileAndRunResult(connectedOutputExpected, ['hello world']),
   });
 
   const Pass = chip('Pass', () => {
@@ -306,102 +302,114 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'a chip instance with connected outputs (inlet)',
     should: 'compile',
-    actual: chipCompile(() => {
-      const start = new Start();
+    actual: compileAndRun(({ onCreate }) => {
       const msg = new Literal('hello world');
       const log = new Log();
       const pass = new Pass();
       pass.id = 'Pass';
 
-      wire(start.out.then, pass.in.exec);
+      wire(onCreate.out.then, pass.in.exec);
       wire(msg.out.value, pass.in.input);
       wire(pass.out.output, log.in.message);
       wire(pass.out.then, log.in.exec);
     }),
-    expected: js`
-    class TestChip {
-      constructor() {
-        let Pass__output;
-        Pass__output = "hello world";
-        console.log(Pass__output);
-      }
-    }`,
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          let Pass__output;
+          Pass__output = "hello world";
+          console.log(Pass__output);
+        }
+      }`,
+      ['hello world'],
+    ),
   });
 
   assert({
     given: 'a complex inlet usage',
     should: 'compile',
-    actual: chipCompile(() => {
-      const start = inputFlow('start');
-      const msg = inputData('msg');
-      const log = new Log();
-      const pass = new Pass();
-      pass.id = 'Pass';
-      const then = outputFlow('then');
-      const output = outputData('output');
+    actual: compileAndRun(
+      () => {
+        const start = inputFlow('start');
+        const msg = inputData('msg');
+        const log = new Log();
+        const pass = new Pass();
+        pass.id = 'Pass';
+        const then = outputFlow('then');
+        const output = outputData('output');
 
-      wire(start, pass.in.exec);
-      wire(pass.out.then, log.in.exec);
-      wire(msg, pass.in.input);
-      wire(pass.out.output, log.in.message);
-      wire(log.out.then, then);
-      wire(pass.out.output, output);
-    }),
-    expected: js`
-    class TestChip {
-      constructor() {
-        this.$in = Object.seal({
-          msg: undefined
-        });
+        wire(start, pass.in.exec);
+        wire(pass.out.then, log.in.exec);
+        wire(msg, pass.in.input);
+        wire(pass.out.output, log.in.message);
+        wire(log.out.then, then);
+        wire(pass.out.output, output);
+      },
+      (chip) => {
+        chip.in.msg = 'test-msg';
+        chip.in.start();
+        return chip.out.output();
+      },
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          this.$in = Object.seal({
+            msg: undefined
+          });
 
-        this.$out = Object.seal({
-          output: undefined,
-          then: undefined
-        });
+          this.$out = Object.seal({
+            output: undefined,
+            then: undefined
+          });
 
-        let Pass__output;
+          let Pass__output;
 
-        Object.defineProperties(this.in = {}, {
-          msg: {
-            get: () => () => this.$in.msg,
+          Object.defineProperties(this.in = {}, {
+            msg: {
+              get: () => () => this.$in.msg,
 
-            set: value => {
-              this.$in.msg = value;
-            }
-          },
-
-          start: {
-            value: () => {
-              Pass__output = this.$in.msg;
-              console.log(Pass__output);
-              this.out.then();
-            }
-          }
-        });
-
-        Object.freeze(this.in);
-
-        Object.defineProperties(this.out = {}, {
-          output: {
-            value: () => this.$out.output
-          },
-
-          then: {
-            value: value => {
-              if (typeof value !== "undefined") {
-                this.$out.then = value;
-                return;
+              set: value => {
+                this.$in.msg = value;
               }
+            },
 
-              this.$out.output = Pass__output;
-              (this.$out.then || (() => {}))();
+            start: {
+              value: () => {
+                Pass__output = this.$in.msg;
+                console.log(Pass__output);
+                this.out.then();
+              }
             }
-          }
-        });
+          });
 
-        Object.seal(this.out);
-      }
-    }`,
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            output: {
+              value: () => this.$out.output
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  this.$out.then = value;
+                  return;
+                }
+
+                this.$out.output = Pass__output;
+                (this.$out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.seal(this.out);
+        }
+      }`,
+      'test-msg',
+    ),
   });
 
   assert({

@@ -129,7 +129,7 @@ export default class ClassWrapper {
     return inletUse;
   }
   compileEnd({
-    compiledEmitters,
+    compiledIngresses,
     compiledFlowPorts,
     compiledOutputPorts,
     compiledUpdatesOnPorts,
@@ -244,8 +244,8 @@ export default class ClassWrapper {
               property(
                 'init',
                 identifier('set'),
-                parse(`(value) => { this.$in.${portInfo.name} = value }`).program.body[0]
-                  .expression,
+                parse(`(value) => { this.$in.${portInfo.name} = value }`)
+                  .program.body[0].expression,
               ),
             ]),
           );
@@ -464,10 +464,24 @@ export default class ClassWrapper {
       body.push(parse('Object.seal(this.out)').program.body[0]);
     }
 
-    // Emitters
+    // Ingresses
 
-    for (const emitterBlock of compiledEmitters) {
-      body.push(emitterBlock);
+    for (const [ingress, ingressBlock] of compiledIngresses.entries()) {
+      switch (ingress) {
+        case 'OnCreateIngress':
+          if (namedTypes.BlockStatement.check(ingressBlock)) {
+            body.push(...ingressBlock.body);
+          } else if (!namedTypes.ExpressionStatement.check(ingressBlock)) {
+            // TODO move this to compile?
+            body.push(expressionStatement(ingressBlock));
+          } else {
+            body.push(ingressBlock);
+          }
+          break;
+        default:
+          console.warn(`Unsupported ingress: ${ingress}`);
+          break;
+      }
     }
 
     return cleanAst(program);
