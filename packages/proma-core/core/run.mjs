@@ -59,13 +59,17 @@ export function makePortRun(portInfo, isOutlet) {
     }
   } else {
     if (portInfo.isData) {
-      port = function outputDataPort() {
+      port = function outputDataPort(assignValue) {
         const scope = Scope.current;
 
         if (isOutlet) {
           const chip = scope.chip;
           assertInfo(chip, portInfo.chipInfo);
-          return chip.out[portInfo.name]();
+          return chip.out[portInfo.name](assignValue);
+        }
+
+        if (typeof assignValue !== 'undefined') {
+          return (port.explicitValue = assignValue);
         }
 
         // A trick to only compute this port when computeOn is active if the
@@ -81,7 +85,14 @@ export function makePortRun(portInfo, isOutlet) {
 
         // Computed output
         if (portInfo.compute) {
-          return scope.with(port.chip, portInfo.compute);
+          let computed = scope.with(port.chip, portInfo.compute);
+          if (typeof computed === 'function') {
+            // If returning a function, it could use outlets in the current scope
+            // (ie: a handler). We wrap that in a scope aware function to allow
+            // it to access the chip instances
+            computed = scope.wrapFunction(computed);
+          }
+          return computed;
         }
 
         // Connections
@@ -89,6 +100,9 @@ export function makePortRun(portInfo, isOutlet) {
         if (conn) {
           return scope.with(port.chip, conn);
         }
+
+        // Value
+        return port.explicitValue;
       };
     } else {
       port = function outputFlowPort() {
@@ -151,6 +165,12 @@ class Scope {
     return this.chips.pop();
   }
 
+  clone() {
+    const newScope = new Scope();
+    newScope.chips = this.chips.slice();
+    return newScope;
+  }
+
   with(chip, f) {
     let didPushChip = false;
     if (this.chip !== chip) {
@@ -194,5 +214,15 @@ class Scope {
       scope = new Scope();
     }
     return scope;
+  }
+
+  wrapFunction(func) {
+    const scope = this.clone();
+    return function scopeWrapped(...args) {
+      context.push(scope);
+      const res = func(...args);
+      context.pop();
+      return res;
+    };
   }
 }

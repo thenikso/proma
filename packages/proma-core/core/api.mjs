@@ -68,8 +68,10 @@ export function outputHandler(name, execHandle) {
     typeof execHandle === 'function',
     'A handler should specify a function',
   );
+  const compute = () => execHandle;
+  compute.toString = () => '() => ' + String(execHandle);
   return outputData(name, {
-    compute: new Function('return () => ' + String(execHandle))(),
+    compute,
     allowSideEffects: true,
   });
 }

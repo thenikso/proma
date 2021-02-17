@@ -34,9 +34,11 @@
 - [x] execution without compilation
 - [x] delegates/terminals/plate? to make events like blueprint
       Handle/ref output ports hat can be used to execute an output flow?
-- [ ] do we need emitters now? or should they use a handler?
-- [ ] rename `isPure` to something else? if reading an prop from an object
+- [x] rename `isPure` to something else? if reading an prop from an object
       it's not pure but "pristine". `isFlowless` or invert logic and call it `hasFlow`
+- [ ] do we need emitters now? or should they use a handler?
+      It would be nice to get handled chips sent to the chip build function
+      like: `chip('MyChip', ({ start }) => { ... })`
 - [ ] editability
 - [ ] how to have a library of loaded chips to be created by name?
 - [ ] save/restore JSON of a chip
