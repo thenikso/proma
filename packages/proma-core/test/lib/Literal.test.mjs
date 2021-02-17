@@ -26,16 +26,16 @@ describe('[lib/Literal] Literal chip', async (assert) => {
       js`
       class Literal {
         constructor(value = "test") {
-          this.$in = Object.seal({
+          const $in = Object.seal({
             value
           });
 
           Object.defineProperties(this.in = {}, {
             value: {
-              get: () => () => this.$in.value,
+              get: () => () => $in.value,
 
               set: value => {
-                this.$in.value = value;
+                $in.value = value;
               }
             }
           });
@@ -45,7 +45,7 @@ describe('[lib/Literal] Literal chip', async (assert) => {
           Object.defineProperties(this.out = {}, {
             value: {
               enumerable: true,
-              value: () => this.$in.value
+              value: () => $in.value
             }
           });
 

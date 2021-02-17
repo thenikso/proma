@@ -34,25 +34,25 @@ describe('[programs/outputs] pure outputs', async (assert) => {
       js`
       class TestChip {
         constructor() {
-          this.$in = Object.seal({
+          const $in = Object.seal({
             A: undefined,
             B: undefined
           });
 
           Object.defineProperties(this.in = {}, {
             A: {
-              get: () => () => this.$in.A,
+              get: () => () => $in.A,
 
               set: value => {
-                this.$in.A = value;
+                $in.A = value;
               }
             },
 
             B: {
-              get: () => () => this.$in.B,
+              get: () => () => $in.B,
 
               set: value => {
-                this.$in.B = value;
+                $in.B = value;
               }
             }
           });
@@ -62,7 +62,7 @@ describe('[programs/outputs] pure outputs', async (assert) => {
           Object.defineProperties(this.out = {}, {
             value: {
               enumerable: true,
-              value: () => this.$in.A + this.$in.B
+              value: () => $in.A + $in.B
             }
           });
 
@@ -98,7 +98,7 @@ describe('[programs/outputs] executed outputs', async (assert) => {
       js`
       class TestChip {
         constructor() {
-          this.$out = Object.seal({
+          const $out = Object.seal({
             value: undefined,
             then: undefined
           });
@@ -106,7 +106,7 @@ describe('[programs/outputs] executed outputs', async (assert) => {
           Object.defineProperties(this.in = {}, {
             exec: {
               value: () => {
-                this.$out.value = Math.random();
+                $out.value = Math.random();
                 this.out.then();
               }
             }
@@ -116,17 +116,17 @@ describe('[programs/outputs] executed outputs', async (assert) => {
 
           Object.defineProperties(this.out = {}, {
             value: {
-              value: () => this.$out.value
+              value: () => $out.value
             },
 
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                (this.$out.then || (() => {}))();
+                ($out.then || (() => {}))();
               }
             }
           });
@@ -144,25 +144,25 @@ describe('[programs/outputs] executed outputs', async (assert) => {
 describe('[programs/outputs] connected outputs (and inlets)', async (assert) => {
   const connectedOutputExpected = js`class TestChip {
     constructor() {
-      this.$out = Object.seal({
+      const $out = Object.seal({
         output: undefined,
         then: undefined
       });
 
       Object.defineProperties(this.out = {}, {
         output: {
-          value: () => this.$out.output
+          value: () => $out.output
         },
 
         then: {
           value: value => {
             if (typeof value !== "undefined") {
-              this.$out.then = value;
+              $out.then = value;
               return;
             }
 
-            this.$out.output = "hello world";
-            (this.$out.then || (() => {}))();
+            $out.output = "hello world";
+            ($out.then || (() => {}))();
           }
         }
       });
@@ -247,21 +247,21 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
       js`
       class Pass {
         constructor() {
-          this.$in = Object.seal({
+          const $in = Object.seal({
             input: undefined
           });
 
-          this.$out = Object.seal({
+          const $out = Object.seal({
             output: undefined,
             then: undefined
           });
 
           Object.defineProperties(this.in = {}, {
             input: {
-              get: () => () => this.$in.input,
+              get: () => () => $in.input,
 
               set: value => {
-                this.$in.input = value;
+                $in.input = value;
               }
             },
 
@@ -276,18 +276,18 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
 
           Object.defineProperties(this.out = {}, {
             output: {
-              value: () => this.$out.output
+              value: () => $out.output
             },
 
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                this.$out.output = this.$in.input;
-                (this.$out.then || (() => {}))();
+                $out.output = $in.input;
+                ($out.then || (() => {}))();
               }
             }
           });
@@ -356,11 +356,11 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
       js`
       class TestChip {
         constructor() {
-          this.$in = Object.seal({
+          const $in = Object.seal({
             msg: undefined
           });
 
-          this.$out = Object.seal({
+          const $out = Object.seal({
             output: undefined,
             then: undefined
           });
@@ -369,16 +369,16 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
 
           Object.defineProperties(this.in = {}, {
             msg: {
-              get: () => () => this.$in.msg,
+              get: () => () => $in.msg,
 
               set: value => {
-                this.$in.msg = value;
+                $in.msg = value;
               }
             },
 
             start: {
               value: () => {
-                Pass__output = this.$in.msg;
+                Pass__output = $in.msg;
                 console.log(Pass__output);
                 this.out.then();
               }
@@ -389,18 +389,18 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
 
           Object.defineProperties(this.out = {}, {
             output: {
-              value: () => this.$out.output
+              value: () => $out.output
             },
 
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                this.$out.output = Pass__output;
-                (this.$out.then || (() => {}))();
+                $out.output = Pass__output;
+                ($out.then || (() => {}))();
               }
             }
           });
@@ -447,21 +447,21 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
       js`
       class TestChip {
         constructor() {
-          this.$in = Object.seal({
+          const $in = Object.seal({
             input: undefined
           });
 
-          this.$out = Object.seal({
+          const $out = Object.seal({
             output: undefined,
             then: undefined
           });
 
           Object.defineProperties(this.in = {}, {
             input: {
-              get: () => () => this.$in.input,
+              get: () => () => $in.input,
 
               set: value => {
-                this.$in.input = value;
+                $in.input = value;
               }
             },
 
@@ -476,18 +476,18 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
 
           Object.defineProperties(this.out = {}, {
             output: {
-              value: () => this.$out.output
+              value: () => $out.output
             },
 
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                this.$out.output = this.$in.input + 1;
-                (this.$out.then || (() => {}))();
+                $out.output = $in.input + 1;
+                ($out.then || (() => {}))();
               }
             }
           });

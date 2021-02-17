@@ -8,11 +8,7 @@ import {
   outputHandle,
   wire,
 } from '../../core/index.mjs';
-import {
-  js,
-  compileAndRun,
-  compileAndRunResult,
-} from '../utils.mjs';
+import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
 
 const Evt = chip('Evt', () => {
   const ref = outputHandle('ref', (e) => {
@@ -61,21 +57,21 @@ describe('[programs/handlers] handlers for events', async (assert) => {
       js`
       class Evt {
         constructor() {
-          this.$out = Object.seal({
+          const $out = Object.seal({
             event: undefined,
             then: undefined
           });
 
           Object.defineProperties(this.out = {}, {
             event: {
-              value: () => this.$out.event
+              value: () => $out.event
             },
 
             ref: {
               enumerable: true,
 
               value: () => e => {
-                this.$out.event = e;
+                $out.event = e;
                 this.out.then();
               }
             },
@@ -83,11 +79,11 @@ describe('[programs/handlers] handlers for events', async (assert) => {
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                (this.$out.then || (() => {}))();
+                ($out.then || (() => {}))();
               }
             }
           });
@@ -138,7 +134,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
       js`
       class TestChip {
         constructor() {
-          this.$out = Object.seal({
+          const $out = Object.seal({
             val: undefined,
             then: undefined
           });
@@ -166,18 +162,18 @@ describe('[programs/handlers] handlers for events', async (assert) => {
 
           Object.defineProperties(this.out = {}, {
             val: {
-              value: () => this.$out.val
+              value: () => $out.val
             },
 
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                this.$out.val = Pass__output;
-                (this.$out.then || (() => {}))();
+                $out.val = Pass__output;
+                ($out.then || (() => {}))();
               }
             }
           });

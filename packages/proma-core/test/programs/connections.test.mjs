@@ -74,7 +74,7 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
       js`
       class TestChip {
         constructor() {
-          this.$out = Object.seal({
+          const $out = Object.seal({
             then: undefined
           });
 
@@ -92,11 +92,11 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                (this.$out.then || (() => {}))();
+                ($out.then || (() => {}))();
               }
             }
           });
@@ -147,7 +147,7 @@ describe('[programs/connections] output data multi-connections', async (assert) 
       js`
       class TestChip {
         constructor() {
-          this.$out = Object.seal({
+          const $out = Object.seal({
             output: undefined,
             then: undefined
           });
@@ -160,18 +160,18 @@ describe('[programs/connections] output data multi-connections', async (assert) 
 
           Object.defineProperties(this.out = {}, {
             output: {
-              value: () => this.$out.output
+              value: () => $out.output
             },
 
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                this.$out.output = Greet__value();
-                (this.$out.then || (() => {}))();
+                $out.output = Greet__value();
+                ($out.then || (() => {}))();
               }
             }
           });
@@ -214,26 +214,26 @@ describe('[programs/connections] output data multi-connections', async (assert) 
       js`
       class TestChip {
         constructor(input = "test-input") {
-          this.$in = Object.seal({
+          const $in = Object.seal({
             input
           });
 
-          this.$out = Object.seal({
+          const $out = Object.seal({
             output: undefined,
             then: undefined
           });
 
           const Log__exec = () => {
-            console.log(this.$in.input);
+            console.log($in.input);
             this.out.then();
           };
 
           Object.defineProperties(this.in = {}, {
             input: {
-              get: () => () => this.$in.input,
+              get: () => () => $in.input,
 
               set: value => {
-                this.$in.input = value;
+                $in.input = value;
               }
             },
 
@@ -248,18 +248,18 @@ describe('[programs/connections] output data multi-connections', async (assert) 
 
           Object.defineProperties(this.out = {}, {
             output: {
-              value: () => this.$out.output
+              value: () => $out.output
             },
 
             then: {
               value: value => {
                 if (typeof value !== "undefined") {
-                  this.$out.then = value;
+                  $out.then = value;
                   return;
                 }
 
-                this.$out.output = this.$in.input;
-                (this.$out.then || (() => {}))();
+                $out.output = $in.input;
+                ($out.then || (() => {}))();
               }
             }
           });

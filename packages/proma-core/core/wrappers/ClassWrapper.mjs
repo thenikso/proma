@@ -45,10 +45,7 @@ export default class ClassWrapper {
     // TODO reset inlets
   }
   compileInputDataOutlet(portInfo) {
-    return memberExpression(
-      memberExpression(thisExpression(), identifier('$in')),
-      identifier(portInfo.name),
-    );
+    return memberExpression(identifier('$in'), identifier(portInfo.name));
   }
   // Generate a call to a continuation wrapper:
   //     this.out.then()
@@ -66,10 +63,7 @@ export default class ClassWrapper {
   compileOutputDataOutlet(portInfo, assignExpressionBlock) {
     return assignmentExpression(
       '=',
-      memberExpression(
-        memberExpression(thisExpression(), identifier('$out')),
-        identifier(portInfo.name),
-      ),
+      memberExpression(identifier('$out'), identifier(portInfo.name)),
       assignExpressionBlock,
     );
   }
@@ -137,8 +131,8 @@ export default class ClassWrapper {
     const program = parse(`
       class ${this.chipInfo.name} {
         constructor() {
-          this.$in = Object.seal({});
-          this.$out = Object.seal({});
+          const $in = Object.seal({});
+          const $out = Object.seal({});
         }
       }
     `);
@@ -149,7 +143,14 @@ export default class ClassWrapper {
     const constructorParams = [...constructorPath, 'params'];
     const inPath = [...constructorBodyPath, 0];
     const outPath = [...constructorBodyPath, 1];
-    const sealObjPath = ['expression', 'right', 'arguments', 0, 'properties'];
+    const sealObjPath = [
+      'declarations',
+      0,
+      'init',
+      'arguments',
+      0,
+      'properties',
+    ];
 
     const body = getPath(program, constructorBodyPath);
 
@@ -238,14 +239,14 @@ export default class ClassWrapper {
               property(
                 'init',
                 identifier('get'),
-                parse(`() => () => this.$in.${portInfo.name}`).program.body[0]
+                parse(`() => () => $in.${portInfo.name}`).program.body[0]
                   .expression,
               ),
               property(
                 'init',
                 identifier('set'),
-                parse(`(value) => { this.$in.${portInfo.name} = value }`)
-                  .program.body[0].expression,
+                parse(`(value) => { $in.${portInfo.name} = value }`).program
+                  .body[0].expression,
               ),
             ]),
           );
@@ -358,8 +359,7 @@ export default class ClassWrapper {
               property(
                 'init',
                 identifier('value'),
-                parse(`() => this.$out.${portInfo.name}`).program.body[0]
-                  .expression,
+                parse(`() => $out.${portInfo.name}`).program.body[0].expression,
               ),
             ]),
           );
@@ -391,7 +391,7 @@ export default class ClassWrapper {
 
     // Output flows
     if (this.chipInfo.outputFlowPorts.length > 0) {
-      // Add continuations inits in `this.$out = { ... }`
+      // Add continuations inits in `$out = { ... }`
       this$OutBody.push(
         ...this.chipInfo.outputFlowPorts.map((portInfo) => {
           return property(
@@ -418,7 +418,7 @@ export default class ClassWrapper {
                   blockStatement([
                     //
                     parse(`() => { if (typeof value !== "undefined") {
-                      this.$out.${portInfo.name} = value;
+                      $out.${portInfo.name} = value;
                       return;
                     }}`).program.body[0].expression.body.body[0],
                     // Update output ports with `computeOn` connected to this
@@ -432,10 +432,7 @@ export default class ClassWrapper {
                         logicalExpression(
                           '||',
                           memberExpression(
-                            memberExpression(
-                              thisExpression(),
-                              identifier('$out'),
-                            ),
+                            identifier('$out'),
                             identifier(portInfo.name),
                           ),
                           arrowFunctionExpression([], blockStatement([])),
