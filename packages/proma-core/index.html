@@ -163,7 +163,7 @@
         wire(evt.out.event, log.in.message);
       });
 
-      window.chip = new MyChip2();
+      window.chip = new Evt();
       window.code = window.chip.compile();
       console.log(window.code);
       // const func = new Function('return (' + code + ')');

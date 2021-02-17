@@ -25,6 +25,12 @@ export function chipEmitters(build) {
   return chipCompile(build, null, EMITTERS_ONLY);
 }
 
+export function chipRun(build, run) {
+  const C = build.__proto__ === Chip ? build : chip('TestChip', build);
+  const c = new C();
+  return run(c);
+}
+
 export function js(strings, ...data) {
   let res = strings[0];
   for (let i = 0, l = data.length; i < l; i++) {

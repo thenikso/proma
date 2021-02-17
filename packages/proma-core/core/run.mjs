@@ -1,4 +1,4 @@
-import { context, info, assertInfo } from './utils.mjs';
+import { context, info, assertInfo, assert } from './utils.mjs';
 
 export function makePortRun(portInfo, isOutlet) {
   let port;
@@ -68,10 +68,6 @@ export function makePortRun(portInfo, isOutlet) {
           return chip.out[portInfo.name](assignValue);
         }
 
-        if (typeof assignValue !== 'undefined') {
-          return (port.explicitValue = assignValue);
-        }
-
         // A trick to only compute this port when computeOn is active if the
         // `explicitValue` is set to one of the PortInfo computing this port
         // That is set in `outputFlowPort`.
@@ -85,14 +81,7 @@ export function makePortRun(portInfo, isOutlet) {
 
         // Computed output
         if (portInfo.compute) {
-          let computed = scope.with(port.chip, portInfo.compute);
-          if (typeof computed === 'function') {
-            // If returning a function, it could use outlets in the current scope
-            // (ie: a handler). We wrap that in a scope aware function to allow
-            // it to access the chip instances
-            computed = scope.wrapFunction(computed);
-          }
-          return computed;
+          return scope.with(port.chip, portInfo.compute);
         }
 
         // Connections
@@ -101,11 +90,17 @@ export function makePortRun(portInfo, isOutlet) {
           return scope.with(port.chip, conn);
         }
 
+        // Assign value to this output port
+        if (typeof assignValue !== 'undefined') {
+          port.explicitValue = assignValue;
+          return;
+        }
+
         // Value
         return port.explicitValue;
       };
     } else {
-      port = function outputFlowPort() {
+      port = function outputFlowPort(assignCont) {
         const scope = Scope.current;
 
         if (isOutlet) {
@@ -130,8 +125,19 @@ export function makePortRun(portInfo, isOutlet) {
         if (parentChip && parentChip !== port.chip) {
           const conn = info(parentChip).getConnectedPorts(port, parentChip)[0];
           if (conn) {
-            scope.withReplace(conn.chip, conn);
+            return scope.withReplace(conn.chip, conn);
           }
+        }
+
+        // If assigning a continuation, save it in the port explicit value
+        if (typeof assignCont !== 'undefined') {
+          port.explicitValue = assignCont;
+          return;
+        }
+
+        // If there is a custom continuation, execute it
+        if (typeof port.explicitValue === 'function') {
+          return port.explicitValue();
         }
       };
     }
@@ -182,7 +188,10 @@ class Scope {
       context.push(this);
       didAddToContext = true;
     }
-    const res = f();
+    let res = f();
+    if (typeof res === 'function') {
+      res = this.wrapFunction(res);
+    }
     if (didPushChip) {
       this.pop();
     }
