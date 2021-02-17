@@ -11,9 +11,6 @@ import {
   cleanAst,
 } from './compile-utils.mjs';
 
-// TODO remove after debug done
-window.recast = recast;
-
 const {
   prettyPrint,
   types: { namedTypes, builders },

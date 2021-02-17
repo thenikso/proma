@@ -19,9 +19,15 @@ const Evt = chip('Evt', () => {
   const event = outputData('event');
 });
 
+if (typeof window === 'undefined') {
+  global.bindTargets = {};
+} else {
+  window.bindTargets = {};
+}
+
 const BindTest = chip('BindTest', () => {
   const exec = inputFlow('exec', () => {
-    const t = document.getElementById(target());
+    const t = bindTargets[target()];
     t.addEventListener('test-event', event());
     then();
   });
@@ -116,17 +122,15 @@ describe('[programs/handlers] handlers for events', async (assert) => {
         wire(pass.out.output, val);
       },
       (chip) => {
-        const btn = document.createElement('button');
-        btn.id = 'run-handlers-1';
-        document.body.appendChild(btn);
+        const btn = new EventTarget();
+        bindTargets['run-handlers-1'] = btn;
         let val;
         chip.out.then(() => {
           val = chip.out.val();
         });
         chip.in.exec();
-        const evt = new CustomEvent('test-event');
+        const evt = new Event('test-event');
         btn.dispatchEvent(evt);
-        btn.remove();
         return val === evt;
       },
     ),
@@ -144,7 +148,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
           Object.defineProperties(this.in = {}, {
             exec: {
               value: () => {
-                const t = document.getElementById("run-handlers-1");
+                const t = bindTargets["run-handlers-1"];
 
                 t.addEventListener("test-event", e => {
                   let event = e;
