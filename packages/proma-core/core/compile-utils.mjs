@@ -182,6 +182,14 @@ export function cleanAst(ast) {
       }
       this.traverse(path);
     },
+    visitVariableDeclaration(path) {
+      // Clean cases in which we have variable declarations inside expressions
+      // which would lead to a double semicolon (let test = 2;;)
+      if (namedTypes.ExpressionStatement.check(path.parentPath.value)) {
+        path.parentPath.replace(path.value);
+      }
+      this.traverse(path);
+    },
   });
   return ast;
 }

@@ -52,7 +52,7 @@ describe('[programs/handlers] handlers for events', async (assert) => {
         const t = document.getElementById("button");
 
         t.addEventListener("click", e => {
-          let event = e;;
+          let event = e;
           console.log(event);
         });
       }
