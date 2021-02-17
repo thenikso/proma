@@ -241,13 +241,14 @@ export default class ClassWrapper {
     if (this.chipInfo.outputDataPorts.length === 0) {
       replaceAstPath(program, outPath, noop());
     } else {
-      if (this.chipInfo.isPure) {
+      const compiledOutputPortsEntries = Object.entries(compiledOutputPorts);
+      if (compiledOutputPortsEntries.length > 0) {
         const outputGetters = parse('Object.defineProperties(this.out, {});')
           .program.body[0];
         replaceAstPath(
           outputGetters,
           ['expression', 'arguments', 1, 'properties'],
-          Object.entries(compiledOutputPorts).map(([portName, block]) =>
+          compiledOutputPortsEntries.map(([portName, block]) =>
             property(
               'init',
               identifier(portName),
@@ -263,18 +264,21 @@ export default class ClassWrapper {
           ),
         );
         body.push(outputGetters);
-      } else {
+      }
+      if (!this.chipInfo.isPure) {
         // Add `this.out` values
         replaceAstPath(
           program,
           [...outPath, ...objPath],
-          this.chipInfo.outputDataPorts.map((portInfo) => {
-            return property(
-              'init',
-              identifier(portInfo.name),
-              identifier('undefined'),
-            );
-          }),
+          this.chipInfo.outputDataPorts
+            .filter((portInfo) => !compiledOutputPorts[portInfo.name])
+            .map((portInfo) => {
+              return property(
+                'init',
+                identifier(portInfo.name),
+                identifier('undefined'),
+              );
+            }),
         );
       }
       // Seal this.out

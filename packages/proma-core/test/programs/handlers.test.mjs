@@ -33,7 +33,46 @@ const BindClick = chip('BindClick', () => {
 
 describe('[programs/handlers] handlers for events', async (assert) => {
   assert({
-    given: 'a handler',
+    given: 'a handler chip',
+    should: 'compile',
+    actual: chipCompile(Evt),
+    expected: js`
+    class Evt {
+      constructor() {
+        this.out = {
+          event: undefined
+        };
+
+        this.cont = Object.seal({
+          then: undefined
+        });
+
+        Object.defineProperties(this.out, {
+          ref: {
+            enumerable: true,
+
+            get: () => e => {
+              this.out.event = e;
+              this.$cont.then();
+            }
+          }
+        });
+
+        Object.seal(this.out);
+
+        Object.defineProperties(this.$cont = {}, {
+          then: {
+            value: () => {
+              (this.cont.then || (() => {}))();
+            }
+          }
+        });
+      }
+    }`,
+  });
+
+  assert({
+    given: 'a handler used for event binding',
     should: 'compile',
     actual: chipCompile(() => {
       const start = new Start();

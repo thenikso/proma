@@ -50,9 +50,18 @@ export class Compilation {
         this.outputBlocksByPort[portInfo.name] = block;
       }
     } else {
-      // Non pure chips may have emitters or executions
+      // Chips with flow may have emitters or executions
 
-      // Outputs
+      // Output data with compute but no computeOn will be initialized once
+      // This covers stuff like handlers
+      for (const portInfo of rootInfo.outputDataPorts) {
+        if (portInfo.compute && portInfo.computeOn.length === 0) {
+          const block = compiler(portInfo)(null, scope, codeWrapper);
+          this.outputBlocksByPort[portInfo.name] = block;
+        }
+      }
+
+      // Output flows
 
       for (const portInfo of rootInfo.outputFlowPorts) {
         if (portInfo.computeOutputs.length === 0) continue;
@@ -276,6 +285,15 @@ function executeCompiler(
             assignExpressionBlock,
           );
         }
+
+        assert(
+          portInfo.computeOn.length === 0,
+          `Can not assign to "${
+            port.fullName
+          }" as it is computed on [${portInfo.computeOn
+            .map((p) => p.name)
+            .join(', ')}]`,
+        );
 
         // Generate assignment of local variable
         //    let portName = <assignExpressionBlock>;

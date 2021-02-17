@@ -32,10 +32,14 @@
   - [x] no connections at all?!
 - [x] variadic input ports
 - [x] execution without compilation
-- [ ] editability
 - [x] delegates/terminals/plate? to make events like blueprint
       Handle/ref output ports hat can be used to execute an output flow?
+- [ ] do we need emitters now? or should they use a handler?
+- [ ] rename `isPure` to something else? if reading an prop from an object
+      it's not pure but "pristine". `isFlowless` or invert logic and call it `hasFlow`
+- [ ] editability
 - [ ] how to have a library of loaded chips to be created by name?
+- [ ] save/restore JSON of a chip
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
       chip builder params could be used to send chip instances of special

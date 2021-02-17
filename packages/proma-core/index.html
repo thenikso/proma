@@ -161,7 +161,7 @@
         wire(evt.out.event, log.in.message);
       });
 
-      const c = new MyChip2();
+      const c = new Evt();
       const code = c.compile();
       console.log(code);
       const func = new Function('return (' + code + ')');
