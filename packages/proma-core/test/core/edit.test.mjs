@@ -7,7 +7,6 @@ import {
   outputData,
   wire,
 } from '../../core/index.mjs';
-import { js, editCompileAndRun, compileAndRunResult } from '../utils.mjs';
 
 const Pass = chip('Pass', () => {
   const exec = inputFlow('exec');
@@ -22,146 +21,109 @@ describe('[core/edit] edit connections', async (assert) => {
   assert({
     given: 'an added in/out flow with connection',
     should: 'edit',
-    actual: editCompileAndRun(
-      (edit) =>
-        edit
-          .addInputFlowPort('exec')
-          .addOutputFlowPort('then')
-          .addConnection('exec', 'then'),
-      (chip) => {
-        let res;
-        chip.out.then(() => {
-          res = 'ok';
-        });
-        chip.in.exec();
-        return res;
-      },
-    ),
-    expected: compileAndRunResult(
-      js`
-      class EditChip {
-        constructor() {
-          const $out = Object.seal({
-            then: undefined
-          });
-
-          Object.defineProperties(this.in = {}, {
-            exec: {
-              value: () => {
-                this.out.then();
-              }
-            }
-          });
-
-          Object.freeze(this.in);
-
-          Object.defineProperties(this.out = {}, {
-            then: {
-              value: value => {
-                if (typeof value !== "undefined") {
-                  $out.then = value;
-                  return;
-                }
-
-                ($out.then || (() => {}))();
-              }
-            }
-          });
-
-          Object.freeze(this.out);
-        }
-      }`,
-      'ok',
-    ),
+    actual: chip('EditChip')
+      .edit()
+      .addInputFlowPort('exec')
+      .addOutputFlowPort('then')
+      .addConnection('exec', 'then')
+      .chip.toJSON(),
+    expected: {
+      name: 'EditChip',
+      inputs: [
+        {
+          name: 'exec',
+          kind: 'flow',
+        },
+      ],
+      outputs: [
+        {
+          name: 'then',
+          kind: 'flow',
+        },
+      ],
+      connections: [
+        {
+          source: 'then',
+          sink: 'exec',
+        },
+      ],
+    },
   });
 });
 
-describe('[core/edit] add sub-chips', async (assert) => {
-  const passFlow = (chip) => {
-    let res;
-    chip.out.then(() => {
-      res = 'ok';
-    });
-    chip.in.exec();
-    return [res, chip.out.value()];
+describe('[core/edit] edit sub-chips', async (assert) => {
+  const expected = {
+    name: 'EditChip',
+    inputs: [
+      {
+        name: 'exec',
+        kind: 'flow',
+      },
+    ],
+    outputs: [
+      {
+        name: 'then',
+        kind: 'flow',
+      },
+      {
+        name: 'value',
+        kind: 'data',
+        computeOn: ['then'],
+      },
+    ],
+    chips: [
+      {
+        id: 'Pass',
+        type: 'Pass',
+        args: ['pass'],
+      },
+    ],
+    connections: [
+      {
+        source: 'Pass.in.exec',
+        sink: 'exec',
+      },
+      {
+        source: 'Pass.out.output',
+        sink: 'value',
+      },
+      {
+        source: 'then',
+        sink: 'Pass.out.then',
+      },
+    ],
   };
-
-  const expectedCode = js`
-    class EditChip {
-      constructor() {
-        const $out = Object.seal({
-          value: undefined,
-          then: undefined
-        });
-
-        let Pass__output;
-
-        Object.defineProperties(this.in = {}, {
-          exec: {
-            value: () => {
-              Pass__output = "pass";
-              this.out.then();
-            }
-          }
-        });
-
-        Object.freeze(this.in);
-
-        Object.defineProperties(this.out = {}, {
-          value: {
-            value: () => $out.value
-          },
-
-          then: {
-            value: value => {
-              if (typeof value !== "undefined") {
-                $out.then = value;
-                return;
-              }
-
-              $out.value = Pass__output;
-              ($out.then || (() => {}))();
-            }
-          }
-        });
-
-        Object.freeze(this.out);
-      }
-    }`;
 
   assert({
     given: 'a chip instance',
     should: 'add the sub-chip',
-    actual: editCompileAndRun(
-      (edit) =>
-        edit
-          .addInputFlowPort('exec')
-          .addOutputFlowPort('then')
-          .addOutputDataPort('value')
-          .addChip('Pass', new Pass('pass'))
-          .addConnection('exec', '$0.in.exec')
-          .addConnection('$0.out.output', 'value')
-          .addConnection('$0.out.then', 'then'),
-      passFlow,
-    ),
-    expected: compileAndRunResult(expectedCode, ['ok', 'pass']),
+    actual: chip('EditChip')
+      .edit()
+      .addInputFlowPort('exec')
+      .addOutputFlowPort('then')
+      .addOutputDataPort('value')
+      .addChip('Pass', new Pass('pass'))
+      .addConnection('exec', '$0.in.exec')
+      .addConnection('$0.out.output', 'value')
+      .addConnection('$0.out.then', 'then')
+      .chip.toJSON(),
+    expected,
   });
 
   assert({
     given: 'a chip class',
     should: 'add the sub-chip',
-    actual: editCompileAndRun(
-      (edit) =>
-        edit
-          .addInputFlowPort('exec')
-          .addOutputFlowPort('then')
-          .addOutputDataPort('value')
-          .addChip('Pass', Pass, ['pass'])
-          .addConnection('exec', 'Pass.in.exec')
-          .addConnection('Pass.out.output', 'value')
-          .addConnection('Pass.out.then', 'then'),
-      passFlow,
-    ),
-    expected: compileAndRunResult(expectedCode, ['ok', 'pass']),
+    actual: chip('EditChip', () => {
+      const exec = inputFlow('exec');
+      const then = outputFlow('then');
+      const value = outputData('value');
+    })
+      .edit()
+      .addChip('Pass', Pass, ['pass'])
+      .addConnection('exec', 'Pass.in.exec')
+      .addConnection('Pass.out.output', 'value')
+      .addConnection('Pass.out.then', 'then')
+      .chip.toJSON(),
+    expected,
   });
 });

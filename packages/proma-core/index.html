@@ -127,20 +127,27 @@
         wire(onCreate.out.then, log.in.exec);
       });
 
-      console.group('Instance (window.chip)');
-      window.chip = new MyChip2();
-      console.log(window.chip);
-      console.groupEnd();
-      console.group('Code (window.code)');
-      window.code = window.chip.compile();
-      console.log(window.code);
-      console.groupEnd();
-      console.group('Compiled instance (window.chipComp)');
-      const func = new Function('return (' + code + ')');
-      window.ChipCompiled = func();
-      window.chipComp = new window.ChipCompiled();
-      console.log(window.chipComp);
-      console.groupEnd();
+      explain(MyChip);
+
+      function explain(ChipClass) {
+        console.group('Instance (window.chip)');
+        window.chip = new ChipClass();
+        console.log(window.chip);
+        console.groupEnd();
+        console.group('Code (window.code)');
+        window.code = window.chip.compile();
+        console.log(window.code);
+        console.groupEnd();
+        console.group('Compiled instance (window.chipComp)');
+        const func = new Function('return (' + code + ')');
+        window.ChipCompiled = func();
+        window.chipComp = new window.ChipCompiled();
+        console.log(window.chipComp);
+        console.groupEnd();
+        console.group('JSON');
+        console.log(JSON.stringify(ChipClass, null, 2));
+        console.groupEnd();
+      }
     </script>
   </body>
 </html>

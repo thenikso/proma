@@ -373,18 +373,31 @@ export class ChipInfo {
   //
 
   toJSON() {
-    return {
+    const inputs = this.inputs.map(serializePortInfo);
+    const outputs = this.outputs.map(serializePortInfo);
+    const chips = this.chips.map(serializeChipInstance);
+    const connections = Array.from(this.sinkConnection.entries()).map(
+      ([sink, source]) => ({
+        source: source.fullName || source.name,
+        sink: sink.fullName || sink.name,
+      }),
+    );
+    const res = {
       name: this.name,
-      inputs: this.inputs.map(serializePortInfo),
-      outputs: this.outputs.map(serializePortInfo),
-      chips: this.chips.map(serializeChipInstance),
-      connections: Array.from(this.sinkConnection.entries()).map(
-        ([sink, source]) => ({
-          source: source.fullName || source.name,
-          sink: sink.fullName || sink.name,
-        }),
-      ),
     };
+    if (inputs.length > 0) {
+      res.inputs = inputs;
+    }
+    if (outputs.length > 0) {
+      res.outputs = outputs;
+    }
+    if (chips.length > 0) {
+      res.chips = chips;
+    }
+    if (connections.length > 0) {
+      res.connections = connections;
+    }
+    return res;
   }
 }
 
