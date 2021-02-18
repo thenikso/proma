@@ -416,7 +416,7 @@ export default class ClassWrapper {
                 arrowFunctionExpression(
                   [identifier('value')],
                   blockStatement([
-                    //
+                    // Add output continuation set trap
                     parse(`() => { if (typeof value !== "undefined") {
                       $out.${portInfo.name} = value;
                       return;
@@ -458,7 +458,7 @@ export default class ClassWrapper {
     // Add output access
     if (hasOutAccess) {
       body.push(thisOut);
-      body.push(parse('Object.seal(this.out)').program.body[0]);
+      body.push(parse('Object.freeze(this.out)').program.body[0]);
     }
 
     // Ingresses

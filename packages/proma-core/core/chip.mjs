@@ -157,6 +157,10 @@ export class ChipInfo {
       chipId = undefined;
     }
     if (chipId) {
+      const chipIndex = /^\$(\d+)$/.exec(chipId);
+      if (chipIndex) {
+        chipId = parseInt(chipIndex[1]);
+      }
       const chip = this.getChip(chipId);
       if (!chip) {
         return null;

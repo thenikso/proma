@@ -103,7 +103,7 @@ describe('[programs/handles] handles usage', async (assert) => {
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
         }
       }`,
       [undefined, 9],
@@ -191,7 +191,7 @@ describe('[programs/handles] handles usage', async (assert) => {
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
         }
       }`,
       true,

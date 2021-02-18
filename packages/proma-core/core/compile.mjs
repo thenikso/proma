@@ -408,11 +408,16 @@ function makeOutputFlowSinkCompiler(portInfo) {
           );
         }
         // We add the assignment (as provided by the wrapper) to the port execution
-        continuationSequence.push(
-          builders.expressionStatement(
-            codeWrapper.compileVariableInlet(computePortInstance, assignBlock),
-          ),
-        );
+        if (assignBlock) {
+          continuationSequence.push(
+            builders.expressionStatement(
+              codeWrapper.compileVariableInlet(
+                computePortInstance,
+                assignBlock,
+              ),
+            ),
+          );
+        }
       }
       if (continuation) {
         if (namedTypes.BlockStatement.check(continuation)) {

@@ -101,7 +101,7 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
           this.out.then();
         }
       }`,
@@ -176,7 +176,7 @@ describe('[programs/connections] output data multi-connections', async (assert) 
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
           console.log(Greet__value());
           this.out.then();
         }
@@ -264,7 +264,7 @@ describe('[programs/connections] output data multi-connections', async (assert) 
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
           Log__exec();
         }
       }`,

@@ -66,7 +66,7 @@ describe('[programs/outputs] pure outputs', async (assert) => {
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
         }
       }`,
       3,
@@ -131,7 +131,7 @@ describe('[programs/outputs] executed outputs', async (assert) => {
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
         }
       }`,
       'number',
@@ -167,7 +167,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
         }
       });
 
-      Object.seal(this.out);
+      Object.freeze(this.out);
       console.log("hello world");
       this.out.then();
     }
@@ -292,7 +292,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
         }
       }`,
       [undefined, 7],
@@ -405,7 +405,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
         }
       }`,
       'test-msg',
@@ -492,7 +492,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
         }
       }`,
       [undefined, 8],

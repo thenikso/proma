@@ -49,7 +49,7 @@ describe('[lib/Literal] Literal chip', async (assert) => {
             }
           });
 
-          Object.seal(this.out);
+          Object.freeze(this.out);
         }
       }`,
       'test',
