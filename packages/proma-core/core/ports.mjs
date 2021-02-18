@@ -241,7 +241,14 @@ export class OutputDataSourcePortInfo extends PortInfo {
     this.compute = config.compute;
     this.computeCompiler = config.computeCompiler;
     this.compiler = undefined;
-    this.inline = undefined;
+    // `inline` can be:
+    // - `undefined` and will be automatically be decided in
+    //   compilaiton phase
+    // - `true` to always attempt to inline the output value (ie: duplicate
+    //   the computation if used in multiple places)
+    // - `false` to never attempt to inline. A variable will be used instead
+    // - `"once"` to never inline but also to compute the output value only once
+    this.inline = config.inline;
     this.allowSideEffects = config.allowSideEffects || false;
 
     let computeOn;

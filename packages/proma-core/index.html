@@ -94,17 +94,23 @@
       });
 
       const BindClick = chip('BindClick', () => {
-        const exec = inputFlow('exec', () => {
+        const bind = inputFlow('bind', () => {
           const t = document.getElementById(target());
           t.addEventListener('click', event());
           then();
         });
+        const unbind = inputFlow('unbind', () => {
+          const t = document.getElementById(target());
+          t.removeEventListener('click', event());
+          then();
+        });
         const target = inputData('target', { canonical: true });
+        // TODO inline: false
         const event = inputData('event');
         const then = outputFlow('then');
       });
 
-      const MyChip2 = chip('MyChip2', ({ onCreate }) => {
+      const MyChip2 = chip('MyChip2', ({ onCreate, onDestroy }) => {
         // const start = new Start();
         // const exec = inputFlow('exec');
         const bind = new BindClick('button');
@@ -112,7 +118,8 @@
         const log = new Log('clicked!');
 
         // wire(start.out.then, bind.in.exec);
-        wire(onCreate.out.then, bind.in.exec);
+        wire(onCreate.out.then, bind.in.bind);
+        wire(onDestroy.out.then, bind.in.unbind);
         wire(evt.out.ref, bind.in.event);
         wire(evt.out.then, log.in.exec);
         wire(evt.out.event, log.in.message);
@@ -144,7 +151,7 @@
         window.chipComp = new window.ChipCompiled();
         console.log(window.chipComp);
         console.groupEnd();
-        console.group('JSON');
+        console.groupCollapsed('JSON');
         console.log(JSON.stringify(ChipClass, null, 2));
         console.groupEnd();
       }

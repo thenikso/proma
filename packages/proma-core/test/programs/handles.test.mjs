@@ -46,15 +46,6 @@ const Pass = chip('Pass', () => {
 });
 
 describe('[programs/handles] handles usage', async (assert) => {
-  // assert({
-  //   given: 'a handler port',
-  //   should: 'define a isHandle property',
-  //   actual: compileAndRun(Evt, (chip) => {
-  //     return chip.out.ref.isHandle;
-  //   }),
-  //   expected: true,
-  // });
-
   assert({
     given: 'a handler chip',
     should: 'compile',
@@ -77,6 +68,11 @@ describe('[programs/handles] handles usage', async (assert) => {
             then: undefined
           });
 
+          const $__ref = e => {
+            $out.event = e;
+            this.out.then();
+          };
+
           Object.defineProperties(this.out = {}, {
             event: {
               value: () => $out.event
@@ -84,11 +80,7 @@ describe('[programs/handles] handles usage', async (assert) => {
 
             ref: {
               enumerable: true,
-
-              value: () => e => {
-                $out.event = e;
-                this.out.then();
-              }
+              value: () => $__ref
             },
 
             then: {
@@ -118,6 +110,7 @@ describe('[programs/handles] handles usage', async (assert) => {
         const exec = inputFlow('exec');
         const bind = new BindTest('run-handles-1');
         const evt = new Evt();
+        evt.id = 'Evt';
         const pass = new Pass();
         pass.id = 'Pass';
         const then = outputFlow('then');
@@ -154,19 +147,20 @@ describe('[programs/handles] handles usage', async (assert) => {
 
           let Pass__output;
 
+          const Evt__ref = e => {
+            let event = e;
+
+            {
+              Pass__output = event;
+              this.out.then();
+            };
+          };
+
           Object.defineProperties(this.in = {}, {
             exec: {
               value: () => {
                 const t = bindTargets["run-handles-1"];
-
-                t.addEventListener("test-event", e => {
-                  let event = e;
-
-                  {
-                    Pass__output = event;
-                    this.out.then();
-                  };
-                });
+                t.addEventListener("test-event", Evt__ref);
               }
             }
           });

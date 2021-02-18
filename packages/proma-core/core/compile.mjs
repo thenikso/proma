@@ -81,13 +81,15 @@ export class Compilation {
 
       // Ingresses
       for (const { port, scope } of usedIngressEvents(rootChip)) {
-        this.ingressEventsBlocksByChip.set(
-          // TODO maybe give different informations here? just the port.chip?
-          // eventually a wrapper will want to properly hook them up. the
-          // name might not be a good enough clue
-          port.chip,
-          compile(port, scope, codeWrapper),
-        );
+        let block = compile(port, scope, codeWrapper);
+        if (!block) continue;
+        if (!namedTypes.BlockStatement.check(block)) {
+          if (!namedTypes.ExpressionStatement.check(block)) {
+            block = builders.expressionStatement(block);
+          }
+          block = builders.blockStatement([block]);
+        }
+        this.ingressEventsBlocksByChip.set(port.chip, block);
       }
     }
 
@@ -734,7 +736,13 @@ function makeOutputDataSourceCompiler(portInfo) {
       }
     }
 
-    if (!shouldInline) {
+    if (shouldInline === 'once') {
+      return codeWrapper.compileVariableInlet(
+        portInstance || portInfo,
+        outputExpression,
+        'const',
+      );
+    } else if (shouldInline === false) {
       return codeWrapper.compileFunctionInlet(
         portInstance || portInfo,
         outputExpression,

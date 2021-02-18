@@ -83,20 +83,37 @@ export function makePortRun(portInfo, isOutlet) {
           return chip.out[portInfo.name](assignValue);
         }
 
+        // Assign value to this output port
+        if (typeof assignValue !== 'undefined') {
+          port.runValue = assignValue;
+          return;
+        }
+
         // A trick to only compute this port when computeOn is active if the
-        // `explicitValue` is set to one of the PortInfo computing this port
+        // `runValue` is set to one of the PortInfo computing this port
         // That is set in `outputFlowPort`.
         if (
           portInfo.computeOn &&
           portInfo.computeOn.length > 0 &&
-          !portInfo.computeOn.includes(port.explicitValue)
+          !portInfo.computeOn.includes(port.runValue)
         ) {
-          return port.explicitValue;
+          return port.runValue;
         }
 
         // Computed output
         if (portInfo.compute) {
-          return scope.with(port.chip, portInfo.compute);
+          if (
+            portInfo.inline === 'once' &&
+            typeof port.runValue !== 'undefined'
+          ) {
+            return port.runValue;
+          }
+          const computed = scope.with(port.chip, portInfo.compute);
+          // Cache "once" inlined outputs
+          if (portInfo.inline === 'once') {
+            port.runValue = computed;
+          }
+          return computed;
         }
 
         // Connections
@@ -105,14 +122,8 @@ export function makePortRun(portInfo, isOutlet) {
           return scope.with(port.chip, conn);
         }
 
-        // Assign value to this output port
-        if (typeof assignValue !== 'undefined') {
-          port.explicitValue = assignValue;
-          return;
-        }
-
         // Value
-        return port.explicitValue;
+        return port.runValue;
       };
     } else {
       port = function outputFlowPort(assignCont) {
@@ -128,8 +139,8 @@ export function makePortRun(portInfo, isOutlet) {
         if (portInfo.computeOutputs.length > 0) {
           for (const name of portInfo.computeOutputs.map((p) => p.name)) {
             const outPort = port.chip.out[name];
-            outPort.explicitValue = portInfo;
-            outPort.explicitValue = outPort();
+            outPort.runValue = portInfo;
+            outPort.runValue = outPort();
           }
         }
 
@@ -144,13 +155,13 @@ export function makePortRun(portInfo, isOutlet) {
 
         // If assigning a continuation, save it in the port explicit value
         if (typeof assignCont !== 'undefined') {
-          port.explicitValue = assignCont;
+          port.runValue = assignCont;
           return;
         }
 
         // If there is a custom continuation, execute it
-        if (typeof port.explicitValue === 'function') {
-          return port.explicitValue();
+        if (typeof port.runValue === 'function') {
+          return port.runValue();
         }
       };
     }

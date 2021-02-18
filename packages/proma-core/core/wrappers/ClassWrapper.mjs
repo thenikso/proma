@@ -75,21 +75,33 @@ export default class ClassWrapper {
   //     let InnerChip_1__outputPort;
   //     // To return with this function
   //     InnerChip_1__outputPort = <assignExpressionBlock>
-  compileVariableInlet(port, assignExpressionBlock) {
+  compileVariableInlet(port, assignExpressionBlock, kind = 'let') {
     let inletUse;
     if (this.inletsByPort.has(port)) {
       inletUse = this.inletsByPort.get(port).use;
     } else {
-      inletUse = identifier(`${port.chip.id}__${port.name}`);
-      const declaration = variableDeclaration('let', [
-        variableDeclarator(inletUse, null),
-      ]);
-      this.inletsByPort.set(port, {
-        use: inletUse,
-        declaration,
-      });
+      inletUse = identifier(
+        `${(port.chip && port.chip.id) || '$'}__${port.name}`,
+      );
+      if (kind === 'let') {
+        const declaration = variableDeclaration('let', [
+          variableDeclarator(inletUse, null),
+        ]);
+        this.inletsByPort.set(port, {
+          use: inletUse,
+          declaration,
+        });
+      } else if (assignExpressionBlock) {
+        const declaration = variableDeclaration('const', [
+          variableDeclarator(inletUse, assignExpressionBlock),
+        ]);
+        this.inletsByPort.set(port, {
+          use: inletUse,
+          declaration,
+        });
+      }
     }
-    if (assignExpressionBlock) {
+    if (kind === 'let' && assignExpressionBlock) {
       return assignmentExpression('=', inletUse, assignExpressionBlock);
     }
     return inletUse;
@@ -467,13 +479,23 @@ export default class ClassWrapper {
       const eventURI = ingressChip.chipURI;
       switch (eventURI) {
         case 'OnCreate':
-          if (namedTypes.BlockStatement.check(ingressBlock)) {
-            body.push(...ingressBlock.body);
-          } else if (!namedTypes.ExpressionStatement.check(ingressBlock)) {
-            // TODO move this to compile?
-            body.push(expressionStatement(ingressBlock));
-          } else {
-            body.push(ingressBlock);
+          body.push(...ingressBlock.body);
+          break;
+        case 'OnDestroy':
+          {
+            // TODO add destroy to all comilations even if not used
+            // (will require another recreation of tests.. maybe it's time for
+            // snapshots)
+            const destroyMethod = parse(
+              `Object.defineProperty(this, "destroy", { value: () => {} })`,
+            ).program.body[0];
+            console.log(destroyMethod);
+            replaceAstPath(
+              destroyMethod,
+              ['expression', 'arguments', 2, 'properties', 0, 'value', 'body'],
+              ingressBlock,
+            );
+            body.push(destroyMethod);
           }
           break;
         default:
