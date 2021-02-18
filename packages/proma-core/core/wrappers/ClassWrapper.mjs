@@ -463,8 +463,9 @@ export default class ClassWrapper {
 
     // Ingresses
 
-    for (const [ingress, ingressBlock] of compiledIngresses.entries()) {
-      switch (ingress) {
+    for (const [ingressChip, ingressBlock] of compiledIngresses.entries()) {
+      const ingressType = ingressChip.type;
+      switch (ingressType) {
         case 'OnCreateIngress':
           if (namedTypes.BlockStatement.check(ingressBlock)) {
             body.push(...ingressBlock.body);
@@ -476,7 +477,7 @@ export default class ClassWrapper {
           }
           break;
         default:
-          console.warn(`Unsupported ingress: ${ingress}`);
+          console.warn(`Unsupported ingress: ${ingressType}`);
           break;
       }
     }

@@ -21,7 +21,7 @@ export class Compilation {
     this.rootChip = rootChip;
     this.outputBlocksByPort = {};
     this.executeBlocksByPort = {};
-    this.ingressBlocksByPort = new Map();
+    this.ingressBlocksByChip = new Map();
     this.updateBlocksByPort = {};
     this.CodeWrapper = CodeWrapper || ClassWrapper;
   }
@@ -79,8 +79,11 @@ export class Compilation {
 
       // Ingresses
       for (const { port, scope } of usedIngresses(this.rootChip)) {
-        this.ingressBlocksByPort.set(
-          info(port.chip).name,
+        this.ingressBlocksByChip.set(
+          // TODO maybe give different informations here? just the port.chip?
+          // eventually a wrapper will want to properly hook them up. the
+          // name might not be a good enough clue
+          port.chip,
           compile(port, scope, codeWrapper),
         );
       }
@@ -90,7 +93,7 @@ export class Compilation {
     const program = codeWrapper.compileEnd({
       chip: this.rootChip,
       chipInfo: rootInfo,
-      compiledIngresses: this.ingressBlocksByPort,
+      compiledIngresses: this.ingressBlocksByChip,
       compiledFlowPorts: this.executeBlocksByPort,
       compiledOutputPorts: this.outputBlocksByPort,
       compiledUpdatesOnPorts: this.updateBlocksByPort,
