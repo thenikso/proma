@@ -563,6 +563,7 @@ function makeInputDataSinkCompiler(portInfo) {
         if (variadicPortInstance) {
           const conn = info(parentChip).getConnectedPorts(
             variadicPortInstance,
+            parentChip,
           )[0];
           if (conn) {
             const valueBlock = compile(
