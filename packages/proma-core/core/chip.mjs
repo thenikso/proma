@@ -37,9 +37,9 @@ export class Chip {
         enumerable: true,
         value: outputs,
       },
-      type: {
+      chipURI: {
         enumerable: true,
-        value: chipInfo.name,
+        value: chipInfo.URI,
       },
     });
     // Assign default values
@@ -66,9 +66,9 @@ export class Chip {
 }
 
 export class ChipInfo {
-  constructor(name) {
+  constructor(URI) {
     // TODO validate name, qualifiedName instead?
-    this.name = name || 'Chip_' + shortUID();
+    this.URI = URI || 'Chip_' + shortUID();
     this.chips = [];
     this.inputs = [];
     this.outputs = [];
@@ -84,7 +84,7 @@ export class ChipInfo {
     let idCount = 0;
     // TODO generate JS usable name
     this.makeChipId = () => {
-      return `${this.name}_${++idCount}`;
+      return `${this.URI}_${++idCount}`;
     };
   }
 
@@ -383,7 +383,7 @@ export class ChipInfo {
       }),
     );
     const res = {
-      name: this.name,
+      URI: this.URI,
     };
     if (inputs.length > 0) {
       res.inputs = inputs;
@@ -439,7 +439,7 @@ function serializePortInfo(portInfo) {
 function serializeChipInstance(chip) {
   const res = {
     id: chip.id,
-    type: chip.type,
+    chipURI: chip.chipURI,
   };
 
   const chipInfo = info(chip);

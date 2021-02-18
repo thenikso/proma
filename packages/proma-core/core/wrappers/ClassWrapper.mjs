@@ -129,7 +129,7 @@ export default class ClassWrapper {
     compiledUpdatesOnPorts,
   }) {
     const program = parse(`
-      class ${this.chipInfo.name} {
+      class ${this.chipInfo.URI} {
         constructor() {
           const $in = Object.seal({});
           const $out = Object.seal({});
@@ -464,7 +464,7 @@ export default class ClassWrapper {
     // Ingresses
 
     for (const [ingressChip, ingressBlock] of compiledIngresses.entries()) {
-      const ingressType = ingressChip.type;
+      const ingressType = ingressChip.chipURI;
       switch (ingressType) {
         case 'OnCreateIngress':
           if (namedTypes.BlockStatement.check(ingressBlock)) {

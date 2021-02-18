@@ -7,12 +7,12 @@ import { Compilation } from './compile.mjs';
 export const OnCreateIngress = ingress('OnCreateIngress');
 
 function makeChipFactory($buildIngresses, $constructed) {
-  function chip(name, build) {
-    if (typeof name !== 'string') {
-      build = name;
-      name = undefined;
+  function chip(uri, build) {
+    if (typeof uri !== 'string') {
+      build = uri;
+      uri = undefined;
     }
-    const chipInfo = new ChipInfo(name);
+    const chipInfo = new ChipInfo(uri);
     context.push(chipInfo);
     const ingresses =
       (typeof $buildIngresses === 'function' && $buildIngresses()) ||

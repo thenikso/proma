@@ -28,7 +28,7 @@ describe('[core/edit] edit connections', async (assert) => {
       .addConnection('exec', 'then')
       .chip.toJSON(),
     expected: {
-      name: 'EditChip',
+      URI: 'EditChip',
       inputs: [
         {
           name: 'exec',
@@ -53,7 +53,7 @@ describe('[core/edit] edit connections', async (assert) => {
 
 describe('[core/edit] edit sub-chips', async (assert) => {
   const expected = {
-    name: 'EditChip',
+    URI: 'EditChip',
     inputs: [
       {
         name: 'exec',
@@ -74,7 +74,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
     chips: [
       {
         id: 'Pass',
-        type: 'Pass',
+        chipURI: 'Pass',
         args: ['pass'],
       },
     ],
