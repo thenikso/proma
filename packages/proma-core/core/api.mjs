@@ -39,6 +39,10 @@ function makeChipFactory($buildIngresses, $constructed) {
         }
       }
 
+      static toJSON() {
+        return chipInfo.toJSON();
+      }
+
       // TODO accept an optional new "build" function that can have deleteChip..?
       static edit() {
         return new EditableChipInfo(this, chipInfo);
