@@ -280,7 +280,7 @@ export default class ClassWrapper {
           let flowBlock = compiledFlowPorts[portInfo.name];
           if (!flowBlock) {
             // TODO connected flow?
-            throw new Error('unimplemented');
+            return noop();
           }
           if (!namedTypes.BlockStatement.check(flowBlock)) {
             if (!namedTypes.ExpressionStatement.check(flowBlock)) {

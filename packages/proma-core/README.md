@@ -41,12 +41,15 @@
       It would be nice to get handled chips sent to the chip build function
       like: `chip('MyChip', ({ start }) => { ... })`
 - [x] rename `this.$in` to `const $in` etc
+- [x] chip builder params could be used to send chip instances of special
+      chips like mount, destroy, ... - `WebComponent.initChip` is a `chip.preset({ chips: { mount: chip(...) } })` that can be used to construct new chips that get preset chips as params (became `chip.extend`)
+- [ ] `compile` should be a static method of the chip, not an instance one
 - [ ] editability
-- [ ] how to have a library of loaded chips to be created by name?
+- [ ] chip registry
+- [ ] `onDestroy` defualt chip ingress (maybe just call these `events` xD)
+      chips get a default `.destroy()` method? maybe even a `.create()`? autocreate?
 - [ ] save/restore JSON of a chip
 - [ ] use this? or have a self? inputs that take it as default?
-- [x] chip builder params could be used to send chip instances of special
-      chips like mount, destroy, ... - `WebComponent.initChip` is a `chip.preset({ chips: { mount: chip(...) } })` that can be used to construct new chips that get preset chips as params
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
 - [ ] types
 - [ ] variadic output ports
@@ -69,7 +72,7 @@
 
 ## Ideas
 
-- [ ] a chip should allow a literal assignment to a port like
+- [x] a chip should allow a literal assignment to a port like
       ```js
       const log = Log();
       log.in.message = 'hello world';
@@ -77,7 +80,7 @@
       // instead of `const log = Log({ message: 'hello world' })`
       ```
 
-- [ ] chips may need "configurations", basically inputs that are not shown as ports
+- [x] chips may need "configurations", basically inputs that are not shown as ports
       ie: a `Literal` chip where "value" is a config rather than a port
       `js chip('Literal', (value) => { // The problem here is that pure outputs should not allow non-input access. // Maybe we can also allow config access (but not function calls?) outputData('value', () => value); }); `
 

@@ -1,6 +1,8 @@
 import { context, assert } from './utils.mjs';
 import { Chip as ChipBase, ChipInfo } from './chip.mjs';
 import { runIngresses } from './run.mjs';
+import { EditableChipInfo } from './edit.mjs';
+import { Compilation } from './compile.mjs';
 
 export const OnCreateIngress = ingress('OnCreateIngress');
 
@@ -11,15 +13,15 @@ function makeChipFactory($buildIngresses, $constructed) {
       name = undefined;
     }
     const chipInfo = new ChipInfo(name);
+    context.push(chipInfo);
+    const ingresses =
+      (typeof $buildIngresses === 'function' && $buildIngresses()) ||
+      $buildIngresses ||
+      {};
     if (typeof build === 'function') {
-      context.push(chipInfo);
-      const ingresses =
-        (typeof $buildIngresses === 'function' && $buildIngresses()) ||
-        $buildIngresses ||
-        {};
       build.call(undefined, ingresses);
-      context.pop();
     }
+    context.pop();
     // TODO validate chip:
     // - if input data but not flow it may not do what you expect
     // - if not using all input data in outputs/execs
@@ -35,6 +37,21 @@ function makeChipFactory($buildIngresses, $constructed) {
         else if (typeof $constructed === 'function') {
           $constructed(this);
         }
+      }
+
+      // TODO accept an optional new "build" function that can have deleteChip..?
+      static edit() {
+        return new EditableChipInfo(this, chipInfo);
+      }
+
+      static compile(wrapper) {
+        const compilation = new Compilation(chipInfo, null);
+        return compilation.compile(wrapper);
+      }
+
+      compile(wrapper) {
+        const compilation = new Compilation(chipInfo, this);
+        return compilation.compile(wrapper);
       }
     }
 

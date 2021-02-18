@@ -104,15 +104,15 @@
         const then = outputFlow('then');
       });
 
-      const MyChip2 = chip('MyChip2', () => {
+      const MyChip2 = chip('MyChip2', ({ onCreate }) => {
         // const start = new Start();
-        const exec = inputFlow('exec');
+        // const exec = inputFlow('exec');
         const bind = new BindClick('button');
         const evt = new Evt();
         const log = new Log('clicked!');
 
         // wire(start.out.then, bind.in.exec);
-        wire(exec, bind.in.exec);
+        wire(onCreate.out.then, bind.in.exec);
         wire(evt.out.ref, bind.in.event);
         wire(evt.out.then, log.in.exec);
         wire(evt.out.event, log.in.message);
@@ -128,7 +128,7 @@
       });
 
       console.group('Instance (window.chip)');
-      window.chip = new MyIngressChip();
+      window.chip = new MyChip2();
       console.log(window.chip);
       console.groupEnd();
       console.group('Code (window.code)');

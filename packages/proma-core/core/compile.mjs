@@ -17,8 +17,9 @@ const {
 } = recast;
 
 export class Compilation {
-  constructor(rootChip, CodeWrapper) {
+  constructor(rootChipInfo, rootChip, CodeWrapper) {
     this.rootChip = rootChip;
+    this.rootChipInfo = rootChipInfo;
     this.outputBlocksByPort = {};
     this.executeBlocksByPort = {};
     this.ingressBlocksByChip = new Map();
@@ -30,11 +31,12 @@ export class Compilation {
     codeWrapper = codeWrapper || new (this.CodeWrapper || ClassWrapper)();
 
     // TODO compile each input exec ports
-    const rootInfo = info(this.rootChip);
-    const scope = [this.rootChip];
+    const rootInfo = this.rootChipInfo;
+    const rootChip = this.rootChip || info({}, this.rootChipInfo);
+    const scope = [rootChip];
 
     if (codeWrapper.compileBegin) {
-      codeWrapper.compileBegin(this.rootChip, rootInfo);
+      codeWrapper.compileBegin(this.rootChip, this.rootChipInfo);
     }
 
     if (rootInfo.isFlowless) {
@@ -78,7 +80,7 @@ export class Compilation {
       }
 
       // Ingresses
-      for (const { port, scope } of usedIngresses(this.rootChip)) {
+      for (const { port, scope } of usedIngresses(rootChip)) {
         this.ingressBlocksByChip.set(
           // TODO maybe give different informations here? just the port.chip?
           // eventually a wrapper will want to properly hook them up. the
@@ -92,7 +94,7 @@ export class Compilation {
     // Build the final program
     const program = codeWrapper.compileEnd({
       chip: this.rootChip,
-      chipInfo: rootInfo,
+      chipInfo: this.rootChipInfo,
       compiledIngresses: this.ingressBlocksByChip,
       compiledFlowPorts: this.executeBlocksByPort,
       compiledOutputPorts: this.outputBlocksByPort,
@@ -483,6 +485,8 @@ function makeInputFlowSourceCompiler(portInfo) {
         'Only one connection is allowed for input flow outlets',
       );
       const conn = conns[0];
+
+      if (!conn) return;
 
       // Connecting to an output flow outlet (from an input flow outlet)
       //

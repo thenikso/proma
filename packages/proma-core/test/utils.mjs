@@ -9,13 +9,17 @@ import {
 } from '../core/index.mjs';
 
 export function compileAndRun(build, run, initData) {
+  // Create chip
+  const C = build.__proto__ === Chip ? build : chip('TestChip', build);
+  if (run === false) {
+    return C.compile();
+  }
   // Default run to capture console.log
   const originalLog = console.log;
   // Prepare for live logs capture
   const liveLogs = [];
   console.log = (msg) => liveLogs.push(msg);
-  // Create chip
-  const C = build.__proto__ === Chip ? build : chip('TestChip', build);
+  // Instantiate chip
   const c = new C(...(initData || []));
   // Prepare for compiled logs capture
   const compLogs = [];
@@ -45,6 +49,13 @@ export function compileAndRun(build, run, initData) {
     live,
     comp,
   };
+}
+
+export function editCompileAndRun(edit, run, initData) {
+  const C = chip('EditChip');
+  const e = C.edit();
+  edit(e);
+  return compileAndRun(C, run, initData);
 }
 
 export function compileAndRunResult(code, value) {

@@ -42,12 +42,6 @@ export class Chip {
         enumerable: true,
         value: chipInfo.name,
       },
-      compile: {
-        value: (wrapper) => {
-          const compilation = new Compilation(this);
-          return compilation.compile(wrapper);
-        },
-      },
     });
     // Assign default values
     if (Array.isArray(canonicalValues) && canonicalValues.length > 0) {
@@ -74,6 +68,7 @@ export class Chip {
 
 export class ChipInfo {
   constructor(name) {
+    // TODO validate name, qualifiedName instead?
     this.name = name || 'Chip_' + shortUID();
     this.chips = [];
     this.inputs = [];
@@ -88,6 +83,7 @@ export class ChipInfo {
     this.sinkConnection = new Map();
 
     let idCount = 0;
+    // TODO generate JS usable name
     this.makeChipId = () => {
       return `${this.name}_${++idCount}`;
     };
@@ -106,6 +102,16 @@ export class ChipInfo {
   //
   // Chips
   //
+
+  getChip(id) {
+    if (typeof id === 'number') {
+      return this.chips[id] || null;
+    }
+    for (const chip of this.chips) {
+      if (chip.id === id) return chip;
+    }
+    return null;
+  }
 
   addChip(chip) {
     this.chips.push(chip);
@@ -131,6 +137,39 @@ export class ChipInfo {
       }
     }
     return null;
+  }
+
+  getPort(path, defaultSide) {
+    if (typeof path === 'string') {
+      path = path.split('.');
+    }
+    let [chipId, side, portName] = path;
+    // Case like `in.exec`
+    if (typeof portName === 'undefined') {
+      portName = side;
+      side = chipId;
+      chipId = undefined;
+    }
+    // Case like `exec`, in this case we will try to find a input outlet first
+    if (typeof portName === 'undefined') {
+      portName = side;
+      side = chipId;
+      chipId = undefined;
+    }
+    if (chipId) {
+      const chip = this.getChip(chipId);
+      if (!chip) {
+        return null;
+      }
+      return chip[side][portName];
+    }
+    if (side === 'in' || defaultSide === 'in') {
+      return this.getInputPortInfo(portName);
+    }
+    if (side === 'out' || defaultSide === 'out') {
+      return this.getOutputPortInfo(portName);
+    }
+    return this.getInputPortInfo(portName) || this.getOutputPortInfo(portName);
   }
 
   get inputFlowPorts() {
@@ -165,15 +204,15 @@ export class ChipInfo {
 
   // Sinks
 
-  addInputDataPort(name, config) {
-    const portInfo = new InputDataSinkPortInfo(this, name, config);
-    this.inputs.push(portInfo);
-    return new PortOutlet(portInfo);
-  }
-
   addOutputFlowPort(name) {
     const portInfo = new OutputFlowSinkPortInfo(this, name);
     this.outputs.push(portInfo);
+    return new PortOutlet(portInfo);
+  }
+
+  addInputDataPort(name, config) {
+    const portInfo = new InputDataSinkPortInfo(this, name, config);
+    this.inputs.push(portInfo);
     return new PortOutlet(portInfo);
   }
 
@@ -182,8 +221,20 @@ export class ChipInfo {
   //
 
   addConnection(portA, portB, dryRun) {
-    const isOutletA = portA instanceof PortOutlet;
-    const isOutletB = portB instanceof PortOutlet;
+    if (typeof portA === 'string' || Array.isArray(portA)) {
+      portA = this.getPort(portA, 'in');
+    }
+    if (typeof portB === 'string' || Array.isArray(portB)) {
+      portB = this.getPort(portB, 'out');
+    }
+    if (portA instanceof PortOutlet) {
+      portA = info(portA);
+    }
+    if (portB instanceof PortOutlet) {
+      portB = info(portB);
+    }
+    const isOutletA = portA instanceof PortInfo;
+    const isOutletB = portB instanceof PortInfo;
     if (
       !(isOutletA || portA instanceof Port) ||
       !(isOutletB || portB instanceof Port)
@@ -195,9 +246,9 @@ export class ChipInfo {
       );
     }
     // Include used ingresses in chip
-    if (this.ingresses.includes(portA.chip)) {
+    if (!isOutletA && this.ingresses.includes(portA.chip)) {
       this.chips.push(portA.chip);
-    } else if (this.ingresses.includes(portB.chip)) {
+    } else if (!isOutletB && this.ingresses.includes(portB.chip)) {
       this.chips.push(portB.chip);
     }
     if (
@@ -206,8 +257,8 @@ export class ChipInfo {
     ) {
       throw new Error('Both ports must be in the chip body');
     }
-    const infoA = info(portA);
-    const infoB = info(portB);
+    const infoA = isOutletA ? portA : info(portA);
+    const infoB = isOutletB ? portB : info(portB);
     if (infoA.isFlow !== infoB.isFlow) {
       throw new Error('Can not wire flow port with data port');
     }
@@ -227,12 +278,10 @@ export class ChipInfo {
       throw new Error('Sink port already connected');
     }
     if (!dryRun) {
-      const saveSource = source instanceof PortOutlet ? info(source) : source;
-      const saveSink = sink instanceof PortOutlet ? info(sink) : sink;
-      const sinks = this.sourceConnections.get(saveSource) || [];
-      sinks.push(saveSink);
-      this.sourceConnections.set(saveSource, sinks);
-      this.sinkConnection.set(saveSink, saveSource);
+      const sinks = this.sourceConnections.get(source) || [];
+      sinks.push(sink);
+      this.sourceConnections.set(source, sinks);
+      this.sinkConnection.set(sink, source);
 
       // When connecting and output port in a non-pure chip (aka a
       // chip with output flow defined), we automatically add all output
@@ -240,13 +289,13 @@ export class ChipInfo {
       // This allow for a shortcut syntax where you don't need
       // to specify output flow ports to compute this output data port on.
       if (
-        saveSink instanceof OutputDataSourcePortInfo &&
-        (!saveSink.computeOn || saveSink.computeOn.length === 0)
+        sink instanceof OutputDataSourcePortInfo &&
+        (!sink.computeOn || sink.computeOn.length === 0)
       ) {
         const computeOn = this.outputs
-          .slice(0, this.outputs.indexOf(saveSink))
+          .slice(0, this.outputs.indexOf(sink))
           .filter((i) => i.isFlow);
-        saveSink.computeOn = computeOn;
+        sink.computeOn = computeOn;
       }
     }
     return {
