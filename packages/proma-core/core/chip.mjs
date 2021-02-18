@@ -72,8 +72,10 @@ export class ChipInfo {
     this.chips = [];
     this.inputs = [];
     this.outputs = [];
-    // TODO describe
-    this.ingresses = [];
+    // Events are special chips (created with the `event` public api) that can
+    // be ingresses. In this case, those event chips are drove by the outside
+    // to send data to this chip
+    this.ingressEvents = [];
     // Wire map from source -> [sink]. Souces can have multiple sinks.
     // Also forwards PortOutlet sinks to [sinks] by saving their PortInfo.
     this.sourceConnections = new Map();
@@ -248,10 +250,10 @@ export class ChipInfo {
         }`,
       );
     }
-    // Include used ingresses in chip
-    if (!isOutletA && this.ingresses.includes(portA.chip)) {
+    // Include used ingressEvents in chip
+    if (!isOutletA && this.ingressEvents.includes(portA.chip)) {
       this.chips.push(portA.chip);
-    } else if (!isOutletB && this.ingresses.includes(portB.chip)) {
+    } else if (!isOutletB && this.ingressEvents.includes(portB.chip)) {
       this.chips.push(portB.chip);
     }
     if (

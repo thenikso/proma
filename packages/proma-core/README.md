@@ -43,12 +43,14 @@
 - [x] rename `this.$in` to `const $in` etc
 - [x] chip builder params could be used to send chip instances of special
       chips like mount, destroy, ... - `WebComponent.initChip` is a `chip.preset({ chips: { mount: chip(...) } })` that can be used to construct new chips that get preset chips as params (became `chip.extend`)
-- [ ] `compile` should be a static method of the chip, not an instance one
-- [ ] editability
+- [x] `compile` should be a static method of the chip, not an instance one
+- [x] editability
 - [ ] chip registry
+- [ ] editability continued
 - [ ] `onDestroy` defualt chip ingress (maybe just call these `events` xD)
       chips get a default `.destroy()` method? maybe even a `.create()`? autocreate?
-- [ ] save/restore JSON of a chip
+- [x] save JSON of a chip
+- [ ] create chip from JSON
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
 - [ ] types

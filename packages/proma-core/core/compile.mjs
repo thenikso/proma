@@ -22,7 +22,7 @@ export class Compilation {
     this.rootChipInfo = rootChipInfo;
     this.outputBlocksByPort = {};
     this.executeBlocksByPort = {};
-    this.ingressBlocksByChip = new Map();
+    this.ingressEventsBlocksByChip = new Map();
     this.updateBlocksByPort = {};
     this.CodeWrapper = CodeWrapper || ClassWrapper;
   }
@@ -49,7 +49,7 @@ export class Compilation {
         this.outputBlocksByPort[portInfo.name] = block;
       }
     } else {
-      // Chips with flow may have ingresses or executions
+      // Chips with flow may have ingress events or executions
 
       // Output data with compute but no computeOn will be initialized once
       // This covers stuff like handlers
@@ -80,8 +80,8 @@ export class Compilation {
       }
 
       // Ingresses
-      for (const { port, scope } of usedIngresses(rootChip)) {
-        this.ingressBlocksByChip.set(
+      for (const { port, scope } of usedIngressEvents(rootChip)) {
+        this.ingressEventsBlocksByChip.set(
           // TODO maybe give different informations here? just the port.chip?
           // eventually a wrapper will want to properly hook them up. the
           // name might not be a good enough clue
@@ -95,7 +95,7 @@ export class Compilation {
     const program = codeWrapper.compileEnd({
       chip: this.rootChip,
       chipInfo: this.rootChipInfo,
-      compiledIngresses: this.ingressBlocksByChip,
+      compiledIngressEvents: this.ingressEventsBlocksByChip,
       compiledFlowPorts: this.executeBlocksByPort,
       compiledOutputPorts: this.outputBlocksByPort,
       compiledUpdatesOnPorts: this.updateBlocksByPort,
@@ -113,13 +113,13 @@ export class Compilation {
 // Visiting
 //
 
-function usedIngresses(chip, scope) {
+function usedIngressEvents(chip, scope) {
   if (!scope) {
     scope = [chip];
   }
   const ingresses = [];
   const chipInfo = info(chip);
-  for (const ingress of chipInfo.ingresses) {
+  for (const ingress of chipInfo.ingressEvents) {
     if (!chipInfo.chips.includes(ingress)) {
       continue;
     }
@@ -133,7 +133,7 @@ function usedIngresses(chip, scope) {
     }
   }
   for (const subChip of chipInfo.chips) {
-    ingresses.push(...usedIngresses(subChip, [subChip, ...scope]));
+    ingresses.push(...usedIngressEvents(subChip, [subChip, ...scope]));
   }
   return ingresses;
 }

@@ -123,7 +123,7 @@ export default class ClassWrapper {
     return inletUse;
   }
   compileEnd({
-    compiledIngresses,
+    compiledIngressEvents,
     compiledFlowPorts,
     compiledOutputPorts,
     compiledUpdatesOnPorts,
@@ -461,12 +461,12 @@ export default class ClassWrapper {
       body.push(parse('Object.freeze(this.out)').program.body[0]);
     }
 
-    // Ingresses
+    // Ingress Events
 
-    for (const [ingressChip, ingressBlock] of compiledIngresses.entries()) {
-      const ingressType = ingressChip.chipURI;
-      switch (ingressType) {
-        case 'OnCreateIngress':
+    for (const [ingressChip, ingressBlock] of compiledIngressEvents.entries()) {
+      const eventURI = ingressChip.chipURI;
+      switch (eventURI) {
+        case 'OnCreate':
           if (namedTypes.BlockStatement.check(ingressBlock)) {
             body.push(...ingressBlock.body);
           } else if (!namedTypes.ExpressionStatement.check(ingressBlock)) {
@@ -477,7 +477,7 @@ export default class ClassWrapper {
           }
           break;
         default:
-          console.warn(`Unsupported ingress: ${ingressType}`);
+          console.warn(`Unsupported ingress: ${eventURI}`);
           break;
       }
     }

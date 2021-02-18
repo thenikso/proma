@@ -1,12 +1,12 @@
 import { context, assert } from './utils.mjs';
 import { Chip as ChipBase, ChipInfo } from './chip.mjs';
-import { runIngresses } from './run.mjs';
+import { runIngressEvents } from './run.mjs';
 import { EditableChipInfo } from './edit.mjs';
 import { Compilation } from './compile.mjs';
 
-export const OnCreateIngress = ingress('OnCreateIngress');
+export const OnCreateEvent = event('OnCreate');
 
-function makeChipFactory($buildIngresses, $constructed) {
+function makeChipFactory($buildEvents, $constructed) {
   function chip(uri, build) {
     if (typeof uri !== 'string') {
       build = uri;
@@ -14,12 +14,12 @@ function makeChipFactory($buildIngresses, $constructed) {
     }
     const chipInfo = new ChipInfo(uri);
     context.push(chipInfo);
-    const ingresses =
-      (typeof $buildIngresses === 'function' && $buildIngresses()) ||
-      $buildIngresses ||
+    const events =
+      (typeof $buildEvents === 'function' && $buildEvents()) ||
+      $buildEvents ||
       {};
     if (typeof build === 'function') {
-      build.call(undefined, ingresses);
+      build.call(undefined, events);
     }
     context.pop();
     // TODO validate chip:
@@ -61,15 +61,14 @@ function makeChipFactory($buildIngresses, $constructed) {
 
     return Chip;
   }
-  chip.extend = function extendChip(buildIngresses, constructed) {
+  chip.extend = function extendChip(buildEvents, constructed) {
     return makeChipFactory(
       () =>
         Object.assign(
           {},
-          (typeof $buildIngresses === 'function' && $buildIngresses()) ||
-            $buildIngresses,
-          (typeof buildIngresses === 'function' && buildIngresses()) ||
-            buildIngresses,
+          (typeof $buildEvents === 'function' && $buildEvents()) ||
+            $buildEvents,
+          (typeof buildEvents === 'function' && buildEvents()) || buildEvents,
         ),
       (chip) => {
         if (typeof $constructed === 'function') $constructed(chip);
@@ -82,11 +81,11 @@ function makeChipFactory($buildIngresses, $constructed) {
 
 export const chip = makeChipFactory(
   () => {
-    const onCreate = new OnCreateIngress();
+    const onCreate = new OnCreateEvent();
     return { onCreate };
   },
   (chip) => {
-    runIngresses(chip, (i) => i instanceof OnCreateIngress);
+    runIngressEvents(chip, (i) => i instanceof OnCreateEvent);
   },
 );
 
@@ -137,29 +136,29 @@ export function outputHandle(name, execHandle) {
   });
 }
 
-export function ingress(name, ...ports) {
-  const ingressInfo = new ChipInfo(name);
-  context.push(ingressInfo);
+export function event(name, ...ports) {
+  const eventInfo = new ChipInfo(name);
+  context.push(eventInfo);
   // TODO funciton with ports and toString
   const handle = outputHandle('handle', () => then());
   const then = outputFlow('then');
   // TODO ports
   context.pop();
 
-  class IngressChip extends ChipBase {
+  class EventChip extends ChipBase {
     constructor() {
-      super(ingressInfo);
+      super(eventInfo);
       // Add to current chip `build` execution
       const parentChipInfo = context();
       if (parentChipInfo instanceof ChipInfo) {
-        parentChipInfo.ingresses.push(this);
+        parentChipInfo.ingressEvents.push(this);
       }
     }
 
-    get isIngress() {
+    get isEvent() {
       return true;
     }
   }
 
-  return IngressChip;
+  return EventChip;
 }
