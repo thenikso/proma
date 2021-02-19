@@ -68,7 +68,7 @@ export class Chip {
 export class ChipInfo {
   constructor(URI) {
     // TODO validate name, qualifiedName instead?
-    this.URI = URI || 'Chip_' + shortUID();
+    this.URI = URI || 'local/' + shortUID();
     this.chips = [];
     this.inputs = [];
     this.outputs = [];
@@ -86,8 +86,12 @@ export class ChipInfo {
     let idCount = 0;
     // TODO generate JS usable name
     this.makeChipId = () => {
-      return `${this.URI}_${++idCount}`;
+      return `${this.jsName}_${++idCount}`;
     };
+  }
+
+  get jsName() {
+    this.URI.replace(/[^_$a-z0-9]/gi, '_');
   }
 
   get isFlowless() {

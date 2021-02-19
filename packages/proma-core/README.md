@@ -74,6 +74,7 @@
 - [ ] test output ports must not use side-effects
 - [ ] test using `then` in an assignment errors
 - [ ] test configs
+- [ ] test name of ports and chips are valid js variable names
 
 ## Ideas
 

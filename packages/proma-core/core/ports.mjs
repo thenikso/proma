@@ -147,8 +147,13 @@ export class PortOutlet extends Function {
   }
 }
 
+const validPortName = /^[a-z_$][a-z_$0-9]*$/i;
+
 export class PortInfo {
   constructor(chipInfo, name) {
+    if (!validPortName.test(name)) {
+      throw new Error(`Invalid name for port "${name}"`);
+    }
     this.chipInfo = chipInfo;
     this.name = name;
   }
