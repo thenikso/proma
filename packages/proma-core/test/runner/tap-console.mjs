@@ -57,7 +57,7 @@ function format(args) {
   const res = [];
   for (let i = 0, l = args.length; i < l; i++) {
     const a = args[i];
-    if (a.startsWith('%c')) {
+    if (typeof a === 'string' && a.startsWith('%c')) {
       const [s, e] = styleMap[args[++i]];
       res.push(s + a.substr(2) + e);
     } else {
@@ -70,7 +70,7 @@ function format(args) {
 function consoleLog() {
   if (isNode) {
     if (collapsed === 0) {
-      console._stdout.write(format(arguments) + '\n');
+      console.log(...arguments);
     }
   } else {
     console.log(...arguments);

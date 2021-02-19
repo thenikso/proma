@@ -45,12 +45,15 @@
       chips like mount, destroy, ... - `WebComponent.initChip` is a `chip.preset({ chips: { mount: chip(...) } })` that can be used to construct new chips that get preset chips as params (became `chip.extend`)
 - [x] `compile` should be a static method of the chip, not an instance one
 - [x] editability
-- [ ] chip registry
-- [ ] editability continued
-- [ ] `onDestroy` defualt chip ingress (maybe just call these `events` xD)
+- [x] `onDestroy` defualt chip ingress (maybe just call these `events` xD)
       chips get a default `.destroy()` method? maybe even a `.create()`? autocreate?
 - [x] save JSON of a chip
+- [x] chip registry (draft)
+- [ ] chips URI validation and transform URI in valid js name when using it for chips ids
+- [ ] editability continued (remove stuff)
 - [ ] create chip from JSON
+- [ ] node command to create snapshots (and use them instead of copy/pasting)
+- [ ] generate `destroy()` method for all compiled chips (not only if `onDestroy` is used)
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
 - [ ] types
@@ -103,7 +106,7 @@
 
 ## Web component
 
- TODO generate web components with Proma
+TODO generate web components with Proma
 
 ```js
 // WebComponent

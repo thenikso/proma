@@ -143,6 +143,10 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
         }
       }
 
+      static get URI() {
+        return chipInfo.URI;
+      }
+
       static toJSON() {
         return chipInfo.toJSON();
       }
@@ -163,7 +167,14 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
       }
     }
 
-    return typeof $subclassChip === 'function' ? $subclassChip(Chip) : Chip;
+    const ChipClass =
+      typeof $subclassChip === 'function' ? $subclassChip(Chip) : Chip;
+
+    if (typeof promaRegistry !== 'undefined') {
+      promaRegistry.add(ChipClass);
+    }
+
+    return ChipClass;
   }
   chip.extend = function extendChip(
     buildIngressEvents,
