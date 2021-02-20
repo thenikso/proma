@@ -1,6 +1,7 @@
 import { info, assert } from './utils.mjs';
 import { variadicStringNameToFunc } from './variadic.mjs';
 import { makePortRun } from './run.mjs';
+import { serializePortInfo } from './serialize.mjs';
 
 export class Port extends Function {
   constructor(chip, portInfo, variadicIndex) {
@@ -79,6 +80,10 @@ export class Port extends Function {
     }
 
     return self;
+  }
+
+  toJSON() {
+    return info(this).toJSON();
   }
 }
 
@@ -184,6 +189,10 @@ export class PortInfo {
 
   get isSource() {
     return !this.isSink;
+  }
+
+  toJSON() {
+    return serializePortInfo(this);
   }
 }
 
