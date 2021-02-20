@@ -8,7 +8,7 @@ import {
   wire,
 } from '../../core/index.mjs';
 
-const Pass = chip('Pass', () => {
+const Pass = chip('test/edit/Pass', () => {
   const exec = inputFlow('exec');
   const input = inputData('input', { canonical: true });
   const then = outputFlow('then');
@@ -74,7 +74,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
     chips: [
       {
         id: 'Pass',
-        chipURI: 'Pass',
+        chipURI: 'test/edit/Pass',
         args: ['pass'],
       },
     ],
@@ -102,7 +102,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addInputFlowPort('exec')
       .addOutputFlowPort('then')
       .addOutputDataPort('value')
-      .addChip('Pass', new Pass('pass'))
+      .addChip(new Pass('pass'), 'Pass')
       .addConnection('exec', '$0.in.exec')
       .addConnection('$0.out.output', 'value')
       .addConnection('$0.out.then', 'then')
@@ -119,7 +119,24 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       const value = outputData('value');
     })
       .edit()
-      .addChip('Pass', Pass, ['pass'])
+      .addChip(Pass, ['pass'], 'Pass')
+      .addConnection('exec', 'Pass.in.exec')
+      .addConnection('Pass.out.output', 'value')
+      .addConnection('Pass.out.then', 'then')
+      .chip.toJSON(),
+    expected,
+  });
+
+  assert({
+    given: 'a chip URI',
+    should: 'add the sub-chip',
+    actual: chip('EditChip', () => {
+      const exec = inputFlow('exec');
+      const then = outputFlow('then');
+      const value = outputData('value');
+    })
+      .edit()
+      .addChip('test/edit/Pass', ['pass'], 'Pass')
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
       .addConnection('Pass.out.then', 'then')

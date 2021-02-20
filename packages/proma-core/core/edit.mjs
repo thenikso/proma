@@ -1,5 +1,7 @@
 import { info } from './utils.mjs';
 import { Chip } from './chip.mjs';
+import { PlaceholderChip } from './placeholder.mjs';
+import { registry } from './registry.mjs';
 
 export class EditableChipInfo {
   constructor(chipClass, chipInfo) {
@@ -76,17 +78,18 @@ export class EditableChipInfo {
   // Chips
   //
 
-  // TODO the registry should provide a functionality to show which chips
-  // can be added
-
-  addChip(id, chipToAdd, initData) {
-    if (typeof id !== 'string') {
-      initData = chipToAdd;
-      chipToAdd = id;
-      id = undefined;
-    }
-    if (chipToAdd.__proto__ === Chip) {
-      chipToAdd = new chipToAdd(...(initData || []));
+  addChip(chipToAdd, canonicalValues, id) {
+    if (typeof chipToAdd === 'string') {
+      chipToAdd = new PlaceholderChip(
+        registry.load(chipToAdd),
+        chipToAdd,
+        canonicalValues,
+      );
+    } else if (chipToAdd instanceof Chip) {
+      id = canonicalValues;
+      canonicalValues = undefined;
+    } else if (chipToAdd.__proto__ === Chip) {
+      chipToAdd = new chipToAdd(...(canonicalValues || []));
     }
     if (id) {
       chipToAdd.id = id;

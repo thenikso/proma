@@ -49,19 +49,23 @@
       chips get a default `.destroy()` method? maybe even a `.create()`? autocreate?
 - [x] save JSON of a chip
 - [x] chip registry (draft)
-- [ ] chips URI validation and transform URI in valid js name when using it for chips ids
-- [ ] editability continued (remove stuff)
+- [x] transform URI in valid js name when using it for chips ids
+- [ ] chips is a Map and can contain promisess that will resolve to chips
+      allowing optimistic chip creation. add `async ready` and `get isReady`
 - [ ] create chip from JSON
-- [ ] node command to create snapshots (and use them instead of copy/pasting)
-- [ ] generate `destroy()` method for all compiled chips (not only if `onDestroy` is used)
+- [ ] editability continued (remove stuff)
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
 - [ ] types
 - [ ] variadic output ports
 - [ ] variadic outlets compilation with proxy an all?
+- [ ] node command to create snapshots (and use them instead of copy/pasting)
+- [ ] generate `destroy()` method for all compiled chips (not only if `onDestroy` is used)
 - [ ] check all errors:
   - [ ] pure output only allow input/config usage
   - [ ] if outlet not used anywhere, warning
+  - [ ] chips URI validation
+  - [ ] names are valid
   - [ ] moar
 - [ ] when building chip, have a pass with recast to allow for:
       config for chips may also get labels

@@ -32,6 +32,7 @@ export const registry = promaRegistry;
 // https://docs.github.com/en/rest/reference/repos#contents
 
 function initRegistry() {
+  const resolvers = [];
   const loadedChips = new Map();
 
   function hasChip(chipURI) {
@@ -55,7 +56,45 @@ function initRegistry() {
     if (loadedChips.has(chipURI)) {
       return loadedChips.get(chipURI);
     }
-    throw new Error('unimplemented');
+    const selectedResolvers = resolvers
+      .map((resolver) => ({ match: resolver.test(chipURI), resolver }))
+      .filter(({ match }) => !!match);
+    if (selectedResolvers.length === 0) {
+      throw new Error(`Can not resolve chip URI: ${chipURI}`);
+    }
+    // TODO resolver's priority?
+    let res;
+    let error;
+    for (const { match, resolver } of selectedResolvers) {
+      try {
+        res = await resolver.load(chipURI, match);
+        break;
+      } catch (e) {
+        if (!error) {
+          error = e;
+        }
+      }
+    }
+    if (!res) {
+      throw error || new Error(`Could not load URI: ${chipURI}`);
+    }
+    return res;
+  }
+
+  function addResolver(resolver) {
+    if (!resolver || !resolver.test || typeof resolver.load !== 'function') {
+      throw new Error(
+        'Invalid resolver. test and load properties are required.',
+      );
+    }
+    const test =
+      resolver.test instanceof RegExp
+        ? resolver.test
+        : new RegExp(resolver.test);
+    resolvers.push({
+      ...resolver,
+      test,
+    });
   }
 
   const registry = {

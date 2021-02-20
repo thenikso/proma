@@ -9,6 +9,7 @@ import {
   InputDataSinkPortInfo,
   OutputFlowSinkPortInfo,
 } from './ports.mjs';
+import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
 
 export class Chip {
   constructor(chipInfo, canonicalValues) {
@@ -63,6 +64,10 @@ export class Chip {
       }
     }
   }
+
+  toJSON() {
+    return serializeChipInstance(this);
+  }
 }
 
 export class ChipInfo {
@@ -86,12 +91,12 @@ export class ChipInfo {
     let idCount = 0;
     // TODO generate JS usable name
     this.makeChipId = () => {
-      return `${this.jsName}_${++idCount}`;
+      return `${this.name}_${++idCount}`;
     };
   }
 
-  get jsName() {
-    this.URI.replace(/[^_$a-z0-9]/gi, '_');
+  get name() {
+    return this.URI.replace(/[^_$a-z0-9]/gi, '_');
   }
 
   get isFlowless() {
@@ -245,8 +250,12 @@ export class ChipInfo {
     const isOutletA = portA instanceof PortInfo;
     const isOutletB = portB instanceof PortInfo;
     if (
-      !(isOutletA || portA instanceof Port) ||
-      !(isOutletB || portB instanceof Port)
+      !(
+        isOutletA ||
+        portA instanceof Port ||
+        portA instanceof PlaceholderPort
+      ) ||
+      !(isOutletB || portB instanceof Port || portB instanceof PlaceholderPort)
     ) {
       throw new Error(
         `Must have two ports or outlet pair. ${portA && portA.name} -> ${
@@ -269,7 +278,15 @@ export class ChipInfo {
     const infoA = isOutletA ? portA : info(portA);
     const infoB = isOutletB ? portB : info(portB);
     if (infoA.isFlow !== infoB.isFlow) {
-      throw new Error('Can not wire flow port with data port');
+      if (portA instanceof PlaceholderPort) {
+        infoA.isFlow = infoB.isFlow;
+        infoA.isData = infoB.isData;
+      } else if (portB instanceof PlaceholderPort) {
+        infoB.isFlow = infoA.isFlow;
+        infoB.isData = infoA.isData;
+      } else {
+        throw new Error('Can not wire flow port with data port');
+      }
     }
     if ((isOutletA ^ infoA.isInput) === (isOutletB ^ infoB.isInput)) {
       throw new Error('Can not wire ports of the same input/output side');
@@ -381,7 +398,7 @@ export class ChipInfo {
   toJSON() {
     const inputs = this.inputs.map(serializePortInfo);
     const outputs = this.outputs.map(serializePortInfo);
-    const chips = this.chips.map(serializeChipInstance);
+    const chips = this.chips.map((c) => c.toJSON());
     const connections = Array.from(this.sinkConnection.entries()).map(
       ([sink, source]) => ({
         source: source.fullName || source.name,
