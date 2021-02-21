@@ -93,7 +93,7 @@ export function serializePortInfo(portInfo) {
   if (typeof portInfo.compute !== 'undefined') {
     res.compute = String(portInfo.compute);
   }
-  if (typeof portInfo.computeOn !== 'undefined') {
+  if (Array.isArray(portInfo.computeOn) && portInfo.computeOn.length > 0) {
     res.computeOn = portInfo.computeOn.map((p) => p.name);
   }
   if (typeof portInfo.inline !== 'undefined') {

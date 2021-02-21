@@ -28,6 +28,9 @@ export class Chip {
           return id;
         },
         set(value) {
+          if (typeof value !== 'string') {
+            throw new Error('A chip ID must be a string');
+          }
           id = value;
         },
       },

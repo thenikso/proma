@@ -12,7 +12,7 @@ export class EditableChipInfo {
     //
     // Return class
     //
-    Object.defineProperty(this, 'chip', {
+    Object.defineProperty(this, 'Chip', {
       enumerable: true,
       value: chipClass,
     });
@@ -80,15 +80,17 @@ export class EditableChipInfo {
 
   addChip(chipToAdd, canonicalValues, id) {
     if (typeof chipToAdd === 'string') {
-      chipToAdd = new PlaceholderChip(
-        registry.load(chipToAdd),
-        chipToAdd,
-        canonicalValues,
-      );
+      const chipClass = registry.load(chipToAdd);
+      if (chipClass.__proto__ === Chip) {
+        chipToAdd = chipClass;
+      } else {
+        chipToAdd = new PlaceholderChip(chipClass, chipToAdd, canonicalValues);
+      }
     } else if (chipToAdd instanceof Chip) {
       id = canonicalValues;
       canonicalValues = undefined;
-    } else if (chipToAdd.__proto__ === Chip) {
+    }
+    if (chipToAdd.__proto__ === Chip) {
       chipToAdd = new chipToAdd(...(canonicalValues || []));
     }
     if (id) {

@@ -199,5 +199,12 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
         : undefined,
     );
   };
+  chip.fromJSON = function fromJSON(data) {
+    // TODO validate `data`
+    const res = chip(data.URI);
+    const build = res.edit();
+    // TODO build the chip
+    return build.Chip;
+  };
   return chip;
 }

@@ -26,7 +26,7 @@ describe('[core/edit] edit connections', async (assert) => {
       .addInputFlowPort('exec')
       .addOutputFlowPort('then')
       .addConnection('exec', 'then')
-      .chip.toJSON(),
+      .Chip.toJSON(),
     expected: {
       URI: 'EditChip',
       inputs: [
@@ -106,7 +106,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addConnection('exec', '$0.in.exec')
       .addConnection('$0.out.output', 'value')
       .addConnection('$0.out.then', 'then')
-      .chip.toJSON(),
+      .Chip.toJSON(),
     expected,
   });
 
@@ -123,7 +123,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
       .addConnection('Pass.out.then', 'then')
-      .chip.toJSON(),
+      .Chip.toJSON(),
     expected,
   });
 
@@ -140,7 +140,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
       .addConnection('Pass.out.then', 'then')
-      .chip.toJSON(),
+      .Chip.toJSON(),
     expected,
   });
 });
