@@ -53,7 +53,8 @@
 - [x] chips is a Map and can contain promisess that will resolve to chips
       allowing optimistic chip creation. add `async ready` and `get isReady`
 - [x] create chip from JSON
-- [ ] build for import in svelte
+- [x] build for import in svelte
+- [ ] Libraries should be initialized with the current proma runtime instead of importing their own
 - [ ] editability continued (remove stuff)
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?

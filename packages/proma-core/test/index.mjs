@@ -8,5 +8,3 @@ import './programs/outputs.test.mjs';
 import './programs/connections.test.mjs';
 import './programs/variadic.test.mjs';
 import './programs/handles.test.mjs';
-
-import './lib/Literal.test.mjs';

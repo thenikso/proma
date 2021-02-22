@@ -9,6 +9,7 @@ import {
   wire,
 } from '../../core/index.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
+import { Pass } from '../lib.mjs';
 
 const Evt = chip('Evt', () => {
   const ref = outputHandle('ref', (e) => {
@@ -34,15 +35,6 @@ const BindTest = chip('BindTest', () => {
   const target = inputData('target', { canonical: true });
   const event = inputData('event');
   const then = outputFlow('then');
-});
-
-const Pass = chip('Pass', () => {
-  const exec = inputFlow('exec');
-  const input = inputData('input');
-  const then = outputFlow('then');
-  const output = outputData('output', then);
-  wire(exec, then);
-  wire(input, output);
 });
 
 describe('[programs/handles] handles usage', async (assert) => {

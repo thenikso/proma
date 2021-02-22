@@ -7,12 +7,8 @@ import {
   outputData,
   wire,
 } from '../../core/index.mjs';
-import {
-  js,
-  compileAndRun,
-  compileAndRunResult,
-} from '../utils.mjs';
-import { Log, Literal } from '../../lib/index.mjs';
+import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
+import { Log, Literal } from '../lib.mjs';
 
 describe('[programs/outputs] pure outputs', async (assert) => {
   assert({

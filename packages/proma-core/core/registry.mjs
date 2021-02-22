@@ -8,7 +8,7 @@ function getRegistry() {
   }
 }
 
-let promaRegistry = getRegistry();
+let promaRegistry; // = getRegistry();
 
 if (!promaRegistry) {
   promaRegistry = initRegistry();

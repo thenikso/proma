@@ -8,7 +8,7 @@ import {
   wire,
 } from '../../core/index.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
-import { Log, Literal } from '../../lib/index.mjs';
+import { Log, Literal } from '../lib.mjs';
 
 describe('[programs/variadic] variadic ports', async (assert) => {
   const Sum = chip('Sum', () => {

@@ -17,9 +17,8 @@
         outputData,
         outputHandle,
         wire,
+        Lib,
       } from './core/index.mjs';
-
-      import { Log, Literal } from './lib/index.mjs';
 
       const Add = chip('Add', () => {
         const A = inputData('A');
@@ -73,7 +72,7 @@
         wire(one, sum.in.A);
         wire(two, sum.in.B);
 
-        const log = new Log();
+        const log = new Lib.Log();
         wire(exec, log.in.exec);
         wire(sum.out.value, log.in.message);
 
@@ -115,7 +114,7 @@
         // const exec = inputFlow('exec');
         const bind = new BindClick('button');
         const evt = new Evt();
-        const log = new Log('clicked!');
+        const log = new Lib.Log('clicked!');
 
         // wire(start.out.then, bind.in.exec);
         wire(onCreate.out.then, bind.in.bind);
@@ -127,7 +126,7 @@
 
       const MyIngressChip = chip('MyIngressChip', ({ onCreate }) => {
         const exec = inputFlow('exec');
-        const log = new Log();
+        const log = new Lib.Log();
         log.id = 'Log';
 
         wire(exec, log.in.exec);

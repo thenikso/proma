@@ -8,7 +8,7 @@ import {
   wire,
 } from '../../core/index.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
-import { Split, Log } from '../../lib/index.mjs';
+import { Split, Log } from '../lib.mjs';
 
 describe('[programs/ingresses] ingress base flow', async (assert) => {
   assert({

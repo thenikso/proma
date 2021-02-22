@@ -8,7 +8,7 @@ import {
   wire,
 } from '../../core/index.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
-import { Log } from '../../lib/index.mjs';
+import { Log } from '../lib.mjs';
 
 describe('[programs/connections] input flow (execs) multi-connections', async (assert) => {
   assert({
