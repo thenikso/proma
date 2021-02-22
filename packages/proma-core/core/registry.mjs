@@ -8,6 +8,9 @@ function getRegistry() {
   }
 }
 
+// TODO gettin a registry from the env is a potential security risk
+// also we need to address the multiple proma versions/runtimes loaded in the
+// same page. Maybe using methods instead of `instanceof` and the like.
 let promaRegistry; // = getRegistry();
 
 if (!promaRegistry) {
@@ -45,6 +48,7 @@ function initRegistry() {
       throw new Error('Invalid Chip class');
     }
     const chipURI = chip.URI;
+    // TODO if URI is internal lib, do not overryde
     if (hasChip(chipURI) && !override) {
       return false;
     }

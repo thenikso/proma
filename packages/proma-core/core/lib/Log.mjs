@@ -1,5 +1,5 @@
 export default function install({ chip, inputFlow, inputData, outputFlow }) {
-  return chip('Log', () => {
+  return chip('lib/debug/Log', () => {
     const exec = inputFlow('exec', () => {
       console.log(message());
       then();

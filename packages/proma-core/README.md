@@ -54,7 +54,7 @@
       allowing optimistic chip creation. add `async ready` and `get isReady`
 - [x] create chip from JSON
 - [x] build for import in svelte
-- [ ] Libraries should be initialized with the current proma runtime instead of importing their own
+- [x] Libraries should be initialized with the current proma runtime instead of importing their own
 - [ ] editability continued (remove stuff)
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
