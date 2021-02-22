@@ -106,10 +106,15 @@ export class ChipInfo {
     this.ingressEvents = [];
     // Wire map from source -> [sink]. Souces can have multiple sinks.
     // Also forwards PortOutlet sinks to [sinks] by saving their PortOutlet.
+    // TODO should map to a Set
     this.sourceConnections = new Map();
     // Wire map from sink -> source. Sink can only have one source.
     // Also forwards PortOutlet source to source by saving their PortOutlet.
     this.sinkConnection = new Map();
+
+    // PlaceholderChip loader promises that will replace the placeholder with
+    // the actual chip when done
+    this.chipLoaders = [];
 
     let idCount = 0;
     // TODO generate JS usable name
@@ -147,7 +152,62 @@ export class ChipInfo {
   }
 
   addChip(chip) {
+    // When addin a placeholder chip, we want to replace it with the resolved
+    // chip when loaded. We also need to replace all connections
+    if (chip instanceof PlaceholderChip) {
+      this.chipLoaders.push(
+        chip.loadedChipInstance.then((actualChip) =>
+          this.replaceChip(chip, actualChip),
+        ),
+      );
+    }
     this.chips.push(chip);
+  }
+
+  replaceChip(chip, actualChip) {
+    assert(actualChip instanceof Chip, 'Expected a Chip instance');
+    const chipIndex = this.chips.indexOf(chip);
+    this.chips[chipIndex] = actualChip;
+    // Replace all connected placeholder ports
+    for (const [key, value] of this.sinkConnection.entries()) {
+      let replaceKey;
+      let replaceValue;
+      if (key instanceof PlaceholderPort && key.chip === chip) {
+        replaceKey = actualChip[info(key).isInput ? 'in' : 'out'][key.name];
+        replaceValue = value;
+      } else if (value instanceof PlaceholderPort && value.chip === chip) {
+        replaceKey = key;
+        replaceValue =
+          actualChip[info(value).isInput ? 'in' : 'out'][value.name];
+      }
+      if (replaceKey) {
+        this.sinkConnection.delete(key);
+        this.sinkConnection.set(replaceKey, replaceValue);
+      }
+    }
+    for (const [key, values] of this.sourceConnections.entries()) {
+      let replaceKey;
+      let replaceValues;
+      if (key instanceof PlaceholderPort && key.chip === chip) {
+        replaceKey = actualChip[info(key).isInput ? 'in' : 'out'][key.name];
+        replaceValues = values;
+      } else if (
+        values.some((v) => v instanceof PlaceholderPort && v.chip === chip)
+      ) {
+        replaceKey = key;
+        replaceValues = values.map((v) => {
+          if (v instanceof PlaceholderPort && v.chip === chip) {
+            return actualChip[info(v).isInput ? 'in' : 'out'][v.name];
+          } else {
+            return v;
+          }
+        });
+      }
+      if (replaceKey) {
+        this.sinkConnection.delete(key);
+        this.sinkConnection.set(replaceKey, replaceValues);
+      }
+    }
   }
 
   //
@@ -436,9 +496,7 @@ export class ChipInfo {
   }
 
   get loaded() {
-    return Promise.all(this.chips.filter((c) => !(c instanceof Chip))).then(
-      () => true,
-    );
+    return Promise.all(this.chipLoaders).then(() => true);
   }
 
   //

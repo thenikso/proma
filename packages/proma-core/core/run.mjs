@@ -136,8 +136,10 @@ export function makePortRun(portInfo, isOutlet) {
         }
 
         // ComputeOn
-        if (portInfo.computeOutputs.length > 0) {
-          for (const name of portInfo.computeOutputs.map((p) => p.name)) {
+        if (portInfo.computeOutputs.size > 0) {
+          for (const name of Array.from(portInfo.computeOutputs).map(
+            (p) => p.name,
+          )) {
             const outPort = port.chip.out[name];
             outPort.runValue = portInfo;
             outPort.runValue = outPort();

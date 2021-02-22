@@ -304,17 +304,14 @@ export class OutputDataSourcePortInfo extends PortInfo {
         set(value) {
           if (computeOn) {
             for (const computeOnOutletInfo of computeOn) {
-              computeOnOutletInfo.computeOutputs.splice(
-                computeOnOutletInfo.computeOutputs.indexOf(this),
-                1,
-              );
+              computeOnOutletInfo.computeOutputs.delete(this);
             }
           }
           if (!Array.isArray(value)) value = [value];
           value = value.map((o) => (o instanceof PortInfo ? o : info(o)));
           computeOn = value;
           for (const computeOnOutletInfo of value) {
-            computeOnOutletInfo.computeOutputs.push(this);
+            computeOnOutletInfo.computeOutputs.add(this);
           }
         },
       },
@@ -415,8 +412,7 @@ export class OutputFlowSinkPortInfo extends PortInfo {
     super(chipInfo, name);
 
     this.compiler = undefined;
-    // TODO make this a Set
-    this.computeOutputs = [];
+    this.computeOutputs = new Set();
   }
 
   get isInput() {

@@ -66,17 +66,17 @@ export class Compilation {
 
       for (const portOutlet of rootInfo.outputFlowPorts) {
         const portInfo = info(portOutlet);
-        if (portInfo.computeOutputs.length === 0) continue;
+        if (portInfo.computeOutputs.size === 0) continue;
 
-        this.updateBlocksByPort[portInfo.name] = portInfo.computeOutputs.map(
-          (outPortInfo) => {
-            return compiler(outPortInfo)(
-              rootInfo.getOutputPortOutlet(outPortInfo.name),
-              scope,
-              codeWrapper,
-            );
-          },
-        );
+        this.updateBlocksByPort[portInfo.name] = Array.from(
+          portInfo.computeOutputs,
+        ).map((outPortInfo) => {
+          return compiler(outPortInfo)(
+            rootInfo.getOutputPortOutlet(outPortInfo.name),
+            scope,
+            codeWrapper,
+          );
+        });
       }
 
       // Executions
@@ -382,7 +382,7 @@ function makeOutputFlowSinkCompiler(portInfo) {
     // All right, now we have inlets. This is an output flow that is used
     // by output data to update itself. So when this port is executed
     // we want to update those inlets with the value.
-    if (portInfo.computeOutputs.length > 0) {
+    if (portInfo.computeOutputs.size > 0) {
       const continuationSequence = [];
       // output flow may have multiple output data to update
       for (const computePortInfo of portInfo.computeOutputs) {

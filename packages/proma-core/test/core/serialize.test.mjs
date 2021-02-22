@@ -87,6 +87,80 @@ const chipJSON = {
   ],
 };
 
+const chipJS = js`
+  class TestChipSerialize {
+    constructor(input, conf) {
+      const $in = Object.seal({
+        input: input || 3,
+        conf: conf || true
+      });
+
+      const $out = Object.seal({
+        output: undefined,
+        then: undefined
+      });
+
+      const $__handle = o => {
+        $out.output = o;
+        this.out.then();
+      };
+
+      let Pass__output;
+
+      Object.defineProperties(this.in = {}, {
+        input: {
+          get: () => () => $in.input,
+
+          set: value => {
+            $in.input = value;
+          }
+        },
+
+        conf: {
+          get: () => () => $in.conf,
+
+          set: value => {
+            $in.conf = value;
+          }
+        },
+
+        exec: {
+          value: () => {
+            Pass__output = $in.input;
+            this.out.then();
+          }
+        }
+      });
+
+      Object.freeze(this.in);
+
+      Object.defineProperties(this.out = {}, {
+        output: {
+          value: () => $out.output
+        },
+
+        handle: {
+          enumerable: true,
+          value: () => $__handle
+        },
+
+        then: {
+          value: value => {
+            if (typeof value !== "undefined") {
+              $out.then = value;
+              return;
+            }
+
+            $out.output = Pass__output;
+            ($out.then || (() => {}))();
+          }
+        }
+      });
+
+      Object.freeze(this.out);
+    }
+  }`;
+
 describe('[core/serialize] to JSON', async (assert) => {
   assert({
     given: 'a chip',
@@ -151,86 +225,11 @@ describe('[core/serialize] from JSON', async (assert) => {
       chip.out.handle()(9);
       return res;
     }),
-    expected: compileAndRunResult(
-      js`
-      class TestChipSerialize {
-        constructor(input, conf) {
-          const $in = Object.seal({
-            input: input || 3,
-            conf: conf || true
-          });
-
-          const $out = Object.seal({
-            output: undefined,
-            then: undefined
-          });
-
-          const $__handle = o => {
-            $out.output = o;
-            this.out.then();
-          };
-
-          let Pass__output;
-
-          Object.defineProperties(this.in = {}, {
-            input: {
-              get: () => () => $in.input,
-
-              set: value => {
-                $in.input = value;
-              }
-            },
-
-            conf: {
-              get: () => () => $in.conf,
-
-              set: value => {
-                $in.conf = value;
-              }
-            },
-
-            exec: {
-              value: () => {
-                Pass__output = $in.input;
-                this.out.then();
-              }
-            }
-          });
-
-          Object.freeze(this.in);
-
-          Object.defineProperties(this.out = {}, {
-            output: {
-              value: () => $out.output
-            },
-
-            handle: {
-              enumerable: true,
-              value: () => $__handle
-            },
-
-            then: {
-              value: value => {
-                if (typeof value !== "undefined") {
-                  $out.then = value;
-                  return;
-                }
-
-                $out.output = Pass__output;
-                ($out.then || (() => {}))();
-              }
-            }
-          });
-
-          Object.freeze(this.out);
-        }
-      }`,
-      [3, 7, 7],
-    ),
+    expected: compileAndRunResult(chipJS, [3, 7, 7]),
   });
 });
 
-describe.skip('[core/serialize] from JSON with async chips', async (assert) => {
+describe('[core/serialize] from JSON with async chips', async (assert) => {
   const asyncChipJSON = {
     ...chipJSON,
     chips: [
@@ -253,14 +252,14 @@ describe.skip('[core/serialize] from JSON with async chips', async (assert) => {
   assert({
     given: 'a JSON chip with async chips',
     should: 'have a false loaded state',
-    actual: chip.fromJSON(chipJSON).isLoaded,
+    actual: chip.fromJSON(asyncChipJSON).isLoaded,
     expected: false,
   });
 
   assert({
     given: 'a JSON chip with async chips',
     should: 'wait for it to be loaded',
-    actual: await chip.fromJSON(chipJSON).loaded,
+    actual: await chip.fromJSON(asyncChipJSON).loaded,
     expected: true,
   });
 
@@ -268,7 +267,7 @@ describe.skip('[core/serialize] from JSON with async chips', async (assert) => {
     given: 'a JSON chip with async chips',
     should: 'compile and run after being loaded',
     actual: await (async () => {
-      const C = chip.fromJSON(chipJSON);
+      const C = chip.fromJSON(asyncChipJSON);
       await C.loaded;
       return compileAndRun(C, (chip) => {
         const res = [];
@@ -281,7 +280,7 @@ describe.skip('[core/serialize] from JSON with async chips', async (assert) => {
         chip.out.handle()(9);
         return res;
       });
-    }),
-    expected: compileAndRunResult(js``, [3, 7, 9]),
+    })(),
+    expected: compileAndRunResult(chipJS, [3, 7, 7]),
   });
 });

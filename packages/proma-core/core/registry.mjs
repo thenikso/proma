@@ -58,7 +58,7 @@ function initRegistry() {
     }
     return Promise.resolve().then(async () => {
       const selectedResolvers = resolvers
-        .map((resolver) => ({ match: resolver.test(chipURI), resolver }))
+        .map((resolver) => ({ match: resolver.test.test(chipURI), resolver }))
         .filter(({ match }) => !!match);
       if (selectedResolvers.length === 0) {
         throw new Error(`Can not resolve chip URI: ${chipURI}`);
@@ -93,7 +93,7 @@ function initRegistry() {
       resolver.test instanceof RegExp
         ? resolver.test
         : new RegExp(resolver.test);
-    resolvers.push({
+    resolvers.unshift({
       ...resolver,
       test,
     });
