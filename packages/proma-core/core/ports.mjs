@@ -3,6 +3,10 @@ import { variadicStringNameToFunc } from './variadic.mjs';
 import { makePortRun } from './run.mjs';
 import { serializePortInfo } from './serialize.mjs';
 
+//
+// Public
+//
+
 export class Port extends Function {
   constructor(chip, portInfo, variadicIndex) {
     super();
@@ -142,15 +146,39 @@ export class PortOutlet extends Function {
     info(outlet, portInfo);
 
     Object.defineProperties(outlet, {
+      isOutlet: {
+        enumerable: true,
+        value: true,
+      },
+
       name: {
         enumerable: true,
-        value: portInfo.name,
+        get() {
+          return portInfo.name;
+        },
+      },
+
+      canonical: {
+        enumerable: true,
+        get() {
+          return portInfo.canonical;
+        },
+      },
+
+      toJSON: {
+        value: function toJSON() {
+          return portInfo.toJSON();
+        },
       },
     });
 
     return outlet;
   }
 }
+
+//
+// Info (private)
+//
 
 const validPortName = /^[a-z_$][a-z_$0-9]*$/i;
 
@@ -387,6 +415,7 @@ export class OutputFlowSinkPortInfo extends PortInfo {
     super(chipInfo, name);
 
     this.compiler = undefined;
+    // TODO make this a Set
     this.computeOutputs = [];
   }
 

@@ -12,14 +12,24 @@ import {
 import { serializeChipInfo, serializeChipInstance } from './serialize.mjs';
 import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
 
+//
+// Public
+//
+
 export class Chip {
   constructor(chipInfo, canonicalValues) {
     let id = chipInfo.makeChipId();
 
     info(this, chipInfo);
 
-    const inputs = new PortList(this, chipInfo.inputs);
-    const outputs = new PortList(this, chipInfo.outputs);
+    const inputs = new PortList(
+      this,
+      chipInfo.inputs.map((p) => info(p)),
+    );
+    const outputs = new PortList(
+      this,
+      chipInfo.outputs.map((p) => info(p)),
+    );
 
     Object.defineProperties(this, {
       id: {
@@ -50,7 +60,8 @@ export class Chip {
     // Assign default values
     if (Array.isArray(canonicalValues) && canonicalValues.length > 0) {
       let i = 0;
-      for (const portInfo of chipInfo.inputs) {
+      for (const portOutlet of chipInfo.inputs) {
+        const portInfo = info(portOutlet);
         if (!portInfo.canonical) {
           continue;
         }
@@ -78,6 +89,10 @@ export function isChipClass(obj) {
   return obj.__proto__ === Chip;
 }
 
+//
+// Info (private)
+//
+
 export class ChipInfo {
   constructor(URI) {
     // TODO validate name, qualifiedName instead?
@@ -90,10 +105,10 @@ export class ChipInfo {
     // to send data to this chip
     this.ingressEvents = [];
     // Wire map from source -> [sink]. Souces can have multiple sinks.
-    // Also forwards PortOutlet sinks to [sinks] by saving their PortInfo.
+    // Also forwards PortOutlet sinks to [sinks] by saving their PortOutlet.
     this.sourceConnections = new Map();
     // Wire map from sink -> source. Sink can only have one source.
-    // Also forwards PortOutlet source to source by saving their PortInfo.
+    // Also forwards PortOutlet source to source by saving their PortOutlet.
     this.sinkConnection = new Map();
 
     let idCount = 0;
@@ -139,7 +154,7 @@ export class ChipInfo {
   // Ports
   //
 
-  getInputPortInfo(name) {
+  getInputPortOutlet(name) {
     for (const port of this.inputs) {
       if (port.name === name) {
         return port;
@@ -148,7 +163,7 @@ export class ChipInfo {
     return null;
   }
 
-  getOutputPortInfo(name) {
+  getOutputPortOutlet(name) {
     for (const port of this.outputs) {
       if (port.name === name) {
         return port;
@@ -186,56 +201,62 @@ export class ChipInfo {
       return chip[side][portName];
     }
     if (side === 'in' || defaultSide === 'in') {
-      return this.getInputPortInfo(portName);
+      return this.getInputPortOutlet(portName);
     }
     if (side === 'out' || defaultSide === 'out') {
-      return this.getOutputPortInfo(portName);
+      return this.getOutputPortOutlet(portName);
     }
-    return this.getInputPortInfo(portName) || this.getOutputPortInfo(portName);
+    return (
+      this.getInputPortOutlet(portName) || this.getOutputPortOutlet(portName)
+    );
   }
 
   get inputFlowPorts() {
-    return this.inputs.filter((i) => i.isFlow);
+    return this.inputs.filter((i) => info(i).isFlow);
   }
 
   get inputDataPorts() {
-    return this.inputs.filter((i) => i.isData);
+    return this.inputs.filter((i) => info(i).isData);
   }
 
   get outputFlowPorts() {
-    return this.outputs.filter((i) => i.isFlow);
+    return this.outputs.filter((i) => info(i).isFlow);
   }
 
   get outputDataPorts() {
-    return this.outputs.filter((i) => i.isData);
+    return this.outputs.filter((i) => info(i).isData);
   }
 
   // Sources
 
   addInputFlowPort(name, config) {
     const portInfo = new InputFlowSourcePortInfo(this, name, config);
-    this.inputs.push(portInfo);
-    return new PortOutlet(portInfo);
+    const portOutlet = new PortOutlet(portInfo);
+    this.inputs.push(portOutlet);
+    return portOutlet;
   }
 
   addOutputDataPort(name, config) {
     const portInfo = new OutputDataSourcePortInfo(this, name, config);
-    this.outputs.push(portInfo);
-    return new PortOutlet(portInfo);
+    const portOutlet = new PortOutlet(portInfo);
+    this.outputs.push(portOutlet);
+    return portOutlet;
   }
 
   // Sinks
 
   addOutputFlowPort(name) {
     const portInfo = new OutputFlowSinkPortInfo(this, name);
-    this.outputs.push(portInfo);
-    return new PortOutlet(portInfo);
+    const portOutlet = new PortOutlet(portInfo);
+    this.outputs.push(portOutlet);
+    return portOutlet;
   }
 
   addInputDataPort(name, config) {
     const portInfo = new InputDataSinkPortInfo(this, name, config);
-    this.inputs.push(portInfo);
-    return new PortOutlet(portInfo);
+    const portOutlet = new PortOutlet(portInfo);
+    this.inputs.push(portOutlet);
+    return portOutlet;
   }
 
   //
@@ -328,6 +349,7 @@ export class ChipInfo {
       ) {
         const computeOn = this.outputs
           .slice(0, this.outputs.indexOf(sink))
+          .map((i) => info(i))
           .filter((i) => i.isFlow);
         sink.computeOn = computeOn;
       }
@@ -342,6 +364,9 @@ export class ChipInfo {
     let portInfo;
     if (port instanceof Port) {
       portInfo = info(port);
+    } else if (port instanceof PortOutlet) {
+      portInfo = info(port);
+      port = null;
     } else if (port instanceof PortInfo) {
       portInfo = port;
       port = null;

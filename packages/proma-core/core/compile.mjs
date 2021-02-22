@@ -44,8 +44,9 @@ export class Compilation {
 
       // Outputs
 
-      for (const portInfo of rootInfo.outputDataPorts) {
-        const block = compiler(portInfo)(null, scope, codeWrapper);
+      for (const portOutlet of rootInfo.outputDataPorts) {
+        const portInfo = info(portOutlet);
+        const block = compiler(portInfo)(portOutlet, scope, codeWrapper);
         this.outputBlocksByPort[portInfo.name] = block;
       }
     } else {
@@ -53,29 +54,36 @@ export class Compilation {
 
       // Output data with compute but no computeOn will be initialized once
       // This covers stuff like handlers
-      for (const portInfo of rootInfo.outputDataPorts) {
+      for (const portOutlet of rootInfo.outputDataPorts) {
+        const portInfo = info(portOutlet);
         if (portInfo.compute && portInfo.computeOn.length === 0) {
-          const block = compiler(portInfo)(null, scope, codeWrapper);
+          const block = compiler(portInfo)(portOutlet, scope, codeWrapper);
           this.outputBlocksByPort[portInfo.name] = block;
         }
       }
 
       // Output flows
 
-      for (const portInfo of rootInfo.outputFlowPorts) {
+      for (const portOutlet of rootInfo.outputFlowPorts) {
+        const portInfo = info(portOutlet);
         if (portInfo.computeOutputs.length === 0) continue;
 
         this.updateBlocksByPort[portInfo.name] = portInfo.computeOutputs.map(
           (outPortInfo) => {
-            return compiler(outPortInfo)(null, scope, codeWrapper);
+            return compiler(outPortInfo)(
+              rootInfo.getOutputPortOutlet(outPortInfo.name),
+              scope,
+              codeWrapper,
+            );
           },
         );
       }
 
       // Executions
 
-      for (const portInfo of rootInfo.inputFlowPorts) {
-        const block = compiler(portInfo)(null, scope, codeWrapper);
+      for (const portOutlet of rootInfo.inputFlowPorts) {
+        const portInfo = info(portOutlet);
+        const block = compiler(portInfo)(portOutlet, scope, codeWrapper);
         this.executeBlocksByPort[portInfo.name] = block;
       }
 
@@ -140,9 +148,9 @@ function usedIngressEvents(chip, scope) {
   return ingresses;
 }
 
-function isOutlet(portInfo, scope) {
+function isOutlet(port, scope) {
   const rootInfo = info(scope[scope.length - 1]);
-  return rootInfo === portInfo.chipInfo;
+  return rootInfo === info(port).chipInfo;
 }
 
 //
@@ -240,9 +248,8 @@ function executeCompiler(
         const port = chip.out[portName];
         // TODO verify port? how?
 
-        const portInfo = info(port);
-        if (isOutlet(portInfo, outterScope)) {
-          return codeWrapper.compileOutputFlowOutlet(portInfo);
+        if (isOutlet(port, outterScope)) {
+          return codeWrapper.compileOutputFlowOutlet(port);
         }
 
         const parentChip = scope[0];
@@ -269,9 +276,9 @@ function executeCompiler(
         const port = chip.out[portName];
         const portInfo = info(port);
 
-        if (isOutlet(portInfo, outterScope)) {
+        if (isOutlet(port, outterScope)) {
           return codeWrapper.compileOutputDataOutlet(
-            portInfo,
+            port,
             assignExpressionBlock,
           );
         }
@@ -346,22 +353,22 @@ function makeOutputFlowSinkCompiler(portInfo) {
   //     const then = outputFlow('then');
   //     const out = outputData('out', then);
   //
-  return function findSourceCompiler(port, outterScope, codeWrapper) {
+  return function findSourceCompiler(portInstance, outterScope, codeWrapper) {
     const [chip, ...scope] = outterScope;
 
-    assertInfo(port, portInfo);
+    assertInfo(portInstance, portInfo);
     assertInfo(chip, portInfo.chipInfo);
 
     // When compiling an outlet, we just defer to the wrapper. This should
     // generate an execution of the output flow outlet in some fashon.
-    if (isOutlet(portInfo, outterScope)) {
-      return codeWrapper.compileOutputFlowOutlet(portInfo);
+    if (isOutlet(portInstance, outterScope)) {
+      return codeWrapper.compileOutputFlowOutlet(portInstance);
     }
 
     const parentChip = scope[0];
-    assert(parentChip, `Port "${port.fullName}" should be an outlet`);
+    assert(parentChip, `Port "${portInstance.fullName}" should be an outlet`);
 
-    const conns = info(parentChip).getConnectedPorts(port, parentChip);
+    const conns = info(parentChip).getConnectedPorts(portInstance, parentChip);
     assert(conns.length <= 1, 'An output flow can only have one connection');
     const conn = conns[0];
 
@@ -456,21 +463,25 @@ function makeInputFlowSourceCompiler(portInfo) {
 
   // When an `execute` is specified, we compile that
   if (portInfo.execute) {
-    return function useExecuteCompiler(port, outterScope, codeWrapper) {
+    return function useExecuteCompiler(portInstance, outterScope, codeWrapper) {
       const executeExpression = executeCompiler(portInfo)(
-        port,
+        portInstance,
         outterScope,
         codeWrapper,
       );
 
       // If this port is connected multiple times, we want this
       // as a function and call to that function instead (inlet)
-      if (!isOutlet(portInfo, outterScope)) {
+      if (!isOutlet(portInstance, outterScope)) {
         const [chip, ...scope] = outterScope;
         const parentChip = scope[0];
-        const connCount = info(parentChip).getConnectedPorts(port).length;
+        const connCount = info(parentChip).getConnectedPorts(portInstance)
+          .length;
         if (connCount > 1) {
-          return codeWrapper.compileFunctionInlet(port, executeExpression);
+          return codeWrapper.compileFunctionInlet(
+            portInstance,
+            executeExpression,
+          );
         }
       }
 
@@ -481,12 +492,16 @@ function makeInputFlowSourceCompiler(portInfo) {
   // An input flow without an execute could be a forwarding outlet.
   // We follow that to the next connection or generate a noop if there is
   // no connection.
-  return function forwardSourceCompiler(port, outterScope, codeWrapper) {
+  return function forwardSourceCompiler(
+    portInstance,
+    outterScope,
+    codeWrapper,
+  ) {
     // Special cases for outlet compilation
     // TODO perhaps cleanup
-    if (isOutlet(portInfo, outterScope)) {
+    if (isOutlet(portInstance, outterScope)) {
       const rootChip = outterScope[0];
-      const conns = info(rootChip).getConnectedPorts(portInfo);
+      const conns = info(rootChip).getConnectedPorts(portInfo, rootChip);
       assert(
         conns.length <= 1,
         'Only one connection is allowed for input flow outlets',
@@ -517,13 +532,13 @@ function makeInputFlowSourceCompiler(portInfo) {
     // If not an outlet, then we follow the connections in the upstream direction
     // input flow -> output flow and compile what we find
 
-    assertInfo(port, portInfo);
+    assertInfo(portInstance, portInfo);
     const [chip, ...scope] = outterScope;
 
     const parentChip = scope[0];
-    assert(parentChip, `Port "${port.fullName}" should be an outlet`);
+    assert(parentChip, `Port "${portInstance.fullName}" should be an outlet`);
 
-    const conns = info(chip).getConnectedPorts(port, chip);
+    const conns = info(chip).getConnectedPorts(portInstance, chip);
     assert(conns.length <= 1, 'unimplemented multi-conns');
     const conn = conns[0];
 
@@ -549,8 +564,8 @@ function makeInputDataSinkCompiler(portInfo) {
   return function forwardDataCompiler(portInstance, outterScope, codeWrapper) {
     assertInfo(portInstance, portInfo);
 
-    if (isOutlet(portInfo, outterScope)) {
-      return codeWrapper.compileInputDataOutlet(portInfo);
+    if (isOutlet(portInstance, outterScope)) {
+      return codeWrapper.compileInputDataOutlet(portInstance);
     }
 
     const [chip, ...scope] = outterScope;
@@ -640,16 +655,13 @@ function makeOutputDataSourceCompiler(portInfo) {
       const [chip, ...scope] = outterScope;
 
       // We find the connected input
-      const conn = info(chip).getConnectedPorts(
-        portInstance || portInfo,
-        chip,
-      )[0];
+      const conn = info(chip).getConnectedPorts(portInstance, chip)[0];
 
       assert(conn, `Output data port "${portInfo.name}" must be connected`);
 
       // If connecting to an output data outlet (ie: an output port of the root
       // chip)
-      if (isOutlet(portInfo, outterScope)) {
+      if (isOutlet(portInstance, outterScope)) {
         let assignExpressionBlock;
         // The connected input data port may also be an outlet. This happens
         // when "passing through" values on the root chip directly from an input
@@ -670,7 +682,7 @@ function makeOutputDataSourceCompiler(portInfo) {
 
         // Assign to an outlet (aka a non connected port of the root chip)
         return codeWrapper.compileOutputDataOutlet(
-          portInfo,
+          portInstance,
           assignExpressionBlock,
         );
       } else {
@@ -702,8 +714,11 @@ function makeOutputDataSourceCompiler(portInfo) {
     // the current output data port is an outlet, or we just read the inlet
     // variable name. See forwardSourceCompiler#findSourceCompiler for more.
     if (portInfo.computeOn.length > 0) {
-      if (isOutlet(portInfo, outterScope)) {
-        return codeWrapper.compileOutputDataOutlet(portInfo, outputExpression);
+      if (isOutlet(portInstance, outterScope)) {
+        return codeWrapper.compileOutputDataOutlet(
+          portInstance,
+          outputExpression,
+        );
       } else {
         return codeWrapper.compileVariableInlet(portInstance);
       }
@@ -738,15 +753,12 @@ function makeOutputDataSourceCompiler(portInfo) {
 
     if (shouldInline === 'once') {
       return codeWrapper.compileVariableInlet(
-        portInstance || portInfo,
+        portInstance,
         outputExpression,
         'const',
       );
     } else if (shouldInline === false) {
-      return codeWrapper.compileFunctionInlet(
-        portInstance || portInfo,
-        outputExpression,
-      );
+      return codeWrapper.compileFunctionInlet(portInstance, outputExpression);
     }
 
     return outputExpression;

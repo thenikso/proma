@@ -44,26 +44,26 @@ export default class ClassWrapper {
     this.chipInfo = chipInfo;
     // TODO reset inlets
   }
-  compileInputDataOutlet(portInfo) {
-    return memberExpression(identifier('$in'), identifier(portInfo.name));
+  compileInputDataOutlet(port) {
+    return memberExpression(identifier('$in'), identifier(port.name));
   }
   // Generate a call to a continuation wrapper:
   //     this.out.then()
-  compileOutputFlowOutlet(portInfo) {
+  compileOutputFlowOutlet(port) {
     return callExpression(
       memberExpression(
         memberExpression(thisExpression(), identifier('out')),
-        identifier(portInfo.name),
+        identifier(port.name),
       ),
       [],
     );
   }
   // Generate an assignment to an outlet:
   //     this.out.value = <assignExpressionBlock>
-  compileOutputDataOutlet(portInfo, assignExpressionBlock) {
+  compileOutputDataOutlet(port, assignExpressionBlock) {
     return assignmentExpression(
       '=',
-      memberExpression(identifier('$out'), identifier(portInfo.name)),
+      memberExpression(identifier('$out'), identifier(port.name)),
       assignExpressionBlock,
     );
   }
@@ -197,18 +197,18 @@ export default class ClassWrapper {
       replaceAstPath(
         program,
         [...inPath, ...sealObjPath],
-        this.chipInfo.inputDataPorts.map((portInfo) => {
+        this.chipInfo.inputDataPorts.map((portOutlet) => {
           let init = identifier('undefined');
-          const port = this.chip.in[portInfo.name];
-          if (portInfo.canonical) {
+          const port = this.chip.in[portOutlet.name];
+          if (portOutlet.canonical) {
             canonical.push([
-              portInfo.name,
+              portOutlet.name,
               port.defaultValue !== port.value ? port.value : undefined,
             ]);
             if (typeof port.defaultValue !== 'undefined') {
               init = logicalExpression(
                 '||',
-                identifier(portInfo.name),
+                identifier(portOutlet.name),
                 literalCompiler(port.defaultValue),
               );
             } else {
@@ -232,8 +232,8 @@ export default class ClassWrapper {
           }
           const res = property(
             'init',
-            identifier(portInfo.name),
-            init || identifier(portInfo.name),
+            identifier(portOutlet.name),
+            init || identifier(portOutlet.name),
           );
           res.shorthand = !init;
           return res;
@@ -243,21 +243,21 @@ export default class ClassWrapper {
 
       // Input accessors
       thisInBody.push(
-        ...this.chipInfo.inputDataPorts.map((portInfo) => {
+        ...this.chipInfo.inputDataPorts.map((portOutlet) => {
           return property(
             'init',
-            identifier(portInfo.name),
+            identifier(portOutlet.name),
             objectExpression([
               property(
                 'init',
                 identifier('get'),
-                parse(`() => () => $in.${portInfo.name}`).program.body[0]
+                parse(`() => () => $in.${portOutlet.name}`).program.body[0]
                   .expression,
               ),
               property(
                 'init',
                 identifier('set'),
-                parse(`(value) => { $in.${portInfo.name} = value }`).program
+                parse(`(value) => { $in.${portOutlet.name} = value }`).program
                   .body[0].expression,
               ),
             ]),
@@ -288,8 +288,8 @@ export default class ClassWrapper {
 
     if (this.chipInfo.inputFlowPorts.length > 0) {
       thisInBody.push(
-        ...this.chipInfo.inputFlowPorts.map((portInfo) => {
-          let flowBlock = compiledFlowPorts[portInfo.name];
+        ...this.chipInfo.inputFlowPorts.map((portOutlet) => {
+          let flowBlock = compiledFlowPorts[portOutlet.name];
           if (!flowBlock) {
             // TODO connected flow?
             return noop();
@@ -302,7 +302,7 @@ export default class ClassWrapper {
           }
           return property(
             'init',
-            identifier(portInfo.name),
+            identifier(portOutlet.name),
             objectExpression([
               property(
                 'init',
@@ -346,15 +346,15 @@ export default class ClassWrapper {
 
     // Data outputs with no compute (aka output data storage)
     const plainOutputDataPorts = this.chipInfo.outputDataPorts.filter(
-      (portInfo) => !compiledOutputPorts[portInfo.name],
+      (portOutlet) => !compiledOutputPorts[portOutlet.name],
     );
     if (plainOutputDataPorts.length > 0) {
       // Regular outputs
       this$OutBody.push(
-        ...plainOutputDataPorts.map((portInfo) => {
+        ...plainOutputDataPorts.map((portOutlet) => {
           return property(
             'init',
-            identifier(portInfo.name),
+            identifier(portOutlet.name),
             identifier('undefined'),
           );
         }),
@@ -363,15 +363,15 @@ export default class ClassWrapper {
 
       // Input accessors
       thisOutBody.push(
-        ...plainOutputDataPorts.map((portInfo) => {
+        ...plainOutputDataPorts.map((portOutlet) => {
           return property(
             'init',
-            identifier(portInfo.name),
+            identifier(portOutlet.name),
             objectExpression([
               property(
                 'init',
                 identifier('value'),
-                parse(`() => $out.${portInfo.name}`).program.body[0].expression,
+                parse(`() => $out.${portOutlet.name}`).program.body[0].expression,
               ),
             ]),
           );
@@ -405,10 +405,10 @@ export default class ClassWrapper {
     if (this.chipInfo.outputFlowPorts.length > 0) {
       // Add continuations inits in `$out = { ... }`
       this$OutBody.push(
-        ...this.chipInfo.outputFlowPorts.map((portInfo) => {
+        ...this.chipInfo.outputFlowPorts.map((portOutlet) => {
           return property(
             'init',
-            identifier(portInfo.name),
+            identifier(portOutlet.name),
             identifier('undefined'),
           );
         }),
@@ -417,10 +417,10 @@ export default class ClassWrapper {
 
       // Add this.out` functions to wrap continuations
       thisOutBody.push(
-        ...this.chipInfo.outputFlowPorts.map((portInfo) =>
+        ...this.chipInfo.outputFlowPorts.map((portOutlet) =>
           property(
             'init',
-            identifier(portInfo.name),
+            identifier(portOutlet.name),
             objectExpression([
               property(
                 'init',
@@ -430,12 +430,12 @@ export default class ClassWrapper {
                   blockStatement([
                     // Add output continuation set trap
                     parse(`() => { if (typeof value !== "undefined") {
-                      $out.${portInfo.name} = value;
+                      $out.${portOutlet.name} = value;
                       return;
                     }}`).program.body[0].expression.body.body[0],
                     // Update output ports with `computeOn` connected to this
                     // flow outlet
-                    ...(compiledUpdatesOnPorts[portInfo.name] || []).map((b) =>
+                    ...(compiledUpdatesOnPorts[portOutlet.name] || []).map((b) =>
                       expressionStatement(b),
                     ),
                     // TODO add output updates here
@@ -445,7 +445,7 @@ export default class ClassWrapper {
                           '||',
                           memberExpression(
                             identifier('$out'),
-                            identifier(portInfo.name),
+                            identifier(portOutlet.name),
                           ),
                           arrowFunctionExpression([], blockStatement([])),
                         ),

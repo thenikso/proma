@@ -1,4 +1,5 @@
 import recast from '../vendor/recast.mjs';
+import { info } from './utils.mjs';
 
 const {
   parse,
@@ -88,9 +89,9 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
         // TODO consider name shadowing!
         const portName = callee.name;
         // Collect input data
-        let sourcePortInfo = chipInfo.getInputPortInfo(portName);
-        if (sourcePortInfo) {
-          if (sourcePortInfo.isFlow) {
+        let sourcePortOutlet = chipInfo.getInputPortOutlet(portName);
+        if (sourcePortOutlet) {
+          if (info(sourcePortOutlet).isFlow) {
             throw new Error('Can not execute input flows!');
           }
           replaceInputData[portName] = {
@@ -100,10 +101,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
           return false;
         }
         // Collect output flows and data
-        sourcePortInfo = chipInfo.getOutputPortInfo(portName);
-        if (sourcePortInfo) {
+        sourcePortOutlet = chipInfo.getOutputPortOutlet(portName);
+        if (sourcePortOutlet) {
           // TODO may need to save call args and/or compile it first
-          if (sourcePortInfo.isFlow) {
+          if (info(sourcePortOutlet).isFlow) {
             // TODO check that it is used as a continuation, not an expression
             replaceOutputFlows[portName] = {
               path: pathFromNodePath(path),
