@@ -55,7 +55,7 @@ const chipJSON = {
     {
       name: 'handle',
       kind: 'data',
-      compute: '() => (o) => { output(o); then(); }',
+      compute: '() => (o) => {\n        output(o);\n        then();\n      }',
       inline: 'once',
       allowSideEffects: true,
     },

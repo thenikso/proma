@@ -17,7 +17,6 @@ export function serializeChipInstance(chip) {
   let canonicalData = [];
   const initData = {};
   for (const portInfo of chipInfo.inputDataPorts) {
-    // const portInfo = info(portOutlet);
     const portValue = chip.in[portInfo.name].value;
     if (portInfo.canonical) {
       if (portInfo.isVariadic) {
@@ -53,9 +52,14 @@ export function serializeChipInfo(chipInfo) {
   const chips = chipInfo.chips.map(toJSON);
   const connections = Array.from(chipInfo.sinkConnection.entries()).map(
     ([sink, source]) => {
-      // TODO reorder in case of outlets
-      const sourceName = source.fullName || source.name;
-      const sinkName = sink.fullName || sink.name;
+      let sourceName = source.fullName || source.name;
+      let sinkName = sink.fullName || sink.name;
+      // If one of the ports is a flow outlet we need to invert the logic
+      if (sink.__proto__ !== source.__proto__ && (sink.isFlow || source.isFlow)) {
+        const tmp = sourceName;
+        sourceName = sinkName;
+        sinkName = tmp;
+      }
       return {
         source: sourceName,
         sink: sinkName,
@@ -134,9 +138,7 @@ export function deserializeChip(chip, data) {
   const portsToCompile = [];
   for (const port of data.inputs || []) {
     if (port.kind === 'flow') {
-      build.addInputFlowPort(port.name, {
-        execute: port.execute && makePortFunction(port.execute),
-      });
+      build.addInputFlowPort(port.name);
       if (port.execute) {
         portsToCompile.push(port);
       }
@@ -178,9 +180,4 @@ export function deserializeChip(chip, data) {
     }
   }
   return build.Chip;
-}
-
-function makePortFunction(string) {
-  const makeRes = new Function('return (' + string + ')');
-  return makeRes();
 }

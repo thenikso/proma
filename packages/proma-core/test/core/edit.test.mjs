@@ -43,8 +43,8 @@ describe('[core/edit] edit connections', async (assert) => {
       ],
       connections: [
         {
-          source: 'then',
-          sink: 'exec',
+          source: 'exec',
+          sink: 'then',
         },
       ],
     },
@@ -80,16 +80,16 @@ describe('[core/edit] edit sub-chips', async (assert) => {
     ],
     connections: [
       {
-        source: 'Pass.in.exec',
-        sink: 'exec',
+        source: 'exec',
+        sink: 'Pass.in.exec',
       },
       {
         source: 'Pass.out.output',
         sink: 'value',
       },
       {
-        source: 'then',
-        sink: 'Pass.out.then',
+        source: 'Pass.out.then',
+        sink: 'then',
       },
     ],
   };
