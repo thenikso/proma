@@ -55,7 +55,7 @@ const chipJSON = {
     {
       name: 'handle',
       kind: 'data',
-      compute: '() => (o) => {\n        output(o);\n        then();\n      }',
+      compute: '() => (o) => { output(o); then(); }',
       inline: 'once',
       allowSideEffects: true,
     },
@@ -69,12 +69,12 @@ const chipJSON = {
   ],
   connections: [
     {
-      source: 'Pass.in.exec',
-      sink: 'exec',
+      source: 'exec',
+      sink: 'Pass.in.exec',
     },
     {
-      source: 'then',
-      sink: 'Pass.out.then',
+      source: 'Pass.out.then',
+      sink: 'then',
     },
     {
       source: 'input',
@@ -115,7 +115,7 @@ describe('[core/serialize] to JSON', async (assert) => {
   });
 });
 
-describe.skip('[core/serialize] from JSON', async (assert) => {
+describe.only('[core/serialize] from JSON', async (assert) => {
   assert({
     given: 'a chip in JSON format',
     should: 'deserialize to a Chip class',
@@ -125,15 +125,15 @@ describe.skip('[core/serialize] from JSON', async (assert) => {
 
   assert({
     given: 'a chip from JSON',
-    should: 'have a ready state',
-    actual: chip.fromJSON(chipJSON).isReady,
+    should: 'have a loaded state',
+    actual: chip.fromJSON(chipJSON).isLoaded,
     expected: true,
   });
 
   assert({
     given: 'a chip from JSON',
-    should: 'wait for it to be ready',
-    actual: await chip.fromJSON(chipJSON).ready,
+    should: 'wait for it to be loaded',
+    actual: await chip.fromJSON(chipJSON).loaded,
     expected: true,
   });
 
@@ -177,24 +177,24 @@ describe.skip('[core/serialize] from JSON with async chips', async (assert) => {
 
   assert({
     given: 'a JSON chip with async chips',
-    should: 'have a false ready state',
-    actual: chip.fromJSON(chipJSON).isReady,
+    should: 'have a false loaded state',
+    actual: chip.fromJSON(chipJSON).isLoaded,
     expected: false,
   });
 
   assert({
     given: 'a JSON chip with async chips',
-    should: 'wait for it to be ready',
-    actual: await chip.fromJSON(chipJSON).ready,
+    should: 'wait for it to be loaded',
+    actual: await chip.fromJSON(chipJSON).loaded,
     expected: true,
   });
 
   assert({
     given: 'a JSON chip with async chips',
-    should: 'compile and run after being ready',
+    should: 'compile and run after being loaded',
     actual: await (async () => {
       const C = chip.fromJSON(chipJSON);
-      await C.ready;
+      await C.loaded;
       return compileAndRun(C, (chip) => {
         const res = [];
         chip.out.then(() => {

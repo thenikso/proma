@@ -206,9 +206,12 @@ export class ChipInfo {
     if (side === 'out' || defaultSide === 'out') {
       return this.getOutputPortOutlet(portName);
     }
-    return (
-      this.getInputPortOutlet(portName) || this.getOutputPortOutlet(portName)
-    );
+    const port1 = this.getInputPortOutlet(portName);
+    const port2 = this.getOutputPortOutlet(portName);
+    if (port1 && port2) {
+      throw new Error(`Ambiguos outlet name "${portName}"`);
+    }
+    return port1 || port2;
   }
 
   get inputFlowPorts() {
@@ -422,6 +425,20 @@ export class ChipInfo {
     for (const p of connectedPorts) {
       info(p.chip).visitConnectedPorts(p, visitor);
     }
+  }
+
+  //
+  // Loaded
+  //
+
+  get isLoaded() {
+    return this.chips.filter((c) => !(c instanceof Chip)).length === 0;
+  }
+
+  get loaded() {
+    return Promise.all(this.chips.filter((c) => !(c instanceof Chip))).then(
+      () => true,
+    );
   }
 
   //

@@ -170,6 +170,14 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
         const compilation = new Compilation(chipInfo, this);
         return compilation.compile(wrapper);
       }
+
+      static get isLoaded() {
+        return chipInfo.isLoaded;
+      }
+
+      static get loaded() {
+        return chipInfo.loaded;
+      }
     }
 
     const ChipClass =

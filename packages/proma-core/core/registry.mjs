@@ -52,33 +52,35 @@ function initRegistry() {
     return true;
   }
 
-  async function loadChip(chipURI) {
+  function loadChip(chipURI) {
     if (loadedChips.has(chipURI)) {
       return loadedChips.get(chipURI);
     }
-    const selectedResolvers = resolvers
-      .map((resolver) => ({ match: resolver.test(chipURI), resolver }))
-      .filter(({ match }) => !!match);
-    if (selectedResolvers.length === 0) {
-      throw new Error(`Can not resolve chip URI: ${chipURI}`);
-    }
-    // TODO resolver's priority?
-    let res;
-    let error;
-    for (const { match, resolver } of selectedResolvers) {
-      try {
-        res = await resolver.load(chipURI, match);
-        break;
-      } catch (e) {
-        if (!error) {
-          error = e;
+    return Promise.resolve().then(async () => {
+      const selectedResolvers = resolvers
+        .map((resolver) => ({ match: resolver.test(chipURI), resolver }))
+        .filter(({ match }) => !!match);
+      if (selectedResolvers.length === 0) {
+        throw new Error(`Can not resolve chip URI: ${chipURI}`);
+      }
+      // TODO resolver's priority?
+      let res;
+      let error;
+      for (const { match, resolver } of selectedResolvers) {
+        try {
+          res = await resolver.load(chipURI, match);
+          break;
+        } catch (e) {
+          if (!error) {
+            error = e;
+          }
         }
       }
-    }
-    if (!res) {
-      throw error || new Error(`Could not load URI: ${chipURI}`);
-    }
-    return res;
+      if (!res) {
+        throw error || new Error(`Could not load URI: ${chipURI}`);
+      }
+      return res;
+    });
   }
 
   function addResolver(resolver) {
