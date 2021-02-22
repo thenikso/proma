@@ -2,7 +2,16 @@
   "name": "@proma/core",
   "version": "0.1.0",
   "description": "Core engine of Proma",
-  "main": "core/index.mjs",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "author": "Nicola Peduzzi <thenikso@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "17.1.0",
+    "@rollup/plugin-node-resolve": "11.2.0",
+    "rollup": "2.39.0"
+  }
 }

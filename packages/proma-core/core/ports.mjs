@@ -12,7 +12,7 @@ export class Port extends Function {
     super();
 
     const self = makePortRun(portInfo);
-    self.__proto__ = Port.prototype;
+    Object.setPrototypeOf(self, Port.prototype);
 
     self.explicitValue = portInfo.isVariadic ? [] : undefined;
 
@@ -139,9 +139,10 @@ export class PortList {
 
 export class PortOutlet extends Function {
   constructor(portInfo) {
-    const outlet = makePortRun(portInfo, true);
+    super();
 
-    outlet.__proto__ = PortOutlet.prototype;
+    const outlet = makePortRun(portInfo, true);
+    Object.setPrototypeOf(outlet, PortOutlet.prototype);
 
     info(outlet, portInfo);
 

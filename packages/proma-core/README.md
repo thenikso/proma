@@ -50,9 +50,10 @@
 - [x] save JSON of a chip
 - [x] chip registry (draft)
 - [x] transform URI in valid js name when using it for chips ids
-- [ ] chips is a Map and can contain promisess that will resolve to chips
+- [x] chips is a Map and can contain promisess that will resolve to chips
       allowing optimistic chip creation. add `async ready` and `get isReady`
-- [ ] create chip from JSON
+- [x] create chip from JSON
+- [ ] build for import in svelte
 - [ ] editability continued (remove stuff)
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
