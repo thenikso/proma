@@ -52,10 +52,15 @@ export function serializeChipInfo(chipInfo) {
   const outputs = chipInfo.outputs.map(toJSON);
   const chips = chipInfo.chips.map(toJSON);
   const connections = Array.from(chipInfo.sinkConnection.entries()).map(
-    ([sink, source]) => ({
-      source: source.fullName || source.name,
-      sink: sink.fullName || sink.name,
-    }),
+    ([sink, source]) => {
+      // TODO reorder in case of outlets
+      const sourceName = source.fullName || source.name;
+      const sinkName = sink.fullName || sink.name;
+      return {
+        source: sourceName,
+        sink: sinkName,
+      };
+    },
   );
   const res = {
     URI: chipInfo.URI,
@@ -126,11 +131,15 @@ export function deserializeChip(chip, data) {
   // TODO validate `data`
   const res = chip(data.URI);
   const build = res.edit();
+  const portsToCompile = [];
   for (const port of data.inputs || []) {
     if (port.kind === 'flow') {
       build.addInputFlowPort(port.name, {
-        execute: port.execute && stringToJavascript(port.execute),
+        execute: port.execute && makePortFunction(port.execute),
       });
+      if (port.execute) {
+        portsToCompile.push(port);
+      }
     } else {
       build.addInputDataPort(port.name, {
         canonical: port.canonical,
@@ -144,13 +153,15 @@ export function deserializeChip(chip, data) {
       build.addOutputFlowPort(port.name);
     } else {
       build.addOutputDataPort(port.name, {
-        compute: port.compute && stringToJavascript(port.compute),
         computeOn: (port.computeOn || []).map((portPath) =>
           build.getPort(portPath, 'out'),
         ),
         inline: port.inline,
         allowSideEffects: port.allowSideEffects,
       });
+      if (port.compute) {
+        portsToCompile.push(port);
+      }
     }
   }
   for (const chipData of data.chips || []) {
@@ -159,10 +170,17 @@ export function deserializeChip(chip, data) {
   for (const conn of data.connections || []) {
     build.addConnection(conn.source, conn.sink);
   }
+  for (const port of portsToCompile) {
+    if (port.execute) {
+      build.setPortExecute(port.name, port.execute);
+    } else if (port.compute) {
+      build.setPortCompute(port.name, port.compute);
+    }
+  }
   return build.Chip;
 }
 
-function stringToJavascript(string) {
+function makePortFunction(string) {
   const makeRes = new Function('return (' + string + ')');
   return makeRes();
 }

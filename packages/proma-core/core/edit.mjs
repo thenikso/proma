@@ -175,6 +175,50 @@ export class EditableChipInfo {
   movePort(port, beforePort) {}
 
   //
+  // Single port
+  //
+
+  setPortExecute(portName, code) {
+    if (typeof code !== 'string') {
+      throw new Error('code should be a string');
+    }
+    const chipInfo = info(this);
+    const portOutlet = chipInfo.getInputPortOutlet(portName);
+    if (!portOutlet) {
+      throw new Error(`No port outlet named "${portName}"`);
+    }
+    const portInfo = info(portOutlet);
+    if (!portInfo.isFlow) {
+      throw new Error('Can only set "execute" function to input flow ports');
+    }
+    const outlets = chipInfo.inputs.filter((p) => info(p).isData);
+    outlets.push(...chipInfo.outputs);
+    portInfo.execute = makeFunction(code, outlets);
+    return this;
+  }
+
+  setPortCompute(portName, code) {
+    if (typeof code !== 'string') {
+      throw new Error('code should be a string');
+    }
+    const chipInfo = info(this);
+    const portOutlet = chipInfo.getOutputPortOutlet(portName);
+    if (!portOutlet) {
+      throw new Error(`No port outlet named "${portName}"`);
+    }
+    const portInfo = info(portOutlet);
+    if (!portInfo.isData) {
+      throw new Error('Can only set "compute" function to output data ports');
+    }
+    const outlets = chipInfo.inputs.filter((p) => info(p).isData);
+    if (portInfo.allowSideEffects) {
+      outlets.push(...chipInfo.outputs);
+    }
+    portInfo.compute = makeFunction(code, outlets);
+    return this;
+  }
+
+  //
   // Connections
   //
 
@@ -196,4 +240,11 @@ export class EditableChipInfo {
 
   // TODO rememeber to disable ingress?
   removeConnection(portA, portB) {}
+}
+
+function makeFunction(code, outlets) {
+  const outletsNames = outlets.map((p) => p.name);
+  const makeFunc = new Function(...outletsNames, 'return (' + code + ')');
+  const res = makeFunc.apply(undefined, outlets);
+  return res;
 }

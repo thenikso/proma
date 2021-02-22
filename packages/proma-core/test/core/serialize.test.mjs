@@ -115,7 +115,7 @@ describe('[core/serialize] to JSON', async (assert) => {
   });
 });
 
-describe.only('[core/serialize] from JSON', async (assert) => {
+describe('[core/serialize] from JSON', async (assert) => {
   assert({
     given: 'a chip in JSON format',
     should: 'deserialize to a Chip class',
@@ -151,7 +151,82 @@ describe.only('[core/serialize] from JSON', async (assert) => {
       chip.out.handle()(9);
       return res;
     }),
-    expected: compileAndRunResult(js``, [3, 7, 9]),
+    expected: compileAndRunResult(
+      js`
+      class TestChipSerialize {
+        constructor(input, conf) {
+          const $in = Object.seal({
+            input: input || 3,
+            conf: conf || true
+          });
+
+          const $out = Object.seal({
+            output: undefined,
+            then: undefined
+          });
+
+          const $__handle = o => {
+            $out.output = o;
+            this.out.then();
+          };
+
+          let Pass__output;
+
+          Object.defineProperties(this.in = {}, {
+            input: {
+              get: () => () => $in.input,
+
+              set: value => {
+                $in.input = value;
+              }
+            },
+
+            conf: {
+              get: () => () => $in.conf,
+
+              set: value => {
+                $in.conf = value;
+              }
+            },
+
+            exec: {
+              value: () => {
+                Pass__output = $in.input;
+                this.out.then();
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            output: {
+              value: () => $out.output
+            },
+
+            handle: {
+              enumerable: true,
+              value: () => $__handle
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.then = value;
+                  return;
+                }
+
+                $out.output = Pass__output;
+                ($out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+        }
+      }`,
+      [3, 7, 7],
+    ),
   });
 });
 
