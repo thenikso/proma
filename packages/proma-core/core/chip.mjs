@@ -74,6 +74,10 @@ export class Chip {
   }
 }
 
+export function isChipClass(obj) {
+  return obj.__proto__ === Chip;
+}
+
 export class ChipInfo {
   constructor(URI) {
     // TODO validate name, qualifiedName instead?
