@@ -1,4 +1,11 @@
 import { info } from './utils.mjs';
+import { registry } from './registry.mjs';
+import { isChipClass } from './chip.mjs';
+import { PlaceholderChip } from './placeholder.mjs';
+
+//
+// Serialization
+//
 
 export function serializeChipInstance(chip) {
   const res = {
@@ -9,7 +16,8 @@ export function serializeChipInstance(chip) {
   const chipInfo = info(chip);
   let canonicalData = [];
   const initData = {};
-  for (const portInfo of chipInfo.inputDataPorts) {
+  for (const portOutlet of chipInfo.inputDataPorts) {
+    const portInfo = info(portOutlet);
     const portValue = chip.in[portInfo.name].value;
     if (portInfo.canonical) {
       if (portInfo.isVariadic) {
@@ -74,7 +82,7 @@ export function serializePortInfo(portInfo) {
   };
   // Input flow
   if (typeof portInfo.execute !== 'undefined') {
-    res.execute = String(portInfo.execute);
+    res.execute = funcToString(portInfo.execute);
   }
   // Input data
   if (portInfo.canonical === true) {
@@ -91,7 +99,7 @@ export function serializePortInfo(portInfo) {
   }
   // Output data
   if (typeof portInfo.compute !== 'undefined') {
-    res.compute = String(portInfo.compute);
+    res.compute = funcToString(portInfo.compute);
   }
   if (Array.isArray(portInfo.computeOn) && portInfo.computeOn.length > 0) {
     res.computeOn = portInfo.computeOn.map((p) => p.name);
@@ -99,5 +107,62 @@ export function serializePortInfo(portInfo) {
   if (typeof portInfo.inline !== 'undefined') {
     res.inline = portInfo.inline;
   }
+  if (portInfo.allowSideEffects) {
+    res.allowSideEffects = portInfo.allowSideEffects;
+  }
   return res;
+}
+
+function funcToString(func) {
+  // TODO use recast to clean this
+  return String(func);
+}
+
+//
+// Deserialization
+//
+
+export function deserializeChip(chip, data) {
+  // TODO validate `data`
+  const res = chip(data.URI);
+  const build = res.edit();
+  for (const port of data.inputs || []) {
+    if (port.kind === 'flow') {
+      build.addInputFlowPort(port.name, {
+        execute: port.execute && stringToJavascript(port.execute),
+      });
+    } else {
+      build.addInputDataPort(port.name, {
+        canonical: port.canonical,
+        conceiled: port.conceiled,
+        defaultValue: port.defaultValue,
+      });
+    }
+  }
+  for (const port of data.outputs || []) {
+    if (port.kind === 'flow') {
+      build.addOutputFlowPort(port.name);
+    } else {
+      build.addOutputDataPort(port.name, {
+        compute: port.compute && stringToJavascript(port.compute),
+        computeOn: (port.computeOn || []).map((portPath) =>
+          build.getPort(portPath, 'out'),
+        ),
+        inline: port.inline,
+        allowSideEffects: port.allowSideEffects,
+      });
+    }
+  }
+  for (const chipData of data.chips || []) {
+    build.addChip(chipData.chipURI, chipData.args, chipData.id);
+  }
+  for (const conn of data.connections || []) {
+    build.addConnection(conn.source, conn.sink);
+  }
+  return build.Chip;
+}
+
+function stringToJavascript(string) {
+  const makeRes = new Function('return (' + string + ')');
+  return makeRes();
 }

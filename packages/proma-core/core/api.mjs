@@ -3,6 +3,7 @@ import { Chip as ChipBase, ChipInfo } from './chip.mjs';
 import { runIngressEvents } from './run.mjs';
 import { EditableChipInfo } from './edit.mjs';
 import { Compilation } from './compile.mjs';
+import { deserializeChip } from './serialize.mjs';
 
 export const OnCreateEvent = event('OnCreate');
 export const OnDestroyEvent = event('OnDestroy');
@@ -97,6 +98,10 @@ export function event(name, ...ports) {
 
   return EventChip;
 }
+
+//
+// Implementations
+//
 
 function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
   function chip(uri, build) {
@@ -199,12 +204,6 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
         : undefined,
     );
   };
-  chip.fromJSON = function fromJSON(data) {
-    // TODO validate `data`
-    const res = chip(data.URI);
-    const build = res.edit();
-    // TODO build the chip
-    return build.Chip;
-  };
+  chip.fromJSON = (data) => deserializeChip(chip, data);
   return chip;
 }

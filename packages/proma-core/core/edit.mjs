@@ -1,5 +1,5 @@
 import { info } from './utils.mjs';
-import { Chip } from './chip.mjs';
+import { Chip, isChipClass } from './chip.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
 import { registry } from './registry.mjs';
 
@@ -81,7 +81,7 @@ export class EditableChipInfo {
   addChip(chipToAdd, canonicalValues, id) {
     if (typeof chipToAdd === 'string') {
       const chipClass = registry.load(chipToAdd);
-      if (chipClass.__proto__ === Chip) {
+      if (isChipClass(chipClass)) {
         chipToAdd = chipClass;
       } else {
         chipToAdd = new PlaceholderChip(chipClass, chipToAdd, canonicalValues);
@@ -90,7 +90,7 @@ export class EditableChipInfo {
       id = canonicalValues;
       canonicalValues = undefined;
     }
-    if (chipToAdd.__proto__ === Chip) {
+    if (isChipClass(chipToAdd)) {
       chipToAdd = new chipToAdd(...(canonicalValues || []));
     }
     if (id) {
@@ -111,6 +111,11 @@ export class EditableChipInfo {
   //
   // Ports
   //
+
+  getPort(path, side) {
+    const chipInfo = info(this);
+    return chipInfo.getPort(path, side);
+  }
 
   addInputFlowPort(name, config) {
     const chipInfo = info(this);

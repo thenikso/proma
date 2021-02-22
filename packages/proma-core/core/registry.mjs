@@ -105,6 +105,7 @@ function initRegistry() {
     list() {
       return loadedChips.keys();
     },
+    loader: addResolver,
   };
 
   return Object.freeze(registry);
