@@ -531,7 +531,7 @@
 >
   <svg
     bind:this={wiresEl}
-    style="position: absolute; top: 0; left: 0;"
+    class="BoardConnections"
     width="100%"
     height="100%"
     viewBox={wiresViewBox}
@@ -591,6 +591,12 @@
 
   .Board.grab * {
     pointer-events: none;
+  }
+
+  .BoardConnections {
+    position: absolute;
+    top: 0;
+    left: 0;
   }
 
   .BoardWrapper {

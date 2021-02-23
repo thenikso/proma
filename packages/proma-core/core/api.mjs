@@ -1,9 +1,10 @@
-import { context, assert } from './utils.mjs';
+import { context, assert, info } from './utils.mjs';
 import { Chip as ChipBase, ChipInfo } from './chip.mjs';
 import { runIngressEvents } from './run.mjs';
 import { EditableChipInfo } from './edit.mjs';
 import { Compilation } from './compile.mjs';
 import { deserializeChip } from './serialize.mjs';
+import { registry } from './registry.mjs';
 
 export const OnCreateEvent = event('OnCreate');
 export const OnDestroyEvent = event('OnDestroy');
@@ -104,11 +105,18 @@ export function event(name, ...ports) {
 //
 
 function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
-  function chip(uri, build) {
+  function chip(uri, build, configuration) {
     if (typeof uri !== 'string') {
       build = uri;
       uri = undefined;
     }
+    const config = Object.assign(
+      {
+        editable: true,
+        metadata: undefined,
+      },
+      configuration,
+    );
     const chipInfo = new ChipInfo(uri);
     context.push(chipInfo);
     const ingressEvents =
@@ -123,8 +131,8 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
     // - if input data but not flow it may not do what you expect
     // - if not using all input data in outputs/execs
     class Chip extends ChipBase {
-      constructor(...configValues) {
-        super(chipInfo, configValues);
+      constructor(...canonicalValues) {
+        super(chipInfo, canonicalValues);
         const parentChipInfo = context();
         // Add to current chip `build` execution
         if (parentChipInfo instanceof ChipInfo) {
@@ -148,17 +156,17 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
         }
       }
 
+      compile(wrapper) {
+        const compilation = new Compilation(chipInfo, this);
+        return compilation.compile(wrapper);
+      }
+
+      //
+      // Static public API
+      //
+
       static get URI() {
         return chipInfo.URI;
-      }
-
-      static toJSON() {
-        return chipInfo.toJSON();
-      }
-
-      // TODO accept an optional new "build" function that can have deleteChip..?
-      static edit() {
-        return new EditableChipInfo(this, chipInfo);
       }
 
       static compile(wrapper) {
@@ -166,9 +174,36 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
         return compilation.compile(wrapper);
       }
 
-      compile(wrapper) {
-        const compilation = new Compilation(chipInfo, this);
-        return compilation.compile(wrapper);
+      static toJSON() {
+        const chipData = chipInfo.toJSON();
+        if (!this.editable) {
+          chipData.editable = false;
+        }
+        if (this.metadata) {
+          // TODO clone-deep
+          chipData.metadata = this.metadata;
+        }
+        return chipData;
+      }
+
+      static get metadata() {
+        return config.metadata;
+      }
+
+      static set metadata(value) {
+        config.metadata = value;
+      }
+
+      static get editable() {
+        return config.editable;
+      }
+
+      // TODO accept an optional new "build" function that can have deleteChip..?
+      static edit() {
+        if (!this.editable) {
+          throw new Error('Chip is not editable');
+        }
+        return new EditableChipInfo(this, chipInfo);
       }
 
       static get isLoaded() {
@@ -178,14 +213,47 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
       static get loaded() {
         return chipInfo.loaded;
       }
+
+      static get inputOutlets() {
+        return chipInfo.inputs.slice();
+      }
+
+      static get outputOutlets() {
+        return chipInfo.outputs.slice();
+      }
+
+      static get chips() {
+        return chipInfo.chips.slice();
+      }
+
+      static get inactiveIngresses() {
+        // TODO return chipInfo.ingressEvents without the one in chips
+      }
+
+      static get connections() {
+        return Array.from(chipInfo.sinkConnection.entries()).map(
+          ([sinkPort, sourcePort]) => {
+            let source = { chip: sourcePort.chip, port: sourcePort };
+            let sink = { chip: sinkPort.chip, port: sinkPort };
+            // If one of the ports is a flow outlet we need to invert the logic
+            if (sinkPort.isFlow || (info(sinkPort) && info(sinkPort).isFlow)) {
+              const tmp = source;
+              source = sink;
+              sink = tmp;
+            }
+            return {
+              source,
+              sink,
+            };
+          },
+        );
+      }
     }
 
     const ChipClass =
       typeof $subclassChip === 'function' ? $subclassChip(Chip) : Chip;
 
-    if (typeof promaRegistry !== 'undefined') {
-      promaRegistry.add(ChipClass);
-    }
+    registry.add(ChipClass);
 
     return ChipClass;
   }
@@ -212,6 +280,10 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
         : undefined,
     );
   };
-  chip.fromJSON = (data) => deserializeChip(chip, data);
+  chip.fromJSON = (data) => {
+    const ChipClass = deserializeChip(chip, data, data.editable !== false);
+    ChipClass.metadata = data.metadata;
+    return ChipClass;
+  };
   return chip;
 }

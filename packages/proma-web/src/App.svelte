@@ -1,48 +1,42 @@
 <script>
-  import { Board, Chip, Inputs, Outputs, Port, Wire } from '@proma/web-board';
+  // TODO used compiled version instead
+  import * as proma from '@proma/core/core/index.mjs';
+  import ChipView from './ChipView.svelte';
+
+  const MyChip = proma.chip('MyChip', ({ onCreate }) => {
+    const exec = proma.inputFlow('exec');
+    const target = proma.inputData('target', { canonical: true });
+
+    const log = new proma.lib.debug.Log();
+
+    proma.wire(onCreate.out.then, log.in.exec);
+    proma.wire(exec, log.in.exec);
+    proma.wire(target, log.in.message);
+  });
+
+  let targetEl;
+  $: myChip = targetEl && new MyChip(targetEl);
 </script>
 
 <main>
-  <h1>Hello!</h1>
-  <p>
-    Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn
-    how to build Svelte apps.
-  </p>
-
-  <Board
-    on:wire:start={(e) => console.log(e)}
-    on:wire:end={(e) => console.log('new wire', e)}
-  >
-    <Chip id="one">
-      <Inputs>
-        <Port name="execute" type="exec" />
-        <Port name="message" />
-      </Inputs>
-      <Outputs>
-        <Port name="then" type="exec" />
-        <Port name="value" />
-      </Outputs>
-    </Chip>
-    <Chip id="two" x={200} y={200}>
-      <Inputs>
-        <Port name="execute" type="exec" />
-        <Port name="message" />
-      </Inputs>
-      <Outputs>
-        <Port name="then" type="exec" />
-      </Outputs>
-    </Chip>
-    <Wire
-      outputChip="one"
-      outputPort="value"
-      inputChip="two"
-      inputPort="message"
-    />
-    <Wire
-      outputChip="one"
-      outputPort="then"
-      inputChip="two"
-      inputPort="execute"
-    />
-  </Board>
+  <div bind:this={targetEl}>
+    <h1>Hello!</h1>
+    <input type="text" placeholder="What's your name?" />
+    <button type="button">Greet me</button>
+  </div>
+  <ChipView chip={MyChip} />
 </main>
+
+<style>
+  main {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: 1fr;
+  }
+</style>

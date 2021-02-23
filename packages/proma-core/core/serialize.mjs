@@ -131,9 +131,9 @@ function funcToString(func) {
 // Deserialization
 //
 
-export function deserializeChip(chip, data) {
+export function deserializeChip(chip, data, editable) {
   // TODO validate `data`
-  const res = chip(data.URI);
+  const res = chip(data.URI, null, { editable });
   const build = res.edit();
   const portsToCompile = [];
   for (const port of data.inputs || []) {

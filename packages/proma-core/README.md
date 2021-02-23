@@ -55,7 +55,11 @@
 - [x] create chip from JSON
 - [x] build for import in svelte
 - [x] Libraries should be initialized with the current proma runtime instead of importing their own
-- [ ] editability continued (remove stuff)
+- [x] editable/non-editable chips
+- [ ] editability continued (remove stuff, integrate in proma-web)
+- [ ] runValue in `run` should always be assigned to the root chip instance
+      because the inner chip instances are used for port reference only.
+      This should be changed by claryfying the scope of class/instance chip/ports
 - [ ] use this? or have a self? inputs that take it as default?
 - [ ] web component wrapper `webChip`? `chip.webComponent`?
 - [ ] types
