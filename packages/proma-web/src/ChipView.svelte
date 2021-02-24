@@ -21,6 +21,10 @@
     dispatch('change', { chip });
   }
 
+  function dispatchChipRequest() {
+    dispatch('chipRequest');
+  }
+
   //
   // Data
   //
@@ -79,8 +83,21 @@
   // Event handlers
   //
 
-  function handleBoardContextmenu(e) {
-    console.log('board contextmenu', e);
+  function handleBoardContextmenu({
+    detail: { boardX, boardY, fromChip, fromSide, fromPort, event },
+  }) {
+    dispatchChipRequest({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      boardX,
+      boardY,
+      fromChip,
+      fromSide,
+      fromPort,
+      provideChip(ChipClass) {
+        // TODO add chip instantiated from chip class
+      },
+    });
   }
 
   function handleChipDelete({ detail: { chip } }) {
@@ -102,23 +119,24 @@
     // console.log('probe', detail);
   }
 
-  function handleWireEnd({
-    detail: { fromChip, fromSide, fromPort, toChip, toSide, toPort },
-  }) {
-    if (toPort) {
-      try {
-        edit.addConnection(
-          makePortPath(fromChip, fromSide, fromPort),
-          makePortPath(toChip, toSide, toPort),
-        );
-      } catch (error) {
-        // TODO catch erros, show notification
-        console.error(error);
-      }
-      return;
+  function handleWireEnd(event) {
+    const {
+      detail: { fromChip, fromSide, fromPort, toChip, toSide, toPort },
+    } = event;
+    if (fromChip === toChip && fromSide === toSide) return;
+    if (!toPort) {
+      // Forward to new chip creation
+      return handleBoardContextmenu(event);
     }
-    // TODO show dropdown to create chip and pre-connect
-    console.log(' TODO show new chip dropdown');
+    try {
+      edit.addConnection(
+        makePortPath(fromChip, fromSide, fromPort),
+        makePortPath(toChip, toSide, toPort),
+      );
+    } catch (error) {
+      // TODO catch erros, show notification
+      console.error(error);
+    }
   }
 
   //
@@ -135,75 +153,86 @@
   }
 </script>
 
-<Board
-  {shortcuts}
-  on:board:contextmenu={handleBoardContextmenu}
-  on:chip:delete={handleChipDelete}
-  on:port:delete={handlePortDelete}
-  on:wire:start={handleWireStart}
-  on:wire:probe={handleWireProbe}
-  on:wire:end={handleWireEnd}
->
-  {#if inputOutlets.length > 0}
-    <Chip
-      id="$in"
-      title="Input"
-      bind:x={chip.metadata.$in.x}
-      bind:y={chip.metadata.$in.y}
-    >
-      <Outputs>
-        {#each inputOutlets as outlet (outlet.name)}
-          <Port name={outlet.name} />
-        {/each}
-      </Outputs>
-    </Chip>
-  {/if}
-
-  {#each innerChips as innerChip (innerChip.id)}
-    <Chip
-      id={innerChip.id}
-      title={innerChip.id}
-      bind:x={chip.metadata[innerChip.id].x}
-      bind:y={chip.metadata[innerChip.id].y}
-    >
-      {#if innerChip.in.length > 0}
-        <Inputs>
-          {#each innerChip.in as port}
-            <Port name={port.name} />
-          {/each}
-        </Inputs>
-      {/if}
-      {#if innerChip.out.length > 0}
+<div class="ChipView">
+  <Board
+    {shortcuts}
+    on:board:contextmenu={handleBoardContextmenu}
+    on:chip:delete={handleChipDelete}
+    on:port:delete={handlePortDelete}
+    on:wire:start={handleWireStart}
+    on:wire:probe={handleWireProbe}
+    on:wire:end={handleWireEnd}
+  >
+    {#if inputOutlets.length > 0}
+      <Chip
+        id="$in"
+        title="Input"
+        bind:x={chip.metadata.$in.x}
+        bind:y={chip.metadata.$in.y}
+      >
         <Outputs>
-          {#each innerChip.out as port}
-            <Port name={port.name} />
+          {#each inputOutlets as outlet (outlet.name)}
+            <Port name={outlet.name} />
           {/each}
         </Outputs>
-      {/if}
-    </Chip>
-  {/each}
+      </Chip>
+    {/if}
 
-  {#if outputOutlets.length > 0}
-    <Chip
-      id="$out"
-      title="Output"
-      bind:x={chip.metadata.$out.x}
-      bind:y={chip.metadata.$out.y}
-    >
-      <Inputs>
-        {#each outputOutlets as outlet (outlet.name)}
-          <Port name={outlet.name} />
-        {/each}
-      </Inputs>
-    </Chip>
-  {/if}
+    {#each innerChips as innerChip (innerChip.id)}
+      <Chip
+        id={innerChip.id}
+        title={innerChip.id}
+        bind:x={chip.metadata[innerChip.id].x}
+        bind:y={chip.metadata[innerChip.id].y}
+      >
+        {#if innerChip.in.length > 0}
+          <Inputs>
+            {#each innerChip.in as port}
+              <Port name={port.name} />
+            {/each}
+          </Inputs>
+        {/if}
+        {#if innerChip.out.length > 0}
+          <Outputs>
+            {#each innerChip.out as port}
+              <Port name={port.name} />
+            {/each}
+          </Outputs>
+        {/if}
+      </Chip>
+    {/each}
 
-  {#each connections as conn (connectionId(conn))}
-    <Wire
-      outputChip={conn.source.chip ? conn.source.chip.id : '$in'}
-      outputPort={conn.source.port.name}
-      inputChip={conn.sink.chip ? conn.sink.chip.id : '$out'}
-      inputPort={conn.sink.port.name}
-    />
-  {/each}
-</Board>
+    {#if outputOutlets.length > 0}
+      <Chip
+        id="$out"
+        title="Output"
+        bind:x={chip.metadata.$out.x}
+        bind:y={chip.metadata.$out.y}
+      >
+        <Inputs>
+          {#each outputOutlets as outlet (outlet.name)}
+            <Port name={outlet.name} />
+          {/each}
+        </Inputs>
+      </Chip>
+    {/if}
+
+    {#each connections as conn (connectionId(conn))}
+      <Wire
+        outputChip={conn.source.chip ? conn.source.chip.id : '$in'}
+        outputPort={conn.source.port.name}
+        inputChip={conn.sink.chip ? conn.sink.chip.id : '$out'}
+        inputPort={conn.sink.port.name}
+      />
+    {/each}
+  </Board>
+  <slot />
+</div>
+
+<style>
+  .ChipView {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+</style>
