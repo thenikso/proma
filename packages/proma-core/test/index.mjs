@@ -2,6 +2,7 @@ import './runner/tap-console.mjs';
 
 import './core/edit.test.mjs';
 import './core/serialize.test.mjs';
+import './core/run.test.mjs';
 
 import './programs/ingresses.test.mjs';
 import './programs/outputs.test.mjs';

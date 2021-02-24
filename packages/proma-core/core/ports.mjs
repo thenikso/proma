@@ -1,4 +1,4 @@
-import { info, assert } from './utils.mjs';
+import { info } from './utils.mjs';
 import { variadicStringNameToFunc } from './variadic.mjs';
 import { makePortRun } from './run.mjs';
 import { serializePortInfo } from './serialize.mjs';
