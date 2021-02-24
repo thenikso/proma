@@ -94,6 +94,9 @@ export class EditableChipInfo {
     if (isChipClass(chipToAdd)) {
       chipToAdd = new chipToAdd(...(canonicalValues || []));
     }
+    if (chipToAdd instanceof this.Chip) {
+      throw new Error('Can not add same chip');
+    }
     if (id) {
       chipToAdd.id = id;
     }

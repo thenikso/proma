@@ -21,6 +21,16 @@
   let chipRequest;
 
   //
+  // Listing chips
+  //
+
+  let registryList = proma.registry.list();
+
+  function registryListExcluding(chipToExclude) {
+    return registryList.filter((c) => c !== chipToExclude);
+  }
+
+  //
   // Event handlers
   //
 
@@ -40,7 +50,7 @@
 
 {#if chipRequest}
   <Modal
-    anchor={{ x: chipRequest.clientX, y: chipRequest.clientY }}
+    anchor={{ x: chipRequest.clientX - 5, y: chipRequest.clientY - 5 }}
     on:dismiss={() => (chipRequest = null)}
   >
     <div>
@@ -57,7 +67,7 @@
         </div>
       {/each}
       <div><b>All chips</b></div>
-      {#each proma.registry.list() as chipClass (chipClass.URI)}
+      {#each registryListExcluding(chipRequest.chip) as chipClass (chipClass.URI)}
         <div>
           <button
             type="button"
