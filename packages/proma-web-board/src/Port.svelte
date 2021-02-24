@@ -22,7 +22,16 @@
     name,
     dataType: type,
     color,
-    portConnected: connected,
+    get eventDetails() {
+      return {
+        chip: chip.id,
+        side,
+        name,
+      };
+    },
+    get portConnected() {
+      return isConnected;
+    },
     get outletElement() {
       return portEl.firstChild;
     },

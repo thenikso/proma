@@ -180,6 +180,13 @@
       e.stopPropagation();
       e.preventDefault();
     },
+    click(e) {
+      const target = getEventTargets(e, true)[0];
+      dispatch(`${target.type}:click`, {
+        ...target.eventDetails,
+        mouseEvent: e,
+      });
+    },
   });
 
   //
@@ -328,7 +335,7 @@
   // Event target
   //
 
-  function getEventTargets(e) {
+  function getEventTargets(e, ignoreMultiselection) {
     if (grab) {
       return [board];
     }
@@ -348,7 +355,7 @@
       if (p.$promaPort) {
         promaPath.push(p.$promaPort);
       } else if (p.$promaChip) {
-        if (selectedChips.has(p.$promaChip)) {
+        if (!ignoreMultiselection && selectedChips.has(p.$promaChip)) {
           promaPath.push(Array.from(selectedChips));
         } else {
           promaPath.push(p.$promaChip);
@@ -389,18 +396,18 @@
   }
 
   //
-  // Dragging
+  // Dragging and other interaction event handlers
   //
 
-  let mouseEventTargets;
+  let draggingEventTargets;
   let draggingStart;
   let dragging;
   let zoomRaw = zoom;
 
   function handleMouseDown(e) {
-    mouseEventTargets = getEventTargets(e);
+    draggingEventTargets = getEventTargets(e);
     draggingStart = dragging = { x: e.pageX, y: e.pageY };
-    withEventTargets(mouseEventTargets, 'mouseDown', e);
+    withEventTargets(draggingEventTargets, 'mouseDown', e);
   }
 
   function handleMouseMove(e) {
@@ -412,7 +419,7 @@
     const dragX = e.pageX - dragging.x;
 
     withEventTargets(
-      mouseEventTargets,
+      draggingEventTargets,
       'drag',
       Object.assign(e, {
         dragStartX: draggingStart.x,
@@ -428,9 +435,9 @@
   }
 
   function handleMouseUp(e) {
-    mouseEventTargets = getEventTargets(e);
+    draggingEventTargets = getEventTargets(e);
     withEventTargets(
-      mouseEventTargets,
+      draggingEventTargets,
       'mouseUp',
       Object.assign(e, {
         didDrag:
@@ -448,7 +455,7 @@
     newWireFromPort = null;
     draggingStart = null;
     dragging = null;
-    mouseEventTargets = null;
+    draggingEventTargets = null;
   }
 
   function handleMouseWheel(e) {
@@ -487,6 +494,11 @@
     // TODO dispatch context menu
     // handleMouseUp(e);
     withEventTargets(targets, 'contextmenu', e);
+  }
+
+  function handleClick(e) {
+    const targets = getEventTargets(e);
+    withEventTargets(targets, 'click', e);
   }
 
   //
@@ -528,6 +540,7 @@
   on:keydown={handleKeydown}
   on:keyup={handleKeyup}
   on:contextmenu={handleContextmenu}
+  on:click={handleClick}
 >
   <svg
     bind:this={wiresEl}

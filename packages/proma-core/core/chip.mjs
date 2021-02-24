@@ -477,16 +477,6 @@ export class ChipInfo {
     return conn;
   }
 
-  visitConnectedPorts(port, visitor) {
-    const connectedPorts = this.getConnectedPorts(port);
-    if (connectedPorts.length === 0) return;
-    const visitResult = visitor(...connectedPorts);
-    if (visitResult === false) return;
-    for (const p of connectedPorts) {
-      info(p.chip).visitConnectedPorts(p, visitor);
-    }
-  }
-
   //
   // Loaded
   //

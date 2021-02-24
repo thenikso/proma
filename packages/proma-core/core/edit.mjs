@@ -1,5 +1,6 @@
 import { info } from './utils.mjs';
 import { Chip, isChipClass } from './chip.mjs';
+import { PortOutlet } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
 import { registry } from './registry.mjs';
 
@@ -37,7 +38,7 @@ export class EditableChipInfo {
             return self;
           }
           if (typeof listener === 'undefined') {
-            listener.delete(eventName);
+            events.delete(eventName);
             return self;
           }
           const listeners = events.get(eventName);
@@ -238,8 +239,60 @@ export class EditableChipInfo {
     return this;
   }
 
-  // TODO rememeber to disable ingress?
-  removeConnection(portA, portB) {}
+  removeConnection(portA, portB) {
+    const chipInfo = info(this);
+    if (typeof portA === 'string' || Array.isArray(portA)) {
+      portA = chipInfo.getPort(portA, 'in');
+    }
+    if (typeof portB === 'string' || Array.isArray(portB)) {
+      portB = chipInfo.getPort(portB, 'out');
+    }
+    if (portA instanceof PortOutlet) {
+      portA = info(portA);
+    }
+    if (portB instanceof PortOutlet) {
+      portB = info(portB);
+    }
+    // Delete from sinkConnection
+    if (!portB || chipInfo.sinkConnection.get(portA) === portB) {
+      chipInfo.sinkConnection.delete(portA);
+    }
+    if (chipInfo.sinkConnection.get(portB) === portA) {
+      chipInfo.sinkConnection.delete(portB);
+    }
+    // Delete from sourceConnections
+    const aConns = chipInfo.sourceConnections.get(portA);
+    if (aConns) {
+      if (portB) {
+        if (aConns.includes(portB)) {
+          aConns.splice(aConns.indexOf(portB), 1);
+        }
+      } else {
+        for (const otherPort of aConns) {
+          if (chipInfo.sinkConnection.get(otherPort) === portA) {
+            chipInfo.sinkConnection.delete(otherPort);
+          }
+        }
+      }
+      if (!portB || aConns.length === 0) {
+        chipInfo.sourceConnections.delete(portA);
+      }
+    }
+    const bConns = chipInfo.sourceConnections.get(portB);
+    if (bConns && bConns.includes(portA)) {
+      bConns.splice(bConns.indexOf(portA), 1);
+      if (bConns.length === 0) {
+        chipInfo.sourceConnections.delete(portB);
+      }
+    }
+    this.dispatch('connection:remove', {
+      subject: 'connection',
+      operation: 'remove',
+      // TODO report removed connections
+      // connections,
+    });
+    return this;
+  }
 }
 
 function makeFunction(code, outlets) {

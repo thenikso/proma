@@ -52,8 +52,8 @@ export function serializeChipInfo(chipInfo) {
   const chips = chipInfo.chips.map(toJSON);
   const connections = Array.from(chipInfo.sinkConnection.entries()).map(
     ([sink, source]) => {
-      let sourceName = source.fullName || source.name;
-      let sinkName = sink.fullName || sink.name;
+      let sourceName = source.fullName;
+      let sinkName = sink.fullName;
       // If one of the ports is a flow outlet we need to invert the logic
       if (sink.__proto__ !== source.__proto__ && (sink.isFlow || source.isFlow)) {
         const tmp = sourceName;

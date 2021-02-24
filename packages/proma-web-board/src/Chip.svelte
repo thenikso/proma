@@ -28,6 +28,11 @@
     type: 'chip',
     board,
     id,
+    get eventDetails() {
+      return {
+        chip: id,
+      };
+    },
     select() {
       selected = true;
     },
@@ -75,6 +80,10 @@
     mouseDown(e) {
       board.selectChip(chip, e);
       chip.select();
+      e.stopPropagation();
+    },
+    mouseUp(e) {
+      // Avoid selection to deselect if clicking on chip
       e.stopPropagation();
     },
     drag(e) {

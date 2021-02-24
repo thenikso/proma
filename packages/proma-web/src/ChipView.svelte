@@ -1,30 +1,58 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
   import { Board, Chip, Inputs, Outputs, Port, Wire } from '@proma/web-board';
 
   export let chip;
   export let instance = null;
 
-  let inputOutlets = chip.inputOutlets;
-  let outputOutlets = chip.outputOutlets;
-  let innerChips = chip.chips;
-  let connections = chip.connections;
+  //
+  // Dispatchers
+  //
+
+  const dispatch = createEventDispatcher();
+
+  function dispatchChange(chip) {
+    dispatch('change', { chip });
+  }
+
+  //
+  // Data
+  //
+
+  let stableChip;
+  let inputOutlets;
+  let outputOutlets;
+  let innerChips;
+  let connections;
+  $: if (stableChip !== chip) {
+    stableChip = chip;
+    inputOutlets = stableChip.inputOutlets;
+    outputOutlets = stableChip.outputOutlets;
+    innerChips = stableChip.chips;
+    connections = stableChip.connections;
+  }
+
+  let edit;
+  $: {
+    if (edit) {
+      edit.off();
+    }
+    edit = stableChip.edit();
+    edit.on('connection', () => {
+      connections = stableChip.connections;
+    });
+  }
+
+  function connectionId({ source, sink }) {
+    return source.port.fullName + '->' + sink.port.fullName;
+  }
+
+  $: console.log(connections.map(connectionId));
 
   //
   // Medatada
   //
 
-  // $: inputMetachip = (chip.metatadata || {}).$in || {
-  //   x: -400,
-  //   y: 0,
-  // };
-  // $: outputMetachip = (chip.metatadata || {}).$out || {
-  //   x: 400,
-  //   y: 0,
-  // };
-  // $: chip.metadata = {
-  //   $in: inputMetachip,
-  //   $out: outputMetachip,
-  // };
   $: if (!chip.metadata) {
     chip.metadata = {
       $in: { x: -400, y: 0 },
@@ -36,9 +64,24 @@
   }
 
   // $: console.log(chip.toJSON());
+
+  //
+  // Event handlers
+  //
+
+  function handlePortClick({ detail }) {
+    // TODO custom shortcuts?
+    if (detail.mouseEvent.altKey) {
+      edit.removeConnection([
+        detail.chip.startsWith('$') ? undefined : detail.chip,
+        detail.side === 'input' ? 'in' : 'out',
+        detail.name,
+      ]);
+    }
+  }
 </script>
 
-<Board>
+<Board on:port:click={handlePortClick}>
   {#if inputOutlets.length > 0}
     <Chip
       id="$in"
@@ -93,12 +136,12 @@
     </Chip>
   {/if}
 
-  {#each connections as { source, sink }}
+  {#each connections as conn (connectionId(conn))}
     <Wire
-      outputChip={source.chip ? source.chip.id : '$in'}
-      outputPort={source.port.name}
-      inputChip={sink.chip ? sink.chip.id : '$out'}
-      inputPort={sink.port.name}
+      outputChip={conn.source.chip ? conn.source.chip.id : '$in'}
+      outputPort={conn.source.port.name}
+      inputChip={conn.sink.chip ? conn.sink.chip.id : '$out'}
+      inputPort={conn.sink.port.name}
     />
   {/each}
 </Board>

@@ -196,6 +196,13 @@ export class PortInfo {
     return this.name === name;
   }
 
+  get fullName() {
+    // TODO not distinguising between input/output is a problem if using
+    // same name for an input and output port
+    // return (this.isInput ? 'in' : 'out') + '.' + this.name;
+    return this.name;
+  }
+
   get isInput() {
     throw new Error('unimplmeneted');
   }
