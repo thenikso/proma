@@ -84,23 +84,49 @@
   }
 
   function handlePortDelete({ detail }) {
-    edit.removeConnection([
-      detail.chip.startsWith('$') ? undefined : detail.chip,
-      detail.side === 'input' ? 'in' : 'out',
-      detail.name,
-    ]);
+    edit.removeConnection(makePortPath(detail.chip, detail.side, detail.name));
   }
 
   function handleWireStart({ detail }) {
-    console.log('start', detail);
+    // TODO highlight available ports
+    // console.log('start', detail);
   }
 
   function handleWireProbe({ detail }) {
-    console.log('probe', detail);
+    // TODO Update tooltip to show possible connection results
+    // console.log('probe', detail);
   }
 
-  function handleWireEnd({ detail }) {
-    console.log('end', detail);
+  function handleWireEnd({
+    detail: { fromChip, fromSide, fromPort, toChip, toSide, toPort },
+  }) {
+    if (toPort) {
+      try {
+        edit.addConnection(
+          makePortPath(fromChip, fromSide, fromPort),
+          makePortPath(toChip, toSide, toPort),
+        );
+      } catch (error) {
+        // TODO catch erros, show notification
+        console.error(error);
+      }
+      return;
+    }
+    // TODO show dropdown to create chip and pre-connect
+    console.log(' TODO show new chip dropdown');
+  }
+
+  //
+  // Utilities
+  //
+
+  function makePortPath(chipId, side, portName) {
+    const isMetaChip = chipId === '$in' || chipId === '$out';
+    return [
+      isMetaChip ? undefined : chipId,
+      (side === 'input') ^ isMetaChip ? 'in' : 'out',
+      portName,
+    ];
   }
 </script>
 

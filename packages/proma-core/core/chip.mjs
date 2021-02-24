@@ -334,7 +334,7 @@ export class ChipInfo {
   // Connections
   //
 
-  addConnection(portA, portB, dryRun) {
+  addConnection(portA, portB, dryRun, shouldReplace) {
     if (typeof portA === 'string' || Array.isArray(portA)) {
       portA = this.getPort(portA, 'in');
     }
@@ -401,7 +401,16 @@ export class ChipInfo {
       sink = portA;
     }
     if (this.sinkConnection.has(sink)) {
-      throw new Error('Sink port already connected');
+      if (!shouldReplace) {
+        throw new Error('Sink port already connected');
+      }
+      // Replace existing connection
+      if (!dryRun) {
+        const sinks = this.sourceConnections.get(this.sinkConnection.get(sink));
+        if (sinks) {
+          sinks.splice(sinks.indexOf(sink), 1);
+        }
+      }
     }
     if (!dryRun) {
       const sinks = this.sourceConnections.get(source) || [];

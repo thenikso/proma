@@ -239,22 +239,12 @@
     endNewWire(port, e) {
       if (!newWireFromPort) return false;
       const detail = {
-        inputChip:
-          newWireFromPort.side === INPUT
-            ? newWireFromPort.chip.id
-            : port && port.chip.id,
-        inputPort:
-          newWireFromPort.side === INPUT
-            ? newWireFromPort.name
-            : port && port.name,
-        outputChip:
-          newWireFromPort.side === OUTPUT
-            ? newWireFromPort.chip.id
-            : port && port.chip.id,
-        outputPort:
-          newWireFromPort.side === OUTPUT
-            ? newWireFromPort.name
-            : port && port.name,
+        fromChip: newWireFromPort.chip.id,
+        fromSide: newWireFromPort.side,
+        fromPort: newWireFromPort.name,
+        toChip: port && port.chip.id,
+        toSide: port && port.side,
+        toPort: port && port.name,
       };
       dispatchWireEnd(detail, e);
       newWireFromPort.connectionCount--;

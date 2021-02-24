@@ -48,11 +48,12 @@
       }
     },
     drag(e) {
-      // Either start a new wire or probe the existing new wire already being
-      // dragged around
-      if (!chip.board.startNewWire(port)) {
-        chip.board.probeNewWire(e);
+      // Start a new wire if dragging away from the port
+      // TODO wait for drag distanct to be > delta
+      if (!e.altKey && !e.ctrlKey && !e.metaKey && e.button === 0) {
+        chip.board.startNewWire(port);
       }
+      chip.board.probeNewWire(e);
       e.stopPropagation();
     },
     contextmenu(e) {

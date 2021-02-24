@@ -265,11 +265,14 @@ export class EditableChipInfo {
   probeConnection(portA, portB) {
     // TODO return error if not connectable and order from/to
     // and connections that need removal to allow this
+    const chipInfo = info(this);
+    chipInfo.addConnection(portA, portB, true);
+    return this;
   }
 
   addConnection(portA, portB) {
     const chipInfo = info(this);
-    const connection = chipInfo.addConnection(portA, portB);
+    const connection = chipInfo.addConnection(portA, portB, false, true);
     this.dispatch('connection:add', {
       subject: 'connection',
       operation: 'add',
