@@ -42,17 +42,17 @@
       connectionCount = value;
     },
     // Handlers
-    mouseDown(e) {
-      if (e.button === 0) {
-        chip.board.startNewWire(port);
-      }
-    },
     mouseUp(e) {
       if (chip.board.endNewWire(port, e)) {
         e.stopPropagation();
       }
     },
     drag(e) {
+      // Either start a new wire or probe the existing new wire already being
+      // dragged around
+      if (!chip.board.startNewWire(port)) {
+        chip.board.probeNewWire(e);
+      }
       e.stopPropagation();
     },
     contextmenu(e) {

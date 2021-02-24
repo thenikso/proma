@@ -9,10 +9,7 @@
   export let maxZoom = 2;
   export let snap = 5;
   export let newWirePath = WirePath;
-  export let shortcuts = {
-    '[port] alt+click': 'port:delete',
-    '[chip] delete,backspace': 'chip:delete',
-  };
+  export let shortcuts = {};
 
   //
   // Dispatchers
@@ -24,8 +21,13 @@
     dispatch('wire:start', detail);
   }
 
-  function dispatchWireEnd(detail) {
-    dispatch('wire:end', detail);
+  // When dragging a new wire on top of a new element
+  function dispatchWireProbe(detail, event) {
+    dispatch('wire:probe', makeDispatchDetail(detail, event));
+  }
+
+  function dispatchWireEnd(detail, event) {
+    dispatch('wire:end', makeDispatchDetail(detail, event));
   }
 
   function dispatchShortcuts(event) {
@@ -40,16 +42,28 @@
     for (const target of targets) {
       for (const { matchTarget, actions } of matchedEvents) {
         if (matchTarget(target.type)) {
-          const details = {
-            ...target.eventDetails,
-            event,
-          };
+          const details = makeDispatchDetail(target.eventDetails, event);
           for (const action of actions) {
             dispatch(action, details);
           }
         }
       }
     }
+  }
+
+  function makeDispatchDetail(detail, event) {
+    const { x: boardX, y: boardY } = clientPointToBoardPoint(
+      event.clientX,
+      event.clientY,
+    );
+    return Object.assign(
+      {
+        event,
+        boardX,
+        boardY,
+      },
+      detail,
+    );
   }
 
   //
@@ -91,8 +105,16 @@
       switch (part) {
         case 'click':
           return (e) => e.type === 'click';
+        case 'contextmenu':
+          return (e) => e.type === 'contextmenu';
         case 'alt':
           return (e) => e.altKey;
+        case 'ctrl':
+          return (e) => e.ctrlKey;
+        case 'cmd':
+        case 'meta':
+        case 'win':
+          return (e) => e.metaKey;
         default:
           return (e) => e.type === 'keydown' && e.key.toLowerCase() === part;
       }
@@ -179,6 +201,14 @@
       inputPort.connectionCount++;
       return id;
     },
+    probeNewWire(e) {
+      if (newWireFromPoint) {
+        const target = getEventTargets(e, true)[0];
+        if (newWireProbeEnd === target) return;
+        newWireProbeEnd = target;
+        dispatchWireProbe(target.eventDetails, e);
+      }
+    },
     removeWire(id) {
       const wireIndex = wires.findIndex((w) => w.id === id);
       let wire;
@@ -197,19 +227,17 @@
       updateWiresTimer = requestAnimationFrame(updateWiresPoints);
     },
     startNewWire(port) {
+      if (newWireFromPort) return false;
       newWireFromPort = port;
       newWireFromPort.connectionCount++;
       dispatchWireStart({
         chip: port.chip.id,
         port: port.name,
       });
+      return true;
     },
     endNewWire(port, e) {
       if (!newWireFromPort) return false;
-      const { x: boardX, y: boardY } = clientPointToBoardPoint(
-        e.clientX,
-        e.clientY,
-      );
       const detail = {
         inputChip:
           newWireFromPort.side === INPUT
@@ -227,12 +255,8 @@
           newWireFromPort.side === OUTPUT
             ? newWireFromPort.name
             : port && port.name,
-        boardX,
-        boardY,
-        clientX: e.clientX,
-        clientY: e.clientY,
       };
-      dispatchWireEnd(detail);
+      dispatchWireEnd(detail, e);
       newWireFromPort.connectionCount--;
       newWireFromPort = null;
       return true;
@@ -337,6 +361,9 @@
   let updateWiresTimer;
   let updateWiresLimit;
   let newWireFromPort;
+  // Used in `board.probeNewWire` to store the last probed element and send a new
+  // event if it changes.
+  let newWireProbeEnd;
 
   $: wiresViewBox = `${(-(boardWidth || 0) / 2 - panX) / zoom} ${
     (-(boardHeight || 0) / 2 - panY) / zoom
@@ -411,7 +438,7 @@
   // Event target
   //
 
-  function getEventTargets(e) {
+  function getEventTargets(e, straightPath) {
     if (grab) {
       return [board];
     }
@@ -431,7 +458,7 @@
       if (p.$promaPort) {
         promaPath.push(p.$promaPort);
       } else if (p.$promaChip) {
-        if (selectedChips.has(p.$promaChip)) {
+        if (!straightPath && selectedChips.has(p.$promaChip)) {
           promaPath.push(Array.from(selectedChips));
         } else {
           promaPath.push(p.$promaChip);
@@ -567,10 +594,9 @@
   }
 
   function handleContextmenu(e) {
-    const targets = getEventTargets(e);
-    // TODO dispatch context menu
-    // handleMouseUp(e);
-    withEventTargets(targets, 'contextmenu', e);
+    dispatchShortcuts(e);
+    e.preventDefault();
+    e.stopPropagation();
   }
 
   function handleClick(e) {

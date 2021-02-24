@@ -5,6 +5,11 @@
   export let chip;
   export let instance = null;
 
+  const shortcuts = {
+    '[port] alt+click': 'port:delete',
+    '[chip] delete,backspace': 'chip:delete',
+  };
+
   //
   // Dispatchers
   //
@@ -73,6 +78,11 @@
   // Event handlers
   //
 
+  function handleChipDelete({ detail: { chip } }) {
+    if (chip === '$in' || chip === '$out') return;
+    edit.removeChip(chip);
+  }
+
   function handlePortDelete({ detail }) {
     edit.removeConnection([
       detail.chip.startsWith('$') ? undefined : detail.chip,
@@ -81,13 +91,27 @@
     ]);
   }
 
-  function handleChipDelete({ detail: { chip } }) {
-    if (chip === '$in' || chip === '$out') return;
-    edit.removeChip(chip);
+  function handleWireStart({ detail }) {
+    console.log('start', detail);
+  }
+
+  function handleWireProbe({ detail }) {
+    console.log('probe', detail);
+  }
+
+  function handleWireEnd({ detail }) {
+    console.log('end', detail);
   }
 </script>
 
-<Board on:port:delete={handlePortDelete} on:chip:delete={handleChipDelete}>
+<Board
+  {shortcuts}
+  on:chip:delete={handleChipDelete}
+  on:port:delete={handlePortDelete}
+  on:wire:start={handleWireStart}
+  on:wire:probe={handleWireProbe}
+  on:wire:end={handleWireEnd}
+>
   {#if inputOutlets.length > 0}
     <Chip
       id="$in"
