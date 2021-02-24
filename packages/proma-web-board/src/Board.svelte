@@ -28,12 +28,11 @@
     dispatch('wire:end', detail);
   }
 
-  function dispatchClick(targetName, detail) {
-    dispatch(`${targetName}:click`, detail);
-  }
-
   function dispatchShortcuts(event) {
-    const targets = getEventTargets(event, true);
+    const targets = getEventTargets(event, true).flat();
+    if (targets.length === 1) {
+      targets.unshift(...selectedChips);
+    }
     const matchedEvents = resolvedShortcuts.filter(({ matchEvent }) =>
       matchEvent(event),
     );
@@ -412,7 +411,7 @@
   // Event target
   //
 
-  function getEventTargets(e, ignoreMultiselection) {
+  function getEventTargets(e) {
     if (grab) {
       return [board];
     }
@@ -432,7 +431,7 @@
       if (p.$promaPort) {
         promaPath.push(p.$promaPort);
       } else if (p.$promaChip) {
-        if (!ignoreMultiselection && selectedChips.has(p.$promaChip)) {
+        if (selectedChips.has(p.$promaChip)) {
           promaPath.push(Array.from(selectedChips));
         } else {
           promaPath.push(p.$promaChip);

@@ -76,9 +76,13 @@
       detail.name,
     ]);
   }
+
+  function handleChipDelete({ detail }) {
+    console.log(detail);
+  }
 </script>
 
-<Board on:port:delete={handlePortDelete}>
+<Board on:port:delete={handlePortDelete} on:chip:delete={handleChipDelete}>
   {#if inputOutlets.length > 0}
     <Chip
       id="$in"
