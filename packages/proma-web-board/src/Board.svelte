@@ -9,6 +9,10 @@
   export let maxZoom = 2;
   export let snap = 5;
   export let newWirePath = WirePath;
+  export let shortcuts = {
+    '[port] alt+click': 'port:delete',
+    '[chip] delete,backspace': 'chip:delete',
+  };
 
   //
   // Dispatchers
@@ -22,6 +26,86 @@
 
   function dispatchWireEnd(detail) {
     dispatch('wire:end', detail);
+  }
+
+  function dispatchClick(targetName, detail) {
+    dispatch(`${targetName}:click`, detail);
+  }
+
+  function dispatchShortcuts(event) {
+    const targets = getEventTargets(event, true);
+    const matchedEvents = resolvedShortcuts.filter(({ matchEvent }) =>
+      matchEvent(event),
+    );
+    if (matchedEvents.length === 0) return;
+    for (const target of targets) {
+      for (const { matchTarget, actions } of matchedEvents) {
+        if (matchTarget(target.type)) {
+          const details = {
+            ...target.eventDetails,
+            event,
+          };
+          for (const action of actions) {
+            dispatch(action, details);
+          }
+        }
+      }
+    }
+  }
+
+  //
+  // Shortcuts
+  //
+
+  const shortcutTargetRegExp = /^(?:\[(.+)\])?\s*(.+)$/;
+
+  $: resolvedShortcuts = Object.entries(shortcuts || {}).reduce(
+    (acc, [shortcut, actions]) => {
+      const [, targetsString, eventsString] =
+        shortcutTargetRegExp.exec(shortcut) || [];
+      if (!eventsString) {
+        console.warn(
+          `Invalid Proma-Board shortcut: "${shortcut}": "${actions}"`,
+        );
+        return acc;
+      }
+      const targets = targetsString
+        ? targetsString.split(',').map((s) => s.trim().toLocaleLowerCase())
+        : ['*'];
+      const eventsMatchers = eventsString
+        .split(',')
+        .map(makeShortcutEventMatcher);
+      const matchTarget = targets.includes('*')
+        ? () => true
+        : (t) => targets.includes(t);
+      const matchEvent = (e) => eventsMatchers.some((m) => m(e));
+      acc.push({ matchTarget, matchEvent, actions: actions.split(',') });
+      return acc;
+    },
+    [],
+  );
+
+  function makeShortcutEventMatcher(eventString) {
+    // parts = ['alt', 'click'];
+    const parts = eventString.split('+').map((s) => s.trim().toLowerCase());
+    const matchers = parts.map((part) => {
+      switch (part) {
+        case 'click':
+          return (e) => e.type === 'click';
+        case 'alt':
+          return (e) => e.altKey;
+        default:
+          return (e) => e.type === 'keydown' && e.key.toLowerCase() === part;
+      }
+    });
+    return function shortcutEventMatcher(event) {
+      for (let i = 0, l = matchers.length; i < l; i++) {
+        if (!matchers[i](event)) {
+          return false;
+        }
+      }
+      return true;
+    };
   }
 
   //
@@ -179,13 +263,6 @@
       }
       e.stopPropagation();
       e.preventDefault();
-    },
-    click(e) {
-      const target = getEventTargets(e, true)[0];
-      dispatch(`${target.type}:click`, {
-        ...target.eventDetails,
-        mouseEvent: e,
-      });
     },
   });
 
@@ -482,6 +559,7 @@
   function handleKeydown(e) {
     const targets = getEventTargets(e);
     withEventTargets(targets, 'keyDown', e);
+    dispatchShortcuts(e);
   }
 
   function handleKeyup(e) {
@@ -499,6 +577,7 @@
   function handleClick(e) {
     const targets = getEventTargets(e);
     withEventTargets(targets, 'click', e);
+    dispatchShortcuts(e);
   }
 
   //

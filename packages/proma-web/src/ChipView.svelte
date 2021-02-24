@@ -47,7 +47,7 @@
     return source.port.fullName + '->' + sink.port.fullName;
   }
 
-  $: console.log(connections.map(connectionId));
+  // $: console.log(connections.map(connectionId));
 
   //
   // Medatada
@@ -69,19 +69,16 @@
   // Event handlers
   //
 
-  function handlePortClick({ detail }) {
-    // TODO custom shortcuts?
-    if (detail.mouseEvent.altKey) {
-      edit.removeConnection([
-        detail.chip.startsWith('$') ? undefined : detail.chip,
-        detail.side === 'input' ? 'in' : 'out',
-        detail.name,
-      ]);
-    }
+  function handlePortDelete({ detail }) {
+    edit.removeConnection([
+      detail.chip.startsWith('$') ? undefined : detail.chip,
+      detail.side === 'input' ? 'in' : 'out',
+      detail.name,
+    ]);
   }
 </script>
 
-<Board on:port:click={handlePortClick}>
+<Board on:port:delete={handlePortDelete}>
   {#if inputOutlets.length > 0}
     <Chip
       id="$in"
