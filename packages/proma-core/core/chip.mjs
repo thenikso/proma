@@ -103,6 +103,7 @@ export class ChipInfo {
     // Events are special chips (created with the `event` public api) that can
     // be ingresses. In this case, those event chips are drove by the outside
     // to send data to this chip
+    // TODO rename to ingressChips
     this.ingressEvents = [];
     // Wire map from source -> [sink]. Souces can have multiple sinks.
     // Also forwards PortOutlet sinks to [sinks] by saving their PortOutlet.
@@ -112,9 +113,9 @@ export class ChipInfo {
     // Also forwards PortOutlet source to source by saving their PortOutlet.
     this.sinkConnection = new Map();
 
-    // PlaceholderChip loader promises that will replace the placeholder with
+    // PlaceholderChip to promises that will replace the placeholder with
     // the actual chip when done
-    this.chipLoaders = [];
+    this.chipLoaders = new Map();
 
     let idCount = 0;
     // TODO generate JS usable name
@@ -155,10 +156,17 @@ export class ChipInfo {
     // When addin a placeholder chip, we want to replace it with the resolved
     // chip when loaded. We also need to replace all connections
     if (chip instanceof PlaceholderChip) {
-      this.chipLoaders.push(
-        chip.loadedChipInstance.then((actualChip) =>
-          this.replaceChip(chip, actualChip),
-        ),
+      this.chipLoaders.set(
+        chip,
+        chip.loadedChipInstance.then((actualChip) => {
+          // Account for chip deletion. If deleted we will not replace anything
+          // This could happen if an external entity (like edit) removes the
+          // placeholder chip before it ends loading
+          if (this.chipLoaders.has(chip)) {
+            this.replaceChip(chip, actualChip);
+            this.chipLoaders.delete(chip);
+          }
+        }),
       );
     }
     this.chips.push(chip);
@@ -486,7 +494,7 @@ export class ChipInfo {
   }
 
   get loaded() {
-    return Promise.all(this.chipLoaders).then(() => true);
+    return Promise.all(this.chipLoaders.values()).then(() => true);
   }
 
   //

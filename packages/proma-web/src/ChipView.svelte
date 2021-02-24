@@ -38,6 +38,10 @@
       edit.off();
     }
     edit = stableChip.edit();
+    edit.on('chip', () => {
+      innerChips = stableChip.chips;
+      connections = stableChip.connections;
+    });
     edit.on('connection', () => {
       connections = stableChip.connections;
     });
@@ -77,8 +81,9 @@
     ]);
   }
 
-  function handleChipDelete({ detail }) {
-    console.log(detail);
+  function handleChipDelete({ detail: { chip } }) {
+    if (chip === '$in' || chip === '$out') return;
+    edit.removeChip(chip);
   }
 </script>
 

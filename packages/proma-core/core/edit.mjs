@@ -102,12 +102,51 @@ export class EditableChipInfo {
     this.dispatch('chip:add', {
       subject: 'chip',
       operation: 'add',
-      add: chipToAdd,
+      chip: chipToAdd,
     });
     return this;
   }
 
-  removeChip(chip) {}
+  removeChip(chip) {
+    const chipInfo = info(this);
+    if (typeof chip === 'string') {
+      chip = chipInfo.getChip(chip);
+    }
+    if (!(chip instanceof Chip)) {
+      throw new Error('No chip to remove');
+    }
+    chipInfo.chips.splice(chipInfo.chips.indexOf(chip), 1);
+    // Placeholder chip removal
+    if (chip instanceof PlaceholderChip) {
+      // Remove chip loader, this will prevent it to resolve and replace itself
+      // in the chips array
+      chipInfo.chipLoaders.delete(chip);
+    }
+    // Remove all connections to/from the chip
+    for (const [key, value] of chipInfo.sinkConnection.entries()) {
+      if (key.chip === chip || value.chip === chip) {
+        chipInfo.sinkConnection.delete(key);
+      }
+    }
+    for (let [key, values] of chipInfo.sourceConnections.entries()) {
+      if (key.chip === chip) {
+        chipInfo.sourceConnections.delete(key);
+      } else if (values.some((v) => v.chip === chip)) {
+        values = values.filter((v) => v.chip !== chip);
+        if (values.length === 0) {
+          chipInfo.sourceConnections.delete(key);
+        } else {
+          chipInfo.sourceConnections.set(key, values);
+        }
+      }
+    }
+    this.dispatch('chip:remove', {
+      subject: 'chip',
+      operation: 'remove',
+      chip,
+    });
+    return this;
+  }
 
   //
   // Ports
