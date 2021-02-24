@@ -2,6 +2,7 @@
   // TODO used compiled version instead
   import * as proma from '@proma/core/core/index.mjs';
   import ChipView from './ChipView.svelte';
+  import Modal from './components/Modal.svelte';
 
   const MyChip = proma.chip('MyChip', ({ onCreate }) => {
     const exec = proma.inputFlow('exec');
@@ -16,6 +17,16 @@
 
   let targetEl;
   $: myChip = targetEl && new MyChip(targetEl);
+
+  let chipRequest;
+
+  //
+  // Event handlers
+  //
+
+  function handleChipRequest(e) {
+    chipRequest = e.detail;
+  }
 </script>
 
 <main>
@@ -24,8 +35,42 @@
     <input type="text" placeholder="What's your name?" />
     <button type="button">Greet me</button>
   </div>
-  <ChipView chip={MyChip} />
+  <ChipView chip={MyChip} on:chipRequest={handleChipRequest} />
 </main>
+
+{#if chipRequest}
+  <Modal
+    anchor={{ x: chipRequest.clientX, y: chipRequest.clientY }}
+    on:dismiss={() => (chipRequest = null)}
+  >
+    <div>
+      <div><b>Context chips</b></div>
+      {#each chipRequest.chip.inactiveIngressChips as chip (chip.id)}
+        <div>
+          <button
+            type="button"
+            on:click={() => {
+              chipRequest.provideChipInstance(chip);
+              chipRequest = null;
+            }}>{chip.chipURI}</button
+          >
+        </div>
+      {/each}
+      <div><b>All chips</b></div>
+      {#each proma.registry.list() as chipClass (chipClass.URI)}
+        <div>
+          <button
+            type="button"
+            on:click={() => {
+              chipRequest.provideChipInstance(new chipClass());
+              chipRequest = null;
+            }}>{chipClass.URI}</button
+          >
+        </div>
+      {/each}
+    </div>
+  </Modal>
+{/if}
 
 <style>
   main {

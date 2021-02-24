@@ -109,7 +109,10 @@ function initRegistry() {
     add: addChip,
     load: loadChip,
     list() {
-      return loadedChips.keys();
+      return Array.from(loadedChips.values());
+    },
+    names() {
+      return Array.from(loadedChips.keys());
     },
     loader: addResolver,
   };

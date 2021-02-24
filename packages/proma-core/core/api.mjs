@@ -226,8 +226,11 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
         return chipInfo.chips.slice();
       }
 
-      static get inactiveIngresses() {
-        // TODO return chipInfo.ingressEvents without the one in chips
+      static get inactiveIngressChips() {
+        // TODO only if editable?
+        return chipInfo.ingressEvents.filter(
+          (ic) => !chipInfo.chips.includes(ic),
+        );
       }
 
       static get connections() {

@@ -21,8 +21,8 @@
     dispatch('change', { chip });
   }
 
-  function dispatchChipRequest() {
-    dispatch('chipRequest');
+  function dispatchChipRequest(detail) {
+    dispatch('chipRequest', detail);
   }
 
   //
@@ -87,6 +87,7 @@
     detail: { boardX, boardY, fromChip, fromSide, fromPort, event },
   }) {
     dispatchChipRequest({
+      chip,
       clientX: event.clientX,
       clientY: event.clientY,
       boardX,
@@ -94,8 +95,13 @@
       fromChip,
       fromSide,
       fromPort,
-      provideChip(ChipClass) {
-        // TODO add chip instantiated from chip class
+      provideChipInstance(chipInstance) {
+        chip.metadata[chipInstance.id] = {
+          x: boardX,
+          y: boardY,
+        };
+        edit.addChip(chipInstance);
+        // TODO pick best port to connect "from" also using types
       },
     });
   }
