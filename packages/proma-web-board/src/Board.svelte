@@ -31,22 +31,35 @@
   }
 
   function dispatchShortcuts(event) {
-    const targets = getEventTargets(event, true).flat();
-    if (targets.length === 1) {
-      targets.unshift(...selectedChips);
-    }
+    // Match event
     const matchedEvents = resolvedShortcuts.filter(({ matchEvent }) =>
       matchEvent(event),
     );
     if (matchedEvents.length === 0) return;
-    for (const target of targets) {
-      for (const { matchTarget, actions } of matchedEvents) {
-        if (matchTarget(target.type)) {
-          const details = makeDispatchDetail(target.eventDetails, event);
+    // Prepare targets
+    let targets = getEventTargets(event, true);
+    if (
+      targets.length === 1 &&
+      selectedChips.size > 0 &&
+      (event.type === 'keydown' || event.type === 'keyup')
+    ) {
+      targets.unshift(Array.from(selectedChips));
+    }
+    targets = targets[0];
+    if (!Array.isArray(targets)) targets = [targets];
+    // Check targets
+    for (const { matchTarget, actions } of matchedEvents) {
+      // Account for selected chip target array
+      if (matchTarget(targets[0].type)) {
+        for (const t of targets) {
+          const details = makeDispatchDetail(t.eventDetails, event);
           for (const action of actions) {
             dispatch(action, details);
           }
+          if (event.cancelBubble) return;
         }
+        // Match only the top most target
+        return;
       }
     }
   }
@@ -574,8 +587,8 @@
 
   function handleKeydown(e) {
     const targets = getEventTargets(e);
-    withEventTargets(targets, 'keyDown', e);
     dispatchShortcuts(e);
+    withEventTargets(targets, 'keyDown', e);
   }
 
   function handleKeyup(e) {
@@ -591,7 +604,6 @@
 
   function handleClick(e) {
     const targets = getEventTargets(e);
-    withEventTargets(targets, 'click', e);
     dispatchShortcuts(e);
   }
 

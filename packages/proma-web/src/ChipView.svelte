@@ -8,6 +8,7 @@
   const shortcuts = {
     '[port] alt+click': 'port:delete',
     '[chip] delete,backspace': 'chip:delete',
+    '[board] contextmenu': 'board:contextmenu',
   };
 
   //
@@ -78,6 +79,10 @@
   // Event handlers
   //
 
+  function handleBoardContextmenu(e) {
+    console.log('board contextmenu', e);
+  }
+
   function handleChipDelete({ detail: { chip } }) {
     if (chip === '$in' || chip === '$out') return;
     edit.removeChip(chip);
@@ -132,6 +137,7 @@
 
 <Board
   {shortcuts}
+  on:board:contextmenu={handleBoardContextmenu}
   on:chip:delete={handleChipDelete}
   on:port:delete={handlePortDelete}
   on:wire:start={handleWireStart}
