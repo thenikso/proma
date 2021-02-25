@@ -391,7 +391,6 @@ export class ChipInfo {
     if ((isOutletA ^ infoA.isInput) === (isOutletB ^ infoB.isInput)) {
       throw new Error('Can not wire ports of the same input/output side');
     }
-    // TODO if isData: check types
     let source, sink;
     if (infoA.isSource ^ isOutletA) {
       source = portA;
@@ -399,6 +398,11 @@ export class ChipInfo {
     } else {
       source = portB;
       sink = portA;
+    }
+    if (source.type && sink.type && !source.type.match(sink.type)) {
+      throw new Error(
+        `Invalid types: ${source.fullName} (${source.type.declaration}) -> ${sink.fullName} (${sink.type.declaration})`,
+      );
     }
     if (this.sinkConnection.has(sink)) {
       if (!shouldReplace) {

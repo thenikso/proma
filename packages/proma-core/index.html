@@ -92,7 +92,7 @@
           then();
         });
         const then = outputFlow('then');
-        const event = outputData('event');
+        const event = outputData('event', 'Event');
       });
 
       const BindClick = chip('BindClick', () => {
@@ -112,11 +112,20 @@
         const then = outputFlow('then');
       });
 
+      const ToString = chip('ToString', () => {
+        const value = inputData('value', { canonical: true });
+        const string = outputData('string', {
+          compute: () => String(value()),
+          type: 'String',
+        });
+      });
+
       const MyChip2 = chip('MyChip2', ({ onCreate, onDestroy }) => {
         // const start = new Start();
         // const exec = inputFlow('exec');
         const bind = new BindClick('button');
         const evt = new Evt();
+        const toStr = new ToString();
         const log = new lib.debug.Log('clicked!');
 
         // wire(start.out.then, bind.in.exec);
@@ -124,7 +133,8 @@
         wire(onDestroy.out.then, bind.in.unbind);
         wire(evt.out.ref, bind.in.event);
         wire(evt.out.then, log.in.exec);
-        wire(evt.out.event, log.in.message);
+        wire(evt.out.event, toStr.in.value);
+        wire(toStr.out.string, log.in.message);
       });
 
       const MyIngressChip = chip('MyIngressChip', ({ onCreate }) => {

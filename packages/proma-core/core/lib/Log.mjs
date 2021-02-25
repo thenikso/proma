@@ -4,7 +4,7 @@ export default function install({ chip, inputFlow, inputData, outputFlow }) {
       console.log(message());
       then();
     });
-    const message = inputData('message', { canonical: true });
+    const message = inputData('message', { canonical: true, type: 'String' });
     const then = outputFlow('then');
   });
 }

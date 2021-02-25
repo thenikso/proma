@@ -66,6 +66,18 @@ export class Port extends Function {
       },
     });
 
+    if (portInfo.isData) {
+      Object.defineProperties(self, {
+        type: {
+          enumerable: true,
+          get() {
+            // TODO account for variadic
+            return portInfo.type;
+          },
+        },
+      });
+    }
+
     if (portInfo.isInput && portInfo.isData) {
       Object.defineProperties(self, {
         defaultValue: {
@@ -225,6 +237,18 @@ export class PortOutlet extends Function {
       },
     });
 
+    if (portInfo.isData) {
+      Object.defineProperties(outlet, {
+        type: {
+          enumerable: true,
+          get() {
+            // TODO account for variadic
+            return portInfo.type;
+          },
+        },
+      });
+    }
+
     return outlet;
   }
 }
@@ -361,6 +385,7 @@ export class OutputDataSourcePortInfo extends PortInfo {
     // - `"once"` to never inline but also to compute the output value only once
     this.inline = config.inline;
     this.allowSideEffects = config.allowSideEffects || false;
+    this.type = config.type;
 
     let computeOn;
 
@@ -413,13 +438,6 @@ export class OutputDataSourcePortInfo extends PortInfo {
 export class InputDataSinkPortInfo extends PortInfo {
   constructor(chipInfo, name, config = {}) {
     super(chipInfo, name);
-    // The port can receive default value from the chip constructor
-    this.canonical = !!config.canonical;
-    // The port can not be connected but only receive a direct value
-    // TODO honor coneiled attribute when connecting (in compilation)
-    this.conceiled = !!config.conceiled;
-    // The default value the port should be having
-    this.defaultValue = config.defaultValue;
 
     if (typeof config === 'string') {
       config = {
@@ -431,6 +449,15 @@ export class InputDataSinkPortInfo extends PortInfo {
     if (typeof config.type === 'string') {
       config.type = type(config.type);
     }
+
+    // The port can receive default value from the chip constructor
+    this.canonical = !!config.canonical;
+    // The port can not be connected but only receive a direct value
+    // TODO honor coneiled attribute when connecting (in compilation)
+    this.conceiled = !!config.conceiled;
+    // The default value the port should be having
+    this.defaultValue = config.defaultValue;
+    this.type = config.type;
 
     // Variadic port
     if (typeof config.variadic === 'string') {

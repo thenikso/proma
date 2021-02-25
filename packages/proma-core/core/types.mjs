@@ -1,6 +1,10 @@
 import recast from '../vendor/recast.mjs';
 
 export function type(declaration) {
+  if (declaration instanceof Type) {
+    // TODO add to typeCache?
+    return declaration;
+  }
   if (typeof declaration !== 'string') {
     declaration = declaration.name;
   }
@@ -12,11 +16,11 @@ export function type(declaration) {
 const typeCache = new Map();
 
 export class Type {
-  constructor(declaration) {
-    const normalizedDeclaration = serializeTypeAll(declaration);
-    if (typeCache.has(normalizedDeclaration)) {
+  constructor(definitionObject) {
+    const declaration = serializeTypeAll(definitionObject);
+    if (typeCache.has(declaration)) {
       // TODO may also need to check customTypes?
-      return typeCache.get(normalizedDeclaration);
+      return typeCache.get(declaration);
     }
     // TODO add cache
     const self = this;
@@ -25,13 +29,16 @@ export class Type {
     Object.defineProperties(this, {
       declaration: {
         enumerable: true,
-        // TODO deep freeze
         value: declaration,
+      },
+      definitionObject: {
+        // TODO deep freeze
+        value: definitionObject,
       },
       check: {
         value: function check(data, customTypes) {
           if (!typeChecker || customTypes) {
-            typeChecker = makeCheckAll(declaration, customTypes);
+            typeChecker = makeCheckAll(definitionObject, customTypes);
           }
           const res = typeChecker(data);
           if (customTypes) {
@@ -47,9 +54,9 @@ export class Type {
           }
           if (otherType === self) return true;
           if (!typeMatcher || customTypes) {
-            typeMatcher = makeTypeMatchAll(declaration, customTypes);
+            typeMatcher = makeTypeMatchAll(definitionObject, customTypes);
           }
-          const res = typeMatcher(otherType.declaration);
+          const res = typeMatcher(otherType.definitionObject);
           if (customTypes) {
             typeMatcher = null;
           }
@@ -58,12 +65,12 @@ export class Type {
       },
       toString: {
         value: function toString() {
-          return normalizedDeclaration;
+          return `[type ${declaration}]`;
         },
       },
     });
 
-    typeCache.set(normalizedDeclaration, this);
+    typeCache.set(declaration, this);
   }
 }
 
@@ -100,8 +107,8 @@ function serializeTypeAll(declarations) {
   return declarations.map(serializeType).join('|');
 }
 
-function serializeType(declaration) {
-  const { type, container } = declaration;
+function serializeType(definitionObject) {
+  const { type, container } = definitionObject;
   let res = '';
   if (type) {
     if (typeof type === 'string') {
@@ -111,14 +118,14 @@ function serializeType(declaration) {
     }
   }
   if (container) {
-    const containerOf = declaration.of;
+    const containerOf = definitionObject.of;
     let containerTypes = [];
     switch (container) {
       case 'object':
         for (const key in containerOf) {
           containerTypes.push(key + ': ' + serializeTypeAll(containerOf[key]));
         }
-        if (declaration.subset) {
+        if (definitionObject.subset) {
           containerTypes.push('...');
         }
         res += '{' + containerTypes.join(', ') + '}';
@@ -164,8 +171,8 @@ function makeTypeMatchAll(declarations, customTypes) {
   };
 }
 
-function makeTypeMatch(declaration, customTypes) {
-  const { type, container } = declaration;
+function makeTypeMatch(definitionObject, customTypes) {
+  const { type, container } = definitionObject;
   let matchFunc;
   if (type) {
     const expectType = resolveType(type, customTypes);
@@ -186,13 +193,16 @@ function makeTypeMatch(declaration, customTypes) {
     let matchContainer;
     switch (container) {
       case 'object':
-        matchContainer = makeMatchObjectContainer(declaration, customTypes);
+        matchContainer = makeMatchObjectContainer(
+          definitionObject,
+          customTypes,
+        );
         break;
       case 'array':
-        matchContainer = makeMatchArrayContainer(declaration, customTypes);
+        matchContainer = makeMatchArrayContainer(definitionObject, customTypes);
         break;
       case 'tuple':
-        matchContainer = makeMatchTupleContainer(declaration, customTypes);
+        matchContainer = makeMatchTupleContainer(definitionObject, customTypes);
         break;
     }
     if (matchFunc && matchContainer) {
@@ -210,17 +220,17 @@ function makeTypeMatch(declaration, customTypes) {
   return matchFunc;
 }
 
-function makeMatchObjectContainer(declaration, customTypes) {
+function makeMatchObjectContainer(definitionObject, customTypes) {
   const expectMathers = {};
   let expectKeyCount = 0;
-  const declarationOf = declaration.of;
+  const declarationOf = definitionObject.of;
   for (const key in declarationOf) {
     expectMathers[key] = makeTypeMatchAll(declarationOf[key], customTypes);
     expectKeyCount++;
   }
-  const ignoreKeyCount = declaration.subset;
+  const ignoreKeyCount = definitionObject.subset;
   return function matchObjectContainer(otherDeclaration) {
-    if (otherDeclaration.container !== declaration.container) return false;
+    if (otherDeclaration.container !== definitionObject.container) return false;
     const actualOf = otherDeclaration.of;
     let actualKeyCount = 0;
     let expectMather;
@@ -237,9 +247,9 @@ function makeMatchObjectContainer(declaration, customTypes) {
   };
 }
 
-function makeMatchArrayContainer(declaration, customTypes) {}
+function makeMatchArrayContainer(definitionObject, customTypes) {}
 
-function makeMatchTupleContainer(declaration, customTypes) {}
+function makeMatchTupleContainer(definitionObject, customTypes) {}
 
 //
 // Checking
@@ -253,8 +263,8 @@ function makeCheckAll(declarations, customTypes) {
   return (data) => checks.some((check) => check(data));
 }
 
-function makeCheck(declaration, customTypes) {
-  const { type, container } = declaration;
+function makeCheck(definitionObject, customTypes) {
+  const { type, container } = definitionObject;
   let checkFunc;
   if (type) {
     if (type === 'any') {
@@ -269,13 +279,16 @@ function makeCheck(declaration, customTypes) {
     let checkContainer;
     switch (container) {
       case 'object':
-        checkContainer = makeCheckObjectContainer(declaration, customTypes);
+        checkContainer = makeCheckObjectContainer(
+          definitionObject,
+          customTypes,
+        );
         break;
       case 'array':
-        checkContainer = makeCheckArrayContainer(declaration, customTypes);
+        checkContainer = makeCheckArrayContainer(definitionObject, customTypes);
         break;
       case 'tuple':
-        checkContainer = makeCheckTupleContainer(declaration, customTypes);
+        checkContainer = makeCheckTupleContainer(definitionObject, customTypes);
         break;
     }
     if (checkFunc && checkContainer) {
@@ -348,16 +361,16 @@ function makeCheckInstanceOf(resolvedType) {
   }
 }
 
-function makeCheckObjectContainer(declaration, customTypes) {
+function makeCheckObjectContainer(definitionObject, customTypes) {
   let expectKeyCount = 0;
-  const innerTypeDeclarations = declaration.of;
+  const innerTypeDeclarations = definitionObject.of;
   const expectChecks = {};
   for (const key in innerTypeDeclarations) {
     const innerDeclarations = innerTypeDeclarations[key];
     expectChecks[key] = makeCheckAll(innerDeclarations, customTypes);
     expectKeyCount++;
   }
-  const ignoreKeyCount = declaration.subset;
+  const ignoreKeyCount = definitionObject.subset;
   return function checkObjectContainer(data) {
     let actualKeysCount = 0;
     let keyCheck;
@@ -377,15 +390,17 @@ function makeCheckObjectContainer(declaration, customTypes) {
   };
 }
 
-function makeCheckArrayContainer(declaration, customTypes) {
-  const checkArrayItem = makeCheckAll(declaration.of, customTypes);
+function makeCheckArrayContainer(definitionObject, customTypes) {
+  const checkArrayItem = makeCheckAll(definitionObject.of, customTypes);
   return function checkArrayContainer(data) {
     return Array.isArray(data) && data.every(checkArrayItem);
   };
 }
 
-function makeCheckTupleContainer(declaration, customTypes) {
-  const tupleChecks = declaration.of.map((t) => makeCheckAll(t, customTypes));
+function makeCheckTupleContainer(definitionObject, customTypes) {
+  const tupleChecks = definitionObject.of.map((t) =>
+    makeCheckAll(t, customTypes),
+  );
   return function checkTupleContainer(data) {
     if (data.length !== tupleChecks.length) return false;
     for (let i = 0, l = tupleChecks.length; i < l; i++) {
