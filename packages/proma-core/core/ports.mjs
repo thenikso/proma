@@ -2,6 +2,7 @@ import { info } from './utils.mjs';
 import { variadicStringNameToFunc } from './variadic.mjs';
 import { makePortRun } from './run.mjs';
 import { serializePortInfo } from './serialize.mjs';
+import { type } from './types.mjs';
 
 //
 // Public
@@ -337,6 +338,15 @@ export class OutputDataSourcePortInfo extends PortInfo {
       config = {
         compute: config,
       };
+    } else if (typeof config === 'string') {
+      config = {
+        type: config,
+      };
+    }
+
+    // Type
+    if (typeof config.type === 'string') {
+      config.type = type(config.type);
     }
 
     this.compute = config.compute;
@@ -410,6 +420,17 @@ export class InputDataSinkPortInfo extends PortInfo {
     this.conceiled = !!config.conceiled;
     // The default value the port should be having
     this.defaultValue = config.defaultValue;
+
+    if (typeof config === 'string') {
+      config = {
+        type: config,
+      };
+    }
+
+    // Type
+    if (typeof config.type === 'string') {
+      config.type = type(config.type);
+    }
 
     // Variadic port
     if (typeof config.variadic === 'string') {

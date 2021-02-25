@@ -19,6 +19,9 @@
         wire,
         lib,
       } from './core/index.mjs';
+      import recast from './vendor/recast.mjs';
+
+      window.recast = recast;
 
       const Add = chip('Add', () => {
         const A = inputData('A');
