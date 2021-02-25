@@ -1,14 +1,14 @@
 import recast from '../vendor/recast.mjs';
 
-export function type(declaration) {
-  if (declaration instanceof Type) {
+export function type(signature) {
+  if (signature instanceof Type) {
     // TODO add to typeCache?
-    return declaration;
+    return signature;
   }
-  if (typeof declaration !== 'string') {
-    declaration = declaration.name;
+  if (typeof signature !== 'string') {
+    signature = signature.name;
   }
-  const tokens = (declaration || 'any').match(tokenRegex) || [];
+  const tokens = (signature || 'any').match(tokenRegex) || [];
   const parsedType = consumeTypes(tokens);
   return new Type(parsedType);
 }
@@ -17,19 +17,19 @@ const typeCache = new Map();
 
 export class Type {
   constructor(definitionObject) {
-    const declaration = serializeTypeAll(definitionObject);
-    if (typeCache.has(declaration)) {
+    const signature = serializeTypeAll(definitionObject);
+    if (typeCache.has(signature)) {
       // TODO may also need to check customTypes?
-      return typeCache.get(declaration);
+      return typeCache.get(signature);
     }
     // TODO add cache
     const self = this;
     let typeChecker;
     let typeMatcher;
     Object.defineProperties(this, {
-      declaration: {
+      signature: {
         enumerable: true,
-        value: declaration,
+        value: signature,
       },
       definitionObject: {
         // TODO deep freeze
@@ -65,12 +65,12 @@ export class Type {
       },
       toString: {
         value: function toString() {
-          return `[type ${declaration}]`;
+          return `[type ${signature}]`;
         },
       },
     });
 
-    typeCache.set(declaration, this);
+    typeCache.set(signature, this);
   }
 }
 
@@ -111,11 +111,7 @@ function serializeType(definitionObject) {
   const { type, container } = definitionObject;
   let res = '';
   if (type) {
-    if (typeof type === 'string') {
-      res += type;
-    } else {
-      res += type.name;
-    }
+    res += serializeSingleType(definitionObject);
   }
   if (container) {
     const containerOf = definitionObject.of;
@@ -142,6 +138,32 @@ function serializeType(definitionObject) {
     }
   }
   return res;
+}
+
+function serializeSingleType(definitionObject) {
+  const type = definitionObject.type;
+  if (typeof type === 'string') {
+    switch (type) {
+      case 'Null':
+        return 'null';
+      case 'String':
+        return 'string';
+      case 'Number':
+        return 'number';
+      case 'BigInt':
+        return 'bigint';
+      case 'Boolean':
+      case 'bool':
+        return 'boolean';
+      case 'Symbol':
+        return 'symbol';
+      case 'Function':
+        return 'function';
+      default:
+        return type;
+    }
+  }
+  return type.name;
 }
 
 //

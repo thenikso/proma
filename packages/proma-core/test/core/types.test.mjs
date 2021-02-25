@@ -12,7 +12,7 @@ describe('[core/types] type parsing', async (assert) => {
   assert({
     given: 'a type declaration toString',
     should: 'render the normalized type declaration',
-    actual: type('Test { any : String }').toString(),
+    actual: type('Test { any : String }').signature,
     expected: 'Test{any: String}',
   });
 

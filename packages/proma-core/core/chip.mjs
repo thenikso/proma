@@ -401,7 +401,7 @@ export class ChipInfo {
     }
     if (source.type && sink.type && !source.type.match(sink.type)) {
       throw new Error(
-        `Invalid types: ${source.fullName} (${source.type.declaration}) -> ${sink.fullName} (${sink.type.declaration})`,
+        `Invalid types: ${source.fullName} (${source.type.signature}) -> ${sink.fullName} (${sink.type.signature})`,
       );
     }
     if (this.sinkConnection.has(sink)) {
