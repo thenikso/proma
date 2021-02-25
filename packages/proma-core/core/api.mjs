@@ -104,7 +104,7 @@ export function event(name, ...ports) {
 // Implementations
 //
 
-function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
+function makeChipFactory($buildIngressEvents, $ingressDrivers) {
   function chip(uri, build, configuration) {
     if (typeof uri !== 'string') {
       build = uri;
@@ -120,7 +120,8 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
     const chipInfo = new ChipInfo(uri);
     context.push(chipInfo);
     const ingressEvents =
-      (typeof $buildIngressEvents === 'function' && $buildIngressEvents()) ||
+      (typeof $buildIngressEvents === 'function' &&
+        $buildIngressEvents(config)) ||
       $buildIngressEvents ||
       {};
     if (typeof build === 'function') {
@@ -253,18 +254,12 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
       }
     }
 
-    const ChipClass =
-      typeof $subclassChip === 'function' ? $subclassChip(Chip) : Chip;
+    // TODO maybe not add automatically?
+    registry.add(Chip);
 
-    registry.add(ChipClass);
-
-    return ChipClass;
+    return Chip;
   }
-  chip.extend = function extendChip(
-    buildIngressEvents,
-    ingressDrivers,
-    subclassChip,
-  ) {
+  chip.extend = function extendChip(buildIngressEvents, ingressDrivers) {
     return makeChipFactory(
       () =>
         Object.assign(
@@ -276,11 +271,6 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers, $subclassChip) {
             buildIngressEvents,
         ),
       Object.assign({}, $ingressDrivers, ingressDrivers),
-      subclassChip
-        ? $subclassChip
-          ? (Klass) => subclassChip($subclassChip(Klass))
-          : (Klass) => subclassChip(Klass)
-        : undefined,
     );
   };
   chip.fromJSON = (data) => {
