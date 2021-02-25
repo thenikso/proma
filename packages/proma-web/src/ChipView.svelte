@@ -157,6 +157,12 @@
       portName,
     ];
   }
+
+  function getPortType(port) {
+    if (port.isFlow) return 'exec';
+    // TODO return port type as string
+    return 'any';
+  }
 </script>
 
 <div class="ChipView">
@@ -178,7 +184,7 @@
       >
         <Outputs>
           {#each inputOutlets as outlet (outlet.name)}
-            <Port name={outlet.name} />
+            <Port name={outlet.name} type={getPortType(outlet)} />
           {/each}
         </Outputs>
       </Chip>
@@ -194,14 +200,14 @@
         {#if innerChip.in.length > 0}
           <Inputs>
             {#each innerChip.in as port}
-              <Port name={port.name} />
+              <Port name={port.name} type={getPortType(port)} />
             {/each}
           </Inputs>
         {/if}
         {#if innerChip.out.length > 0}
           <Outputs>
             {#each innerChip.out as port}
-              <Port name={port.name} />
+              <Port name={port.name} type={getPortType(port)} />
             {/each}
           </Outputs>
         {/if}
@@ -217,7 +223,7 @@
       >
         <Inputs>
           {#each outputOutlets as outlet (outlet.name)}
-            <Port name={outlet.name} />
+            <Port name={outlet.name} type={getPortType(outlet)} />
           {/each}
         </Inputs>
       </Chip>

@@ -38,6 +38,31 @@ export class Port extends Function {
           return `${chip.id}.${portInfo.isInput ? 'in' : 'out'}.${portName}`;
         },
       },
+      // Common port accessors
+      isInput: {
+        enumerable: true,
+        get() {
+          return portInfo.isInput;
+        },
+      },
+      isOutput: {
+        enumerable: true,
+        get() {
+          return portInfo.isOutput;
+        },
+      },
+      isFlow: {
+        enumerable: true,
+        get() {
+          return portInfo.isFlow;
+        },
+      },
+      isData: {
+        enumerable: true,
+        get() {
+          return portInfo.isData;
+        },
+      },
     });
 
     if (portInfo.isInput && portInfo.isData) {
@@ -169,6 +194,32 @@ export class PortOutlet extends Function {
       toJSON: {
         value: function toJSON() {
           return portInfo.toJSON();
+        },
+      },
+
+      // Common port accessors
+      isInput: {
+        enumerable: true,
+        get() {
+          return portInfo.isInput;
+        },
+      },
+      isOutput: {
+        enumerable: true,
+        get() {
+          return portInfo.isOutput;
+        },
+      },
+      isFlow: {
+        enumerable: true,
+        get() {
+          return portInfo.isFlow;
+        },
+      },
+      isData: {
+        enumerable: true,
+        get() {
+          return portInfo.isData;
         },
       },
     });
