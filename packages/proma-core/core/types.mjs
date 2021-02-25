@@ -16,8 +16,8 @@ export function type(signature) {
 const typeCache = new Map();
 
 export class Type {
-  constructor(definitionObject) {
-    const signature = serializeTypeAll(definitionObject);
+  constructor(definitions) {
+    const signature = serializeTypeAll(definitions);
     if (typeCache.has(signature)) {
       // TODO may also need to check customTypes?
       return typeCache.get(signature);
@@ -31,14 +31,18 @@ export class Type {
         enumerable: true,
         value: signature,
       },
-      definitionObject: {
+      definitionKinds: {
+        enumerable: true,
+        value: definitions.map(serializeKind),
+      },
+      definitions: {
         // TODO deep freeze
-        value: definitionObject,
+        value: definitions,
       },
       check: {
         value: function check(data, customTypes) {
           if (!typeChecker || customTypes) {
-            typeChecker = makeCheckAll(definitionObject, customTypes);
+            typeChecker = makeCheckAll(definitions, customTypes);
           }
           const res = typeChecker(data);
           if (customTypes) {
@@ -56,9 +60,9 @@ export class Type {
           if (otherType === AnyType) return true;
           if (otherType === self) return true;
           if (!typeMatcher || customTypes) {
-            typeMatcher = makeTypeMatchAll(definitionObject, customTypes);
+            typeMatcher = makeTypeMatchAll(definitions, customTypes);
           }
-          const res = typeMatcher(otherType.definitionObject);
+          const res = typeMatcher(otherType.definitions);
           if (customTypes) {
             typeMatcher = null;
           }
@@ -105,8 +109,8 @@ function classDeclarationOf(data) {
 // Serialize
 //
 
-function serializeTypeAll(declarations) {
-  return declarations.map(serializeType).join('|');
+function serializeTypeAll(definitions) {
+  return definitions.map(serializeType).join('|');
 }
 
 function serializeType(definitionObject) {
@@ -148,23 +152,47 @@ function serializeSingleType(definitionObject) {
     switch (type) {
       case 'Null':
         return 'null';
-      case 'String':
-        return 'string';
-      case 'Number':
-        return 'number';
-      case 'BigInt':
-        return 'bigint';
-      case 'Boolean':
-        return 'boolean';
-      case 'Symbol':
-        return 'symbol';
-      case 'Function':
-        return 'function';
+      case 'string':
+        return 'String';
+      case 'number':
+        return 'Number';
+      case 'bigint':
+      case 'bigInt':
+        return 'BigInt';
+      case 'boolean':
+        return 'Boolean';
+      case 'symbol':
+        return 'Symbol';
+      case 'function':
+        return 'Function';
       default:
         return type;
     }
   }
   return type.name;
+}
+
+function serializeKind(definitionObject) {
+  if (definitionObject.container) return definitionObject.container;
+  const type = serializeSingleType(definitionObject);
+  switch (type) {
+    case 'null':
+      return 'null';
+    case 'String':
+      return 'string';
+    case 'Number':
+      return 'number';
+    case 'BigInt':
+      return 'bigint';
+    case 'Boolean':
+      return 'boolean';
+    case 'Symbol':
+      return 'symbol';
+    case 'Function':
+      return 'function';
+    default:
+      return 'object';
+  }
 }
 
 //
@@ -177,13 +205,13 @@ const byType = (a, b) => {
   return 0;
 };
 
-function makeTypeMatchAll(declarations, customTypes) {
-  const declarationMatchers = declarations
+function makeTypeMatchAll(definitions, customTypes) {
+  const declarationMatchers = definitions
     .slice()
     .sort(byType)
     .map((d) => makeTypeMatch(d, customTypes));
   return function typeMatchAll(otherDeclarations) {
-    if (declarations.length < otherDeclarations.length) return false;
+    if (definitions.length < otherDeclarations.length) return false;
     otherDeclarations = otherDeclarations.slice().sort(byType);
     for (let i = 0, l = otherDeclarations.length; i < l; i++) {
       if (!declarationMatchers.some((m) => m(otherDeclarations[i]))) {
@@ -278,8 +306,8 @@ function makeMatchTupleContainer(definitionObject, customTypes) {}
 // Checking
 //
 
-function makeCheckAll(declarations, customTypes) {
-  const checks = declarations.map((d) => makeCheck(d, customTypes));
+function makeCheckAll(definitions, customTypes) {
+  const checks = definitions.map((d) => makeCheck(d, customTypes));
   if (checks.lenght === 1) {
     return checks[0];
   }

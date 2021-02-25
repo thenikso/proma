@@ -1,7 +1,7 @@
 import { describe } from '../runner/riteway.mjs';
 import { type, Type } from '../../core/types.mjs';
 
-describe('[core/types] type parsing', async (assert) => {
+describe('[core/types] type parsing and serializing', async (assert) => {
   assert({
     given: 'a type declaration',
     should: 'produce a Type',
@@ -10,10 +10,10 @@ describe('[core/types] type parsing', async (assert) => {
   });
 
   assert({
-    given: 'a type declaration toString',
-    should: 'render the normalized type declaration',
-    actual: type('Test { Key : String }').signature,
-    expected: 'Test{Key: string}',
+    given: 'a type declaration signature',
+    should: 'render the normalized type signature',
+    actual: type('Test { Key : string }').signature,
+    expected: 'Test{Key: String}',
   });
 
   assert({
@@ -21,6 +21,13 @@ describe('[core/types] type parsing', async (assert) => {
     should: 'be the same type',
     actual: type('string'),
     expected: type('String'),
+  });
+
+  assert({
+    given: 'an object type',
+    should: 'have an appropriate "definitionKinds"',
+    actual: type('Test { Key : string }').definitionKinds,
+    expected: ['object'],
   });
 });
 
