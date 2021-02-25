@@ -49,9 +49,11 @@ export class Type {
       },
       match: {
         value: function match(otherType, customTypes) {
+          if (self === AnyType) return true;
           if (!(otherType instanceof Type)) {
             otherType = type(otherType);
           }
+          if (otherType === AnyType) return true;
           if (otherType === self) return true;
           if (!typeMatcher || customTypes) {
             typeMatcher = makeTypeMatchAll(definitionObject, customTypes);
@@ -153,7 +155,6 @@ function serializeSingleType(definitionObject) {
       case 'BigInt':
         return 'bigint';
       case 'Boolean':
-      case 'bool':
         return 'boolean';
       case 'Symbol':
         return 'symbol';
@@ -361,7 +362,6 @@ function makeCheckInstanceOf(resolvedType) {
     case Boolean:
     case 'Boolean':
     case 'boolean':
-    case 'bool':
       return checkInstanceOfBoolean;
     case Symbol:
     case 'Symbol':
@@ -618,3 +618,11 @@ function consumeTypes(tokens) {
   }
   return types;
 }
+
+//
+// Static types
+//
+
+export const AnyType = type('any');
+
+// TODO add the "unknown" type that can be matched by everything but matches nothing?
