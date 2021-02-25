@@ -161,6 +161,9 @@
   function getPortType(port) {
     if (port.isFlow) return 'exec';
     // TODO return port type as string
+    if (port.type) {
+      return port.type.definitionKinds[0];
+    }
     return 'any';
   }
 </script>

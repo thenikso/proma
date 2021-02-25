@@ -195,7 +195,10 @@
       } else {
         id = `wire-${shortUID()}`;
       }
-      const type = outputPort.dataType;
+      const type =
+        outputPort.dataType === inputPort.dataType
+          ? inputPort.dataType
+          : `${outputPort.dataType}-to-${inputPort.dataType}`;
       wires = [
         ...wires,
         {

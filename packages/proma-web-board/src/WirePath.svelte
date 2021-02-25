@@ -36,7 +36,7 @@
 
 <path
   {d}
-  class="WirePath WirePathType-{type}"
+  class="WirePath WirePath-type-{type}"
   stroke={actualColor}
   stroke-width="3"
   stroke-linecap="round"

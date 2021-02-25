@@ -37,7 +37,7 @@
   </svg>
 {:else}
   <svg
-    class="Outlet OutletType-{type}"
+    class="Outlet Outlet-type-{type}"
     class:OutletConnected={connected}
     style="display: block; cursor: crosshair;"
     width="16px"

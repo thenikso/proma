@@ -77,7 +77,7 @@
   });
 </script>
 
-<div class="Port Port-{name} {side}" bind:this={portEl} on:click>
+<div class="Port Port-{name} Port-type-{type} {side}" bind:this={portEl} on:click>
   {#if outlet}
     <svelte:component this={outlet} {type} {color} connected={isConnected} />
   {/if}
