@@ -163,6 +163,20 @@ describe('[core/types] type checking', async (assert) => {
 });
 
 describe('[core/types] type matching', async (assert) => {
+  assert({
+    given: 'a complex type to any',
+    should: 'return true, as "any" can use any type',
+    actual: type('{ b: number, a: string }').match(type('any')),
+    expected: true,
+  });
+
+  assert({
+    given: 'to any a complex type to match',
+    should: 'return true, as "any" makes no restrictions',
+    actual: type('any').match(type('{ b: number, a: string }')),
+    expected: true,
+  });
+
   const StringType = type('string');
 
   assert({
@@ -224,25 +238,31 @@ describe('[core/types] type matching', async (assert) => {
     expected: true,
   });
 
+  // objects
+
   assert({
-    given: 'and object with more properties than a second object',
+    given: 'and object type with more properties than a second object type',
     should:
       'return true, because the first object can work for someone using the second one',
     actual: type('{ b: number, a: string }').match(type('{ a: string }')),
     expected: true,
   });
 
+  // arrays
+
   assert({
-    given: 'a complex type to any',
-    should: 'return true, as "any" can use any type',
-    actual: type('{ b: number, a: string }').match(type('any')),
+    given: 'an array of B matching array of A',
+    should: 'return true',
+    actual: type('[B]').match(type('[A]'), { A, B }),
     expected: true,
   });
 
+  // tuples
+
   assert({
-    given: 'to any a complex type to match',
-    should: 'return true, as "any" makes no restrictions',
-    actual: type('any').match(type('{ b: number, a: string }')),
+    given: 'a tuple of B matching tuple of A',
+    should: 'return true',
+    actual: type('(B, A, number)').match(type('(A, A, Number)'), { A, B }),
     expected: true,
   });
 });

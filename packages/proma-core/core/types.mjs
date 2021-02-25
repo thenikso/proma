@@ -60,7 +60,7 @@ export class Type {
           if (otherType === AnyType) return true;
           if (otherType === self) return true;
           if (!typeMatcher || customTypes) {
-            typeMatcher = makeTypeMatchAll(definitions, customTypes);
+            typeMatcher = makeMatchAll(definitions, customTypes);
           }
           const res = typeMatcher(otherType.definitions);
           if (customTypes) {
@@ -84,18 +84,23 @@ export class Type {
 // Type resolution
 //
 
-function resolveType(typeString, customTypes) {
+function resolveType(definitionObject, customTypes) {
+  const baseType = hasBaseType(definitionObject);
+  if (baseType) {
+    return baseType;
+  }
+  const type = definitionObject.type;
   try {
-    const ident = recast.parse(typeString).program.body[0].expression;
+    const ident = recast.parse(type).program.body[0].expression;
     recast.types.namedTypes.Identifier.assert(ident);
     const getTypeRef = new Function(
       'custom',
       `return (custom["${ident.name}"] || ${ident.name})`,
     );
     const typeRef = getTypeRef(customTypes || {});
-    return typeRef || typeString;
+    return typeRef || type;
   } catch (e) {
-    return typeString;
+    return type;
   }
 }
 
@@ -146,28 +151,45 @@ function serializeType(definitionObject) {
   return res;
 }
 
+function hasBaseType(definitionObject) {
+  const type = definitionObject.type;
+  switch (type) {
+    case 'any':
+      return 'any';
+    case 'Null':
+    case 'null':
+      return 'null';
+    case 'String':
+    case 'string':
+      return 'String';
+    case 'Number':
+    case 'number':
+      return 'Number';
+    case 'BigInt':
+    case 'bigint':
+    case 'bigInt':
+      return 'BigInt';
+    case 'Boolean':
+    case 'boolean':
+      return 'Boolean';
+    case 'Symbol':
+    case 'symbol':
+      return 'Symbol';
+    case 'Function':
+    case 'function':
+      return 'Function';
+  }
+  return false;
+}
+
 function serializeSingleType(definitionObject) {
   const type = definitionObject.type;
   if (typeof type === 'string') {
-    switch (type) {
-      case 'Null':
-        return 'null';
-      case 'string':
-        return 'String';
-      case 'number':
-        return 'Number';
-      case 'bigint':
-      case 'bigInt':
-        return 'BigInt';
-      case 'boolean':
-        return 'Boolean';
-      case 'symbol':
-        return 'Symbol';
-      case 'function':
-        return 'Function';
-      default:
-        return type;
+    const baseType = hasBaseType(definitionObject);
+    if (baseType) {
+      return baseType;
     }
+    return type;
   }
   return type.name;
 }
@@ -205,16 +227,16 @@ const byType = (a, b) => {
   return 0;
 };
 
-function makeTypeMatchAll(definitions, customTypes) {
+function makeMatchAll(definitions, customTypes) {
   const declarationMatchers = definitions
     .slice()
     .sort(byType)
     .map((d) => makeTypeMatch(d, customTypes));
-  return function typeMatchAll(otherDeclarations) {
-    if (definitions.length < otherDeclarations.length) return false;
-    otherDeclarations = otherDeclarations.slice().sort(byType);
-    for (let i = 0, l = otherDeclarations.length; i < l; i++) {
-      if (!declarationMatchers.some((m) => m(otherDeclarations[i]))) {
+  return function typeMatchAll(otherDefinitions) {
+    if (definitions.length < otherDefinitions.length) return false;
+    otherDefinitions = otherDefinitions.slice().sort(byType);
+    for (let i = 0, l = otherDefinitions.length; i < l; i++) {
+      if (!declarationMatchers.some((m) => m(otherDefinitions[i]))) {
         return false;
       }
     }
@@ -226,10 +248,10 @@ function makeTypeMatch(definitionObject, customTypes) {
   const { type, container } = definitionObject;
   let matchFunc;
   if (type) {
-    const expectType = resolveType(type, customTypes);
-    matchFunc = function matchType(otherDeclaration) {
-      if (!otherDeclaration.type) return false;
-      const actualType = resolveType(otherDeclaration.type, customTypes);
+    const expectType = resolveType(definitionObject, customTypes);
+    matchFunc = function matchType(otherDefinitionObject) {
+      if (!otherDefinitionObject.type) return false;
+      const actualType = resolveType(otherDefinitionObject, customTypes);
       if (expectType === actualType) return true;
       if (
         typeof expectType === 'function' &&
@@ -258,8 +280,8 @@ function makeTypeMatch(definitionObject, customTypes) {
     }
     if (matchFunc && matchContainer) {
       const matchType = matchFunc;
-      matchFunc = function matchTypeAndContainer(data) {
-        return matchType(data) && matchContainer(data);
+      matchFunc = function matchTypeAndContainer(definitions) {
+        return matchType(definitions) && matchContainer(definitions);
       };
     } else {
       matchFunc = matchContainer;
@@ -276,13 +298,15 @@ function makeMatchObjectContainer(definitionObject, customTypes) {
   let expectKeyCount = 0;
   const declarationOf = definitionObject.of;
   for (const key in declarationOf) {
-    expectMathers[key] = makeTypeMatchAll(declarationOf[key], customTypes);
+    expectMathers[key] = makeMatchAll(declarationOf[key], customTypes);
     expectKeyCount++;
   }
   const ignoreKeyCount = definitionObject.subset;
-  return function matchObjectContainer(otherDeclaration) {
-    if (otherDeclaration.container !== definitionObject.container) return false;
-    const actualOf = otherDeclaration.of;
+  return function matchObjectContainer(otherDefinitionObject) {
+    if (otherDefinitionObject.container !== definitionObject.container) {
+      return false;
+    }
+    const actualOf = otherDefinitionObject.of;
     let actualKeyCount = 0;
     let expectMather;
     for (const key in actualOf) {
@@ -298,9 +322,35 @@ function makeMatchObjectContainer(definitionObject, customTypes) {
   };
 }
 
-function makeMatchArrayContainer(definitionObject, customTypes) {}
+function makeMatchArrayContainer(definitionObject, customTypes) {
+  const matchArrayItem = makeMatchAll(definitionObject.of, customTypes);
+  return function matchArrayContainer(otherDefinitionObject) {
+    if (otherDefinitionObject.container !== definitionObject.container) {
+      return false;
+    }
+    const actualOf = otherDefinitionObject.of;
+    return matchArrayItem(actualOf);
+  };
+}
 
-function makeMatchTupleContainer(definitionObject, customTypes) {}
+function makeMatchTupleContainer(definitionObject, customTypes) {
+  const tupleMatchers = definitionObject.of.map((t) =>
+    makeMatchAll(t, customTypes),
+  );
+  return function checkTupleContainer(otherDefinitionObject) {
+    if (otherDefinitionObject.container !== definitionObject.container) {
+      return false;
+    }
+    const actualOf = otherDefinitionObject.of;
+    if (actualOf.length !== tupleMatchers.length) {
+      return false;
+    }
+    for (let i = 0, l = tupleMatchers.length; i < l; i++) {
+      if (!tupleMatchers[i](actualOf[i])) return false;
+    }
+    return true;
+  };
+}
 
 //
 // Checking
@@ -323,7 +373,7 @@ function makeCheck(definitionObject, customTypes) {
         return true;
       };
     } else {
-      checkFunc = makeCheckInstanceOf(resolveType(type, customTypes));
+      checkFunc = makeCheckInstanceOf(resolveType(definitionObject, customTypes));
     }
   }
   if (container) {
