@@ -8,7 +8,6 @@
   export let inputChip;
   export let inputPort;
   export let path = WirePath;
-  export let color = undefined;
 
   const board = getBoard();
 
@@ -21,7 +20,6 @@
       inputChip,
       inputPort,
       path,
-      color,
     );
     return () => {
       if (id) {
@@ -30,5 +28,5 @@
     };
   });
 
-  // $: id = board.addWire(outputChip, outputPort, inputChip, inputPort, path, color, id);
+  // $: id = board.addWire(outputChip, outputPort, inputChip, inputPort, path, id);
 </script>

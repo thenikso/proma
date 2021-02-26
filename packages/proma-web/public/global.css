@@ -1,0 +1,11 @@
+:root {
+  --proma-board--type-any: #00a7ef;
+  --proma-board--type-exec: #e7e7e7;
+  --proma-board--type-string: #55d67c;
+  --proma-board--type-number: #57acee;
+  --proma-board--type-boolean: #eeac57;
+  --proma-board--type-object: #ac57ee;
+  --proma-board--type-array: #bf7df2;
+  --proma-board--type-tuple: #cd82a3;
+  --proma-board--type-function: #d6557c;
+}

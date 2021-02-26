@@ -7,7 +7,6 @@
   export let type = 'any';
   export let connected = false;
   export let outlet = PortOutlet;
-  export let color = undefined;
 
   let portEl;
   let connectionCount = 0;
@@ -21,7 +20,6 @@
     side,
     name,
     dataType: type,
-    color,
     get eventDetails() {
       return {
         chip: chip.id,
@@ -63,7 +61,6 @@
 
   $: port.name = name;
   $: port.dataType = type;
-  $: port.color = color;
 
   onMount(() => {
     portEl.$promaPort = port;
@@ -77,9 +74,15 @@
   });
 </script>
 
-<div class="Port Port-{name} Port-type-{type} {side}" bind:this={portEl} on:click>
+<div
+  class="Port Port-{name} Port-type-{type} {side}"
+  bind:this={portEl}
+  on:click
+>
   {#if outlet}
-    <svelte:component this={outlet} {type} {color} connected={isConnected} />
+    <div class="PortOutlet">
+      <svelte:component this={outlet} {type} connected={isConnected} />
+    </div>
   {/if}
   <div class="PortLabel">{name}</div>
 </div>
@@ -110,5 +113,41 @@
 
   .PortLabel {
     padding: 0 8px;
+  }
+
+  .Port .PortOutlet {
+    color: var(--proma-board--type-any, #00a7ef);
+  }
+
+  .Port-type-exec .PortOutlet {
+    color: var(--proma-board--type-exec, #e7e7e7);
+  }
+
+  .Port-type-string .PortOutlet {
+    color: var(--proma-board--type-string, #55d67c);
+  }
+
+  .Port-type-number .PortOutlet {
+    color: var(--proma-board--type-number, #57acee);
+  }
+
+  .Port-type-boolean .PortOutlet {
+    color: var(--proma-board--type-boolean, #eeac57);
+  }
+
+  .Port-type-object .PortOutlet {
+    color: var(--proma-board--type-object, #ac57ee);
+  }
+
+  .Port-type-array .PortOutlet {
+    color: var(--proma-board--type-array, #bf7df2);
+  }
+
+  .Port-type-tuple .PortOutlet {
+    color: var(--proma-board--type-tuple, #cd82a3);
+  }
+
+  .Port-type-function .PortOutlet {
+    color: var(--proma-board--type-function, #d6557c);
   }
 </style>

@@ -173,7 +173,7 @@
       selectedChips.delete(chip);
     },
     // Wires
-    addWire(outputChip, outputPort, inputChip, inputPort, wirePath, color, id) {
+    addWire(outputChip, outputPort, inputChip, inputPort, wirePath, id) {
       if (typeof outputChip === 'string') {
         outputChip = boardContentEl.getElementsByClassName(
           'Chip-' + outputChip,
@@ -209,7 +209,6 @@
           inputPort,
           type,
           wirePath,
-          color,
           ...wirePoints({ outputPort, inputPort }),
         },
       ];
@@ -662,8 +661,67 @@
     xmlns="http://www.w3.org/2000/svg"
     xmlns:xlink="http://www.w3.org/1999/xlink"
   >
-    {#each wires as { id, wirePath, fromPoint, toPoint, type, color } (id)}
-      <svelte:component this={wirePath} {fromPoint} {toPoint} {type} {color} />
+    <defs>
+      <linearGradient id="any-to-string">
+        <stop offset="0%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-string, #55D67C)" />
+      </linearGradient>
+      <linearGradient id="any-to-number">
+        <stop offset="0%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-number, #57acee)" />
+      </linearGradient>
+      <linearGradient id="any-to-boolean">
+        <stop offset="0%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-boolean, #eeac57)" />
+      </linearGradient>
+      <linearGradient id="any-to-object">
+        <stop offset="0%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-object, #ac57ee)" />
+      </linearGradient>
+      <linearGradient id="any-to-array">
+        <stop offset="0%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-array, #bf7df2)" />
+      </linearGradient>
+      <linearGradient id="any-to-tuple">
+        <stop offset="0%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-tuple, #cd82a3)" />
+      </linearGradient>
+      <linearGradient id="any-to-function">
+        <stop offset="0%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-function, #d6557c)" />
+      </linearGradient>
+
+      <linearGradient id="string-to-any">
+        <stop offset="0%" stop-color="var(--proma-board--type-string, #55D67C)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+      </linearGradient>
+      <linearGradient id="number-to-any">
+        <stop offset="0%" stop-color="var(--proma-board--type-number, #57acee)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+      </linearGradient>
+      <linearGradient id="boolean-to-any">
+        <stop offset="0%" stop-color="var(--proma-board--type-boolean, #eeac57)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+      </linearGradient>
+      <linearGradient id="object-to-any">
+        <stop offset="0%" stop-color="var(--proma-board--type-object, #ac57ee)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+      </linearGradient>
+      <linearGradient id="array-to-any">
+        <stop offset="0%" stop-color="var(--proma-board--type-array, #bf7df2)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+      </linearGradient>
+      <linearGradient id="tuple-to-any">
+        <stop offset="0%" stop-color="var(--proma-board--type-tuple, #cd82a3)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+      </linearGradient>
+      <linearGradient id="function-to-any">
+        <stop offset="0%" stop-color="var(--proma-board--type-function, #d6557c)" />
+        <stop offset="100%" stop-color="var(--proma-board--type-any, #00a7ef)" />
+      </linearGradient>
+    </defs>
+    {#each wires as { id, wirePath, fromPoint, toPoint, type } (id)}
+      <svelte:component this={wirePath} {fromPoint} {toPoint} {type} />
     {/each}
     {#if newWireFromPoint && dragging}
       <svelte:component
@@ -675,7 +733,6 @@
           ? newWireFromPoint
           : clientPointToBoardPoint(dragging)}
         type={newWireFromPort.dataType}
-        color={newWireFromPort.color}
       />
     {/if}
   </svg>
