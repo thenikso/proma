@@ -81,6 +81,35 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
       }
     }),
     expected: compileAndRunResult(
+      js`
+      class test_core_ports_LiteralExternal {
+        constructor(value) {
+          const $in = Object.seal({
+            value
+          });
+
+          Object.defineProperties(this.in = {}, {
+            value: {
+              get: () => () => $in.value
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            value: {
+              enumerable: true,
+              value: () => $in.value
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
       new Error('Attempting to access hidden port "value"'),
     ),
   });

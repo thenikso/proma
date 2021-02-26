@@ -141,7 +141,7 @@ export default class ClassWrapper {
     compiledUpdatesOnPorts,
   }) {
     const program = parse(`
-      class ${this.chipInfo.URI} {
+      class ${this.chipInfo.name} {
         constructor() {
           const $in = Object.seal({});
           const $out = Object.seal({});
@@ -244,23 +244,28 @@ export default class ClassWrapper {
       // Input accessors
       thisInBody.push(
         ...this.chipInfo.inputDataPorts.map((portOutlet) => {
-          return property(
-            'init',
-            identifier(portOutlet.name),
-            objectExpression([
-              property(
-                'init',
-                identifier('get'),
-                parse(`() => () => $in.${portOutlet.name}`).program.body[0]
-                  .expression,
-              ),
+          const inProps = [
+            property(
+              'init',
+              identifier('get'),
+              parse(`() => () => $in.${portOutlet.name}`).program.body[0]
+                .expression,
+            ),
+          ];
+          if (!portOutlet.isHidden) {
+            inProps.push(
               property(
                 'init',
                 identifier('set'),
                 parse(`(value) => { $in.${portOutlet.name} = value }`).program
                   .body[0].expression,
               ),
-            ]),
+            );
+          }
+          return property(
+            'init',
+            identifier(portOutlet.name),
+            objectExpression(inProps),
           );
         }),
       );

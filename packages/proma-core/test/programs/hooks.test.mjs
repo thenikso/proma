@@ -11,6 +11,19 @@ import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
 import { Split, Log } from '../lib.mjs';
 
 describe('[programs/hooks] onCreate hook', async (assert) => {
+  const WLog = chip('test/programs/hooks/WLog', () => {
+    const exec = inputFlow('exec');
+    const message = inputData('message');
+
+    const log = new Log();
+
+    const then = outputFlow('then');
+
+    wire(exec, log.in.exec);
+    wire(message, log.in.message);
+    wire(log.out.then, then);
+  });
+
   assert({
     given: 'a direct onCreate hook based program',
     should: 'compile',
@@ -94,24 +107,4 @@ describe('[programs/hooks] onCreate hook', async (assert) => {
       ['one', 'two'],
     ),
   });
-});
-
-const WStart = chip('WStart', ({ OnCreate }) => {
-  const onCreate = new OnCreate();
-  const then = outputFlow('then');
-
-  wire(onCreate.out.then, then);
-});
-
-const WLog = chip('WLog', () => {
-  const exec = inputFlow('exec');
-  const message = inputData('message');
-
-  const log = new Log();
-
-  const then = outputFlow('then');
-
-  wire(exec, log.in.exec);
-  wire(message, log.in.message);
-  wire(log.out.then, then);
 });
