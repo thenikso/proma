@@ -42,7 +42,9 @@ export function makePortRun(portInfo, isOutlet) {
         if (parentChip && parentChip !== port.chip) {
           const conn = info(parentChip).getConnectedPorts(port, parentChip)[0];
           if (conn) {
-            return scope.withReplace(conn.chip, conn);
+            const value = scope.withReplace(conn.chip, conn);
+            checkValueType(port, value);
+            return value;
           }
         }
 
@@ -85,6 +87,7 @@ export function makePortRun(portInfo, isOutlet) {
 
         // Assign value to this output port
         if (typeof assignValue !== 'undefined') {
+          checkValueType(port, assignValue);
           port.runValue = assignValue;
           return;
         }
@@ -111,6 +114,7 @@ export function makePortRun(portInfo, isOutlet) {
           const computed = scope.with(port.chip, portInfo.compute);
           // Cache "once" inlined outputs
           if (portInfo.inline === 'once') {
+            checkValueType(port, computed);
             port.runValue = computed;
           }
           return computed;
@@ -119,7 +123,9 @@ export function makePortRun(portInfo, isOutlet) {
         // Connections
         const conn = info(port.chip).getConnectedPorts(port, port.chip)[0];
         if (conn) {
-          return scope.with(port.chip, conn);
+          const value = scope.with(port.chip, conn);
+          checkValueType(port, value);
+          return value;
         }
 
         // Value
@@ -259,5 +265,13 @@ class Scope {
       context.pop();
       return res;
     };
+  }
+}
+
+function checkValueType(port, value) {
+  if (port.type && !port.type.check(value)) {
+    console.warn(
+      `Invalid value type for port ${port.fullName}, expected type: ${port.type.signature}, got value: ${value}`,
+    );
   }
 }
