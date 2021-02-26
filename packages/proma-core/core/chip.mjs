@@ -318,8 +318,19 @@ export class ChipInfo {
     return portOutlet;
   }
 
+  // TODO accept a beforePort param to insert in specific position?
   addInputDataPort(name, config) {
     const portInfo = new InputDataSinkPortInfo(this, name, config);
+    if (portInfo.isRequired) {
+      const otherCanonicalInputs = this.inputs.filter(
+        (outlet) => outlet.isData && outlet.isCanonical && !outlet.isRequired,
+      );
+      if (otherCanonicalInputs.length !== 0) {
+        throw new Error(
+          `Required canonical inputs must be declared before non-required ones: ${name}`,
+        );
+      }
+    }
     const portOutlet = new PortOutlet(portInfo);
     this.inputs.push(portOutlet);
     return portOutlet;

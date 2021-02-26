@@ -1,5 +1,6 @@
 import './runner/tap-console.mjs';
 
+import './core/ports.test.mjs';
 import './core/edit.test.mjs';
 import './core/serialize.test.mjs';
 import './core/run.test.mjs';

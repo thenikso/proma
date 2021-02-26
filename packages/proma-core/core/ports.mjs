@@ -247,6 +247,23 @@ export class PortOutlet extends Function {
           },
         },
       });
+
+      if (portInfo.isInput) {
+        Object.defineProperties(outlet, {
+          isCanonical: {
+            enumerable: true,
+            get() {
+              return portInfo.isCanonical;
+            },
+          },
+          isRequired: {
+            enumerable: true,
+            get() {
+              return portInfo.isRequired;
+            },
+          },
+        });
+      }
     }
 
     return outlet;
@@ -451,7 +468,7 @@ export class InputDataSinkPortInfo extends PortInfo {
     }
 
     // The port can receive default value from the chip constructor
-    this.canonical = !!config.canonical;
+    this.canonical = config.canonical || false;
     // The port can not be connected but only receive a direct value
     // TODO honor coneiled attribute when connecting (in compilation)
     this.conceiled = !!config.conceiled;
@@ -476,6 +493,14 @@ export class InputDataSinkPortInfo extends PortInfo {
     } else {
       this.variadic = config.variadic || false;
     }
+  }
+
+  get isCanonical() {
+    return !!this.canonical;
+  }
+
+  get isRequired() {
+    return this.canonical === 'required';
   }
 
   get isVariadic() {
