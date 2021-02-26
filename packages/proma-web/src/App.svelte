@@ -4,10 +4,11 @@
   import ChipView from './ChipView.svelte';
   import Modal from './components/Modal.svelte';
 
-  const MyChip = proma.chip('MyChip', ({ onCreate }) => {
+  const MyChip = proma.chip('MyChip', ({ OnCreate }) => {
     const exec = proma.inputFlow('exec');
     const target = proma.inputData('target', { canonical: true });
 
+    const onCreate = new OnCreate();
     const log = new proma.lib.debug.Log();
 
     proma.wire(onCreate.out.then, log.in.exec);
@@ -55,15 +56,17 @@
   >
     <div>
       <div><b>Context chips</b></div>
-      {#each chipRequest.chip.inactiveIngressChips as chip (chip.id)}
+      {#each chipRequest.chip.customChipClasses as chipClass (chipClass.URI)}
         <div>
           <button
             type="button"
             on:click={() => {
-              chipRequest.provideChipInstance(chip);
+              chipRequest.provideChipInstance(new chipClass());
               chipRequest = null;
-            }}>{chip.chipURI}</button
+            }}
           >
+            {chipClass.URI}
+          </button>
         </div>
       {/each}
       <div><b>All chips</b></div>
@@ -74,8 +77,10 @@
             on:click={() => {
               chipRequest.provideChipInstance(new chipClass());
               chipRequest = null;
-            }}>{chipClass.URI}</button
+            }}
           >
+            {chipClass.URI}
+          </button>
         </div>
       {/each}
     </div>
