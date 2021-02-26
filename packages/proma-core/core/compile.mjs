@@ -155,6 +155,11 @@ function getHookPorts(chip, selectPorts, scope) {
     }
     const newScope = [subChip, ...scope];
     for (const port of selectedPorts) {
+      if (!port.isOutput || !port.isFlow) {
+        throw new Error(
+          `Can only select output flow ports as hooks. Got "${port.fullName}"`,
+        );
+      }
       hookPorts.push({
         port,
         scope: newScope,
