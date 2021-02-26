@@ -109,12 +109,17 @@ function makeChipFactory($customChips, $hooks) {
     );
     const chipInfo = new ChipInfo(uri);
     context.push(chipInfo);
-    const customChips =
-      (typeof $customChips === 'function' && $customChips(config)) ||
-      $customChips ||
-      {};
-    if (typeof build === 'function') {
-      build.call(undefined, customChips);
+    try {
+      const customChips =
+        (typeof $customChips === 'function' && $customChips(config)) ||
+        $customChips ||
+        {};
+      if (typeof build === 'function') {
+        build.call(undefined, customChips);
+      }
+    } catch (buildError) {
+      context.pop();
+      throw buildError;
     }
     context.pop();
     // TODO validate chip:
