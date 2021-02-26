@@ -158,6 +158,10 @@ const chipJS = js`
       });
 
       Object.freeze(this.out);
+
+      Object.defineProperty(this, "destroy", {
+        value: () => {}
+      });
     }
   }`;
 

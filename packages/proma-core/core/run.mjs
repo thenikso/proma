@@ -1,16 +1,17 @@
 import { context, info, assertInfo, assert } from './utils.mjs';
 
-export function runIngressEvents(chip, filterIngress = () => true) {
+export function runFlowPorts(ownerChip, selectPortsToRun) {
   const scope = Scope.current;
-  scope.with(chip, () => {
-    const chipInfo = info(chip);
-    for (const ingress of chipInfo.ingressEvents) {
-      if (filterIngress(ingress)) {
-        scope.with(ingress.out.then.chip, ingress.out.then);
+  scope.with(ownerChip, () => {
+    const chipInfo = info(ownerChip);
+    for (const innerChip of chipInfo.chips) {
+      const ports = selectPortsToRun(innerChip) || [];
+      for (const port of ports) {
+        scope.with(port.chip, port);
       }
     }
     for (const subChip of chipInfo.chips) {
-      runIngressEvents(subChip, filterIngress);
+      runFlowPorts(subChip, selectPortsToRun);
     }
   });
 }

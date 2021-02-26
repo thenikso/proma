@@ -88,6 +88,10 @@ describe('[programs/handles] handles usage', async (assert) => {
           });
 
           Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       [undefined, 9],
@@ -178,6 +182,10 @@ describe('[programs/handles] handles usage', async (assert) => {
           });
 
           Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       true,

@@ -10,11 +10,12 @@ import {
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
 import { Split, Log } from '../lib.mjs';
 
-describe('[programs/ingresses] ingress base flow', async (assert) => {
+describe('[programs/hooks] onCreate hook', async (assert) => {
   assert({
-    given: 'a direct onCreate ingress based program',
+    given: 'a direct onCreate hook based program',
     should: 'compile',
-    actual: compileAndRun(({ onCreate }) => {
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
       const log = new Log();
       log.in.message = 'hello world';
       wire(onCreate.out.then, log.in.exec);
@@ -23,7 +24,13 @@ describe('[programs/ingresses] ingress base flow', async (assert) => {
       js`
       class TestChip {
         constructor() {
-          console.log("hello world");
+          {
+            console.log("hello world");
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       ['hello world'],
@@ -33,7 +40,8 @@ describe('[programs/ingresses] ingress base flow', async (assert) => {
   assert({
     given: 'wrapped chips',
     should: 'reduce to non wrapped versions',
-    actual: compileAndRun(({ onCreate }) => {
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
       const log = new WLog();
       log.in.message = 'hello world';
       wire(onCreate.out.then, log.in.exec);
@@ -42,7 +50,13 @@ describe('[programs/ingresses] ingress base flow', async (assert) => {
       js`
       class TestChip {
         constructor() {
-          console.log("hello world");
+          {
+            console.log("hello world");
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       ['hello world'],
@@ -52,7 +66,8 @@ describe('[programs/ingresses] ingress base flow', async (assert) => {
   assert({
     given: 'a sequence',
     should: 'compile both branch sequentially',
-    actual: compileAndRun(({ onCreate }) => {
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
       const log1 = new Log();
       log1.in.message = 'one';
       const log2 = new WLog();
@@ -66,8 +81,14 @@ describe('[programs/ingresses] ingress base flow', async (assert) => {
       js`
       class TestChip {
         constructor() {
-          console.log("one");
-          console.log("two");
+          {
+            console.log("one");
+            console.log("two");
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       ['one', 'two'],
@@ -75,7 +96,8 @@ describe('[programs/ingresses] ingress base flow', async (assert) => {
   });
 });
 
-const WStart = chip('WStart', ({ onCreate }) => {
+const WStart = chip('WStart', ({ OnCreate }) => {
+  const onCreate = new OnCreate();
   const then = outputFlow('then');
 
   wire(onCreate.out.then, then);

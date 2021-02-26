@@ -17,23 +17,23 @@ const {
 } = recast;
 
 export class Compilation {
-  constructor(rootChipInfo, rootChip, CodeWrapper) {
+  constructor(rootChipInfo, rootChip) {
     this.rootChip = rootChip;
     this.rootChipInfo = rootChipInfo;
-    this.outputBlocksByPort = {};
-    this.executeBlocksByPort = {};
-    this.ingressEventsBlocksByChip = new Map();
-    this.updateBlocksByPort = {};
-    this.CodeWrapper = CodeWrapper || ClassWrapper;
   }
 
-  compile(codeWrapper) {
-    codeWrapper = codeWrapper || new (this.CodeWrapper || ClassWrapper)();
+  compile(codeWrapper, hooks) {
+    codeWrapper = codeWrapper || new ClassWrapper();
 
     // TODO compile each input exec ports
     const rootInfo = this.rootChipInfo;
     const rootChip = this.rootChip || info({}, this.rootChipInfo);
     const scope = [rootChip];
+    const outputBlocksByPort = {};
+    const executeBlocksByPort = {};
+    // A map of hook label to array of compiled blocks for the hook
+    const hooksBlocksByLabel = {};
+    const updateBlocksByPort = {};
 
     if (codeWrapper.compileBegin) {
       codeWrapper.compileBegin(this.rootChip, this.rootChipInfo);
@@ -47,10 +47,10 @@ export class Compilation {
       for (const portOutlet of rootInfo.outputDataPorts) {
         const portInfo = info(portOutlet);
         const block = compiler(portInfo)(portOutlet, scope, codeWrapper);
-        this.outputBlocksByPort[portInfo.name] = block;
+        outputBlocksByPort[portInfo.name] = block;
       }
     } else {
-      // Chips with flow may have ingress events or executions
+      // Chips with flow
 
       // Output data with compute but no computeOn will be initialized once
       // This covers stuff like handlers
@@ -58,7 +58,7 @@ export class Compilation {
         const portInfo = info(portOutlet);
         if (portInfo.compute && portInfo.computeOn.length === 0) {
           const block = compiler(portInfo)(portOutlet, scope, codeWrapper);
-          this.outputBlocksByPort[portInfo.name] = block;
+          outputBlocksByPort[portInfo.name] = block;
         }
       }
 
@@ -68,7 +68,7 @@ export class Compilation {
         const portInfo = info(portOutlet);
         if (portInfo.computeOutputs.size === 0) continue;
 
-        this.updateBlocksByPort[portInfo.name] = Array.from(
+        updateBlocksByPort[portInfo.name] = Array.from(
           portInfo.computeOutputs,
         ).map((outPortInfo) => {
           return compiler(outPortInfo)(
@@ -84,20 +84,39 @@ export class Compilation {
       for (const portOutlet of rootInfo.inputFlowPorts) {
         const portInfo = info(portOutlet);
         const block = compiler(portInfo)(portOutlet, scope, codeWrapper);
-        this.executeBlocksByPort[portInfo.name] = block;
+        executeBlocksByPort[portInfo.name] = block;
       }
 
-      // Ingresses
-      for (const { port, scope } of usedIngressEvents(rootChip)) {
-        let block = compile(port, scope, codeWrapper);
-        if (!block) continue;
-        if (!namedTypes.BlockStatement.check(block)) {
-          if (!namedTypes.ExpressionStatement.check(block)) {
-            block = builders.expressionStatement(block);
+      // Hooks
+      // These are (if defined) an object with the key being the label of the
+      // hook and the value an object with:
+      // - `selectPorts` a required function that will be run recursivelly on
+      //   all inner chips and should return an array of ports to be compiled
+      //   for that chip (or nothing to ignore the chip)
+      //
+      //     {
+      //       hookLabel: {
+      //         selectPorts: chip => [chip.out.flow]
+      //       }
+      //     }
+      //
+      // Note that the wrapper will need to know what to do with these.
+
+      for (const [label, { selectPorts }] of Object.entries(hooks || {})) {
+        const hookPorts = getHookPorts(rootChip, selectPorts);
+        const hookBlocks = [];
+        for (const { port, scope } of hookPorts) {
+          let block = compile(port, scope, codeWrapper);
+          if (!block) continue;
+          if (!namedTypes.BlockStatement.check(block)) {
+            if (!namedTypes.ExpressionStatement.check(block)) {
+              block = builders.expressionStatement(block);
+            }
+            block = builders.blockStatement([block]);
           }
-          block = builders.blockStatement([block]);
+          hookBlocks.push(block);
         }
-        this.ingressEventsBlocksByChip.set(port.chip, block);
+        hooksBlocksByLabel[label] = hookBlocks;
       }
     }
 
@@ -105,10 +124,10 @@ export class Compilation {
     const program = codeWrapper.compileEnd({
       chip: this.rootChip,
       chipInfo: this.rootChipInfo,
-      compiledIngressEvents: this.ingressEventsBlocksByChip,
-      compiledFlowPorts: this.executeBlocksByPort,
-      compiledOutputPorts: this.outputBlocksByPort,
-      compiledUpdatesOnPorts: this.updateBlocksByPort,
+      compiledHooks: hooksBlocksByLabel,
+      compiledFlowPorts: executeBlocksByPort,
+      compiledOutputPorts: outputBlocksByPort,
+      compiledUpdatesOnPorts: updateBlocksByPort,
     });
 
     return prettyPrint(program, { tabWidth: 2 }).code;
@@ -123,29 +142,29 @@ export class Compilation {
 // Visiting
 //
 
-function usedIngressEvents(chip, scope) {
+function getHookPorts(chip, selectPorts, scope) {
   if (!scope) {
     scope = [chip];
   }
-  const ingresses = [];
+  const hookPorts = [];
   const chipInfo = info(chip);
-  for (const ingress of chipInfo.ingressEvents) {
-    if (!chipInfo.chips.includes(ingress)) {
+  for (const subChip of chipInfo.chips) {
+    const selectedPorts = selectPorts(subChip);
+    if (!selectedPorts || selectedPorts.length === 0) {
       continue;
     }
-    const newScope = [ingress, ...scope];
-    const outFlowPorts = ingress.out.filter((port) => info(port).isFlow);
-    for (const port of outFlowPorts) {
-      ingresses.push({
+    const newScope = [subChip, ...scope];
+    for (const port of selectedPorts) {
+      hookPorts.push({
         port,
         scope: newScope,
       });
     }
   }
   for (const subChip of chipInfo.chips) {
-    ingresses.push(...usedIngressEvents(subChip, [subChip, ...scope]));
+    hookPorts.push(...getHookPorts(subChip, selectPorts, [subChip, ...scope]));
   }
-  return ingresses;
+  return hookPorts;
 }
 
 function isOutlet(port, scope) {

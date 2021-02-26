@@ -135,7 +135,7 @@ export default class ClassWrapper {
     return inletUse;
   }
   compileEnd({
-    compiledIngressEvents,
+    compiledHooks,
     compiledFlowPorts,
     compiledOutputPorts,
     compiledUpdatesOnPorts,
@@ -371,7 +371,8 @@ export default class ClassWrapper {
               property(
                 'init',
                 identifier('value'),
-                parse(`() => $out.${portOutlet.name}`).program.body[0].expression,
+                parse(`() => $out.${portOutlet.name}`).program.body[0]
+                  .expression,
               ),
             ]),
           );
@@ -435,9 +436,9 @@ export default class ClassWrapper {
                     }}`).program.body[0].expression.body.body[0],
                     // Update output ports with `computeOn` connected to this
                     // flow outlet
-                    ...(compiledUpdatesOnPorts[portOutlet.name] || []).map((b) =>
-                      expressionStatement(b),
-                    ),
+                    ...(
+                      compiledUpdatesOnPorts[portOutlet.name] || []
+                    ).map((b) => expressionStatement(b)),
                     // TODO add output updates here
                     expressionStatement(
                       callExpression(
@@ -473,36 +474,44 @@ export default class ClassWrapper {
       body.push(parse('Object.freeze(this.out)').program.body[0]);
     }
 
-    // Ingress Events
+    // Destroy method
+    const destroyMethod = parse(
+      `Object.defineProperty(this, "destroy", { value: () => {} })`,
+    ).program.body[0];
+    const destroyBodyPath = [
+      'expression',
+      'arguments',
+      2,
+      'properties',
+      0,
+      'value',
+      'body',
+    ];
 
-    for (const [ingressChip, ingressBlock] of compiledIngressEvents.entries()) {
-      const eventURI = ingressChip.chipURI;
-      switch (eventURI) {
-        case 'OnCreate':
-          body.push(...ingressBlock.body);
+    // Hooks
+
+    for (const [hookLabel, hookBlocks] of Object.entries(compiledHooks || {})) {
+      switch (hookLabel) {
+        case 'onCreate':
+          // TODO could remove outter block if there are no variable declarations
+          body.push(...hookBlocks);
           break;
-        case 'OnDestroy':
-          {
-            // TODO add destroy to all comilations even if not used
-            // (will require another recreation of tests.. maybe it's time for
-            // snapshots)
-            const destroyMethod = parse(
-              `Object.defineProperty(this, "destroy", { value: () => {} })`,
-            ).program.body[0];
-            console.log(destroyMethod);
-            replaceAstPath(
-              destroyMethod,
-              ['expression', 'arguments', 2, 'properties', 0, 'value', 'body'],
-              ingressBlock,
-            );
-            body.push(destroyMethod);
-          }
+        case 'onDestroy':
+          replaceAstPath(
+            destroyMethod,
+            destroyBodyPath,
+            // TODO could remove outter block if there are no variable declarations
+            blockStatement(hookBlocks),
+          );
           break;
         default:
-          console.warn(`Unsupported ingress: ${eventURI}`);
+          console.warn(`Unsupported hook: ${hookLabel}`);
           break;
       }
     }
+
+    // Always add destroy method (even if emtpy)
+    body.push(destroyMethod);
 
     return cleanAst(program);
   }

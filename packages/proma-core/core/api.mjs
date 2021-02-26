@@ -1,26 +1,32 @@
 import { context, assert, info } from './utils.mjs';
 import { Chip as ChipBase, ChipInfo } from './chip.mjs';
-import { runIngressEvents } from './run.mjs';
+import { runFlowPorts } from './run.mjs';
 import { EditableChipInfo } from './edit.mjs';
 import { Compilation } from './compile.mjs';
 import { deserializeChip } from './serialize.mjs';
 import { registry } from './registry.mjs';
 
-export const OnCreateEvent = event('OnCreate');
-export const OnDestroyEvent = event('OnDestroy');
+const OnCreate = event('OnCreate');
+const OnDestroy = event('OnDestroy');
 
 export const chip = makeChipFactory(
   () => {
-    const onCreate = new OnCreateEvent();
-    const onDestroy = new OnDestroyEvent();
-    return { onCreate, onDestroy };
+    return { OnCreate, OnDestroy };
   },
   {
-    onCreate(chip) {
-      runIngressEvents(chip, (i) => i instanceof OnCreateEvent);
+    onCreate: {
+      selectPorts(chip) {
+        if (chip instanceof OnCreate) {
+          return [chip.out.then];
+        }
+      },
     },
-    onDestroy(chip) {
-      runIngressEvents(chip, (i) => i instanceof OnDestroyEvent);
+    onDestroy: {
+      selectPorts(chip) {
+        if (chip instanceof OnDestroy) {
+          return [chip.out.then];
+        }
+      },
     },
   },
 );
@@ -73,6 +79,7 @@ export function outputHandle(name, execHandle) {
   });
 }
 
+// TODO use chipFactory?
 export function event(name, ...ports) {
   const eventInfo = new ChipInfo(name);
   context.push(eventInfo);
@@ -88,7 +95,7 @@ export function event(name, ...ports) {
       // Add to current chip `build` execution
       const parentChipInfo = context();
       if (parentChipInfo instanceof ChipInfo) {
-        parentChipInfo.ingressEvents.push(this);
+        parentChipInfo.addChip(this);
       }
     }
 
@@ -104,7 +111,7 @@ export function event(name, ...ports) {
 // Implementations
 //
 
-function makeChipFactory($buildIngressEvents, $ingressDrivers) {
+function makeChipFactory($customChips, $hooks) {
   function chip(uri, build, configuration) {
     if (typeof uri !== 'string') {
       build = uri;
@@ -119,13 +126,12 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers) {
     );
     const chipInfo = new ChipInfo(uri);
     context.push(chipInfo);
-    const ingressEvents =
-      (typeof $buildIngressEvents === 'function' &&
-        $buildIngressEvents(config)) ||
-      $buildIngressEvents ||
+    const customChips =
+      (typeof $customChips === 'function' && $customChips(config)) ||
+      $customChips ||
       {};
     if (typeof build === 'function') {
-      build.call(undefined, ingressEvents);
+      build.call(undefined, customChips);
     }
     context.pop();
     // TODO validate chip:
@@ -141,25 +147,27 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers) {
         }
         // Run `constructed`
         else if (
-          $ingressDrivers &&
-          typeof $ingressDrivers.onCreate === 'function'
+          $hooks &&
+          $hooks.onCreate &&
+          typeof $hooks.onCreate.selectPorts === 'function'
         ) {
-          $ingressDrivers.onCreate(this);
+          runFlowPorts(this, $hooks.onCreate.selectPorts);
         }
       }
 
       destroy() {
         if (
-          $ingressDrivers &&
-          typeof $ingressDrivers.onDestroy === 'function'
+          $hooks &&
+          hooks.onDestroy &&
+          typeof $hooks.onDestroy.selectPorts === 'function'
         ) {
-          $ingressDrivers.onDestroy(this);
+          runFlowPorts(this, $hooks.onDestroy.selectPorts);
         }
       }
 
       compile(wrapper) {
         const compilation = new Compilation(chipInfo, this);
-        return compilation.compile(wrapper);
+        return compilation.compile(wrapper, $hooks);
       }
 
       //
@@ -227,11 +235,9 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers) {
         return chipInfo.chips.slice();
       }
 
-      static get inactiveIngressChips() {
-        // TODO only if editable?
-        return chipInfo.ingressEvents.filter(
-          (ic) => !chipInfo.chips.includes(ic),
-        );
+      static get customChipClasses() {
+        // TODO may make this editable?
+        return customChips.slice();
       }
 
       static get connections() {
@@ -259,18 +265,16 @@ function makeChipFactory($buildIngressEvents, $ingressDrivers) {
 
     return Chip;
   }
-  chip.extend = function extendChip(buildIngressEvents, ingressDrivers) {
+  chip.extend = function extendChip(customChips, hooks) {
     return makeChipFactory(
       () =>
         Object.assign(
           {},
-          (typeof $buildIngressEvents === 'function' &&
-            $buildIngressEvents()) ||
-            $buildIngressEvents,
-          (typeof buildIngressEvents === 'function' && buildIngressEvents()) ||
-            buildIngressEvents,
+          (typeof $customChips === 'function' && $customChips()) ||
+            $customChips,
+          (typeof customChips === 'function' && customChips()) || customChips,
         ),
-      Object.assign({}, $ingressDrivers, ingressDrivers),
+      Object.assign({}, $hooks, hooks),
     );
   };
   chip.fromJSON = (data) => {

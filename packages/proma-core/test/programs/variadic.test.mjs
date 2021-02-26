@@ -24,7 +24,8 @@ describe('[programs/variadic] variadic ports', async (assert) => {
   assert({
     given: 'a variadic chip instance',
     should: 'compile as expected',
-    actual: compileAndRun(({ onCreate }) => {
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
       const sum = new Sum(1, 2, 3);
       sum.id = 'Sum';
       sum.in.B = 20;
@@ -44,7 +45,13 @@ describe('[programs/variadic] variadic ports', async (assert) => {
             return [1, 20, 3, 100].reduce((acc, n) => acc + n, 0);
           };
 
-          console.log(Sum__value());
+          {
+            console.log(Sum__value());
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       [124],
@@ -55,7 +62,8 @@ describe('[programs/variadic] variadic ports', async (assert) => {
     given: 'a connection from an outlet to a variadic port',
     should: 'compile as expected',
     actual: compileAndRun(
-      ({ onCreate }) => {
+      ({ OnCreate }) => {
+        const onCreate = new OnCreate();
         const input = inputData('input', { canonical: true });
 
         const sum = new Sum(1, 2, 3);
@@ -96,7 +104,14 @@ describe('[programs/variadic] variadic ports', async (assert) => {
           });
 
           Object.freeze(this.in);
-          console.log(Sum__value());
+
+          {
+            console.log(Sum__value());
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       [1124],

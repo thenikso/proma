@@ -63,6 +63,10 @@ describe('[programs/outputs] pure outputs', async (assert) => {
           });
 
           Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       3,
@@ -128,6 +132,10 @@ describe('[programs/outputs] executed outputs', async (assert) => {
           });
 
           Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       'number',
@@ -164,15 +172,23 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
       });
 
       Object.freeze(this.out);
-      console.log("hello world");
-      this.out.then();
+
+      {
+        console.log("hello world");
+        this.out.then();
+      }
+
+      Object.defineProperty(this, "destroy", {
+        value: () => {}
+      });
     }
   }`;
 
   assert({
     given: 'an output connected with array of output flow',
     should: 'compile',
-    actual: compileAndRun(({ onCreate }) => {
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
       const msg = new Literal('hello world');
       const log = new Log();
       const then = outputFlow('then');
@@ -189,7 +205,8 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'an output connected with just one output flow',
     should: 'compile',
-    actual: compileAndRun(({ onCreate }) => {
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
       const msg = new Literal('hello world');
       const log = new Log();
       const then = outputFlow('then');
@@ -206,7 +223,8 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'an output connected with nothing (auto-connection)',
     should: 'compile',
-    actual: compileAndRun(({ onCreate }) => {
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
       const msg = new Literal('hello world');
       const log = new Log();
       const then = outputFlow('then');
@@ -289,6 +307,10 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
           });
 
           Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       [undefined, 7],
@@ -298,7 +320,8 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
   assert({
     given: 'a chip instance with connected outputs (inlet)',
     should: 'compile',
-    actual: compileAndRun(({ onCreate }) => {
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
       const msg = new Literal('hello world');
       const log = new Log();
       const pass = new Pass();
@@ -314,8 +337,15 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
       class TestChip {
         constructor() {
           let Pass__output;
-          Pass__output = "hello world";
-          console.log(Pass__output);
+
+          {
+            Pass__output = "hello world";
+            console.log(Pass__output);
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       ['hello world'],
@@ -402,6 +432,10 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
           });
 
           Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       'test-msg',
@@ -489,6 +523,10 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
           });
 
           Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       [undefined, 8],

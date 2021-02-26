@@ -15,7 +15,8 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
     given: 'multiple connections to an input flow inlet',
     should: 'compile as a function',
     actual: compileAndRun(
-      ({ onCreate }) => {
+      ({ OnCreate }) => {
+        const onCreate = new OnCreate();
         const exec = inputFlow('exec');
         const log = new Log('test');
         log.id = 'Log';
@@ -45,7 +46,14 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
           });
 
           Object.freeze(this.in);
-          Log__exec();
+
+          {
+            Log__exec();
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       ['test', 'test'],
@@ -56,7 +64,8 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
     given: 'multiple connections to an output flow outlet',
     should: 'compile to call the continaution outlet',
     actual: compileAndRun(
-      ({ onCreate }) => {
+      ({ OnCreate }) => {
+        const onCreate = new OnCreate();
         const exec = inputFlow('exec');
         const then = outputFlow('then');
 
@@ -102,7 +111,14 @@ describe('[programs/connections] input flow (execs) multi-connections', async (a
           });
 
           Object.freeze(this.out);
-          this.out.then();
+
+          {
+            this.out.then();
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       1,
@@ -126,7 +142,8 @@ describe('[programs/connections] output data multi-connections', async (assert) 
     given: 'multiple connections from an output data inlet',
     should: 'compile',
     actual: compileAndRun(
-      ({ onCreate }) => {
+      ({ OnCreate }) => {
+        const onCreate = new OnCreate();
         const msg = new Greet('test');
         msg.id = 'Greet';
         const log = new Log();
@@ -177,8 +194,15 @@ describe('[programs/connections] output data multi-connections', async (assert) 
           });
 
           Object.freeze(this.out);
-          console.log(Greet__value());
-          this.out.then();
+
+          {
+            console.log(Greet__value());
+            this.out.then();
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       ['Hello test!', ['Hello test!']],
@@ -189,7 +213,8 @@ describe('[programs/connections] output data multi-connections', async (assert) 
     given: 'multiple connections from an input data outlet',
     should: 'compile',
     actual: compileAndRun(
-      ({ onCreate }) => {
+      ({ OnCreate }) => {
+        const onCreate = new OnCreate();
         const exec = inputFlow('exec');
         const input = inputData('input', { canonical: true });
 
@@ -265,7 +290,14 @@ describe('[programs/connections] output data multi-connections', async (assert) 
           });
 
           Object.freeze(this.out);
-          Log__exec();
+
+          {
+            Log__exec();
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
         }
       }`,
       ['test-input', ['test-input']],

@@ -5,7 +5,7 @@ import './core/serialize.test.mjs';
 import './core/run.test.mjs';
 import './core/types.test.mjs';
 
-import './programs/ingresses.test.mjs';
+import './programs/hooks.test.mjs';
 import './programs/outputs.test.mjs';
 import './programs/connections.test.mjs';
 import './programs/variadic.test.mjs';

@@ -120,9 +120,10 @@
         });
       });
 
-      const MyChip2 = chip('MyChip2', ({ onCreate, onDestroy }) => {
-        // const start = new Start();
-        // const exec = inputFlow('exec');
+      const MyChip2 = chip('MyChip2', ({ OnCreate, OnDestroy }) => {
+        const onCreate = new OnCreate();
+        const onDestroy = new OnDestroy();
+
         const bind = new BindClick('button');
         const evt = new Evt();
         const toStr = new ToString();
@@ -137,7 +138,9 @@
         wire(toStr.out.string, log.in.message);
       });
 
-      const MyIngressChip = chip('MyIngressChip', ({ onCreate }) => {
+      const MyIngressChip = chip('MyIngressChip', ({ OnCreate }) => {
+        const onCreate = new OnCreate();
+
         const exec = inputFlow('exec');
         const log = new lib.debug.Log();
         log.id = 'Log';
