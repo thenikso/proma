@@ -155,10 +155,7 @@ export class Port extends Function {
 }
 
 export class PortList {
-  constructor(chip, portInfoArray) {
-    const ports = Object.freeze(
-      portInfoArray.map((portInfo) => new Port(chip, portInfo)),
-    );
+  constructor(chip, ports) {
     return new Proxy(ports, {
       get(target, key) {
         for (const port of ports) {

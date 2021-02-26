@@ -1,4 +1,5 @@
 import { context, info, assertInfo, assert } from './utils.mjs';
+import { ExternalReference } from './external.mjs';
 
 export function runFlowPorts(ownerChip, selectPortsToRun) {
   const scope = Scope.current;
@@ -49,7 +50,13 @@ export function makePortRun(portInfo, isOutlet) {
           }
         }
 
-        return port.value;
+        const portValue = port.value;
+
+        if (portValue instanceof ExternalReference) {
+          return portValue.value;
+        }
+
+        return portValue;
       };
     } else {
       port = function inputFlowPort() {

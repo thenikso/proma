@@ -5,8 +5,9 @@ import { EditableChipInfo } from './edit.mjs';
 import { Compilation } from './compile.mjs';
 import { deserializeChip } from './serialize.mjs';
 import { registry } from './registry.mjs';
+import { ExternalReference } from './external.mjs';
 
-const plainChip = makeChipFactory();
+export const plainChip = makeChipFactory();
 
 const OnCreate = event('OnCreate');
 const OnDestroy = event('OnDestroy');
@@ -59,11 +60,11 @@ export function wire(portA, portB) {
 }
 
 // TODO rename to `parameter`?
-export function inputConfig(name, { defaultValue, required, external } = {}) {
+export function inputConfig(name, { defaultValue, required } = {}) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputDataPort(name, {
-    canonical: required || external ? 'required' : true,
-    conceiled: external ? 'hidden' : true,
+    canonical: required ? 'required' : true,
+    conceiled: true,
     defaultValue,
   });
 }
@@ -89,6 +90,14 @@ export function event(name, ...ports) {
     const then = outputFlow('then');
     // TODO ports
   });
+}
+
+// NOTE externalReferenceObj must be specified as `{ myReference }` so that
+// the engine can extract both a compiletime name and a runtime reference.
+// If the name is not somehow provided to the compiled code (ie: by adding a
+// value to `window.myReference`), the compiled code will fail to execute.
+export function externalRef(externalReferenceObj) {
+  return new ExternalReference(externalReferenceObj);
 }
 
 //

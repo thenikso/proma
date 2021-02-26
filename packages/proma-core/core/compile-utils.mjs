@@ -1,5 +1,6 @@
 import recast from '../vendor/recast.mjs';
 import { info } from './utils.mjs';
+import { ExternalReference } from './external.mjs';
 
 const {
   parse,
@@ -7,6 +8,9 @@ const {
 } = recast;
 
 export function literalCompiler(value) {
+  if (value instanceof ExternalReference) {
+    return builders.identifier(value.reference);
+  }
   switch (typeof value) {
     case 'string':
       return builders.stringLiteral(value);

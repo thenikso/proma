@@ -8,7 +8,7 @@ import {
   Chip,
 } from '../core/index.mjs';
 
-export function compileAndRun(build, run, initData) {
+export function compileAndRun(build, run, initData, externalContext) {
   // Create chip
   const C = build.__proto__ === Chip ? build : chip('TestChip', build);
   if (run === false) {
@@ -25,15 +25,21 @@ export function compileAndRun(build, run, initData) {
   const compLogs = [];
   console.log = (msg) => compLogs.push(msg);
   // Create compiled chip
+  let error;
   let code;
-  let cComp;
   try {
     code = c.compile();
-    const makeClass = new Function('return (' + code + ')');
-    const CClass = makeClass();
-    cComp = new CClass(...(initData || []));
   } catch (compileError) {
-    code = compileError;
+    error = compileError;
+  }
+  let cComp;
+  if (!error) {
+    const context = Object.entries(externalContext || {});
+    const contextNames = context.map(([key]) => key);
+    const contextValues = context.map(([, value]) => value);
+    const makeClass = new Function(...contextNames, 'return (' + code + ')');
+    const CClass = makeClass(...contextValues);
+    cComp = new CClass(...(initData || []));
   }
   // Run tests
   let live;
@@ -51,7 +57,7 @@ export function compileAndRun(build, run, initData) {
   console.log = originalLog;
   // Return results
   return {
-    code,
+    code: error || code,
     live,
     comp,
   };

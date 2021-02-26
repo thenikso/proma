@@ -5,7 +5,6 @@ import {
   inputData,
   outputFlow,
   outputData,
-  inputConfig,
   wire,
 } from '../../core/index.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
@@ -32,12 +31,18 @@ describe('[core/ports] (input data) canonical ports', async (assert) => {
 
 describe('[core/ports] (input data) conceiled ports', async (assert) => {
   const LiteralConceiled = chip('test/core/ports/LiteralConceiled', () => {
-    const value = inputConfig('value');
+    const value = inputData('value', {
+      canonical: true,
+      conceiled: true,
+    });
     outputData('value', () => value());
   });
 
-  const LiteralExternal = chip('test/core/ports/LiteralExternal', () => {
-    const value = inputConfig('value', { external: true });
+  const LiteralHidden = chip('test/core/ports/LiteralHidden', () => {
+    const value = inputData('value', {
+      canonical: 'required',
+      conceiled: 'hidden',
+    });
     outputData('value', () => value());
   });
 
@@ -62,7 +67,7 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
     actual: Try(chip, () => {
       const input = inputData('input');
 
-      const val = new LiteralExternal('one');
+      const val = new LiteralHidden('one');
       val.id = 'val';
 
       val.in.value = 'two';
@@ -73,7 +78,7 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
   assert({
     given: 'a hidden port when running',
     should: 'can not be assigned to or accessed',
-    actual: compileAndRun(LiteralExternal, (chip) => {
+    actual: compileAndRun(LiteralHidden, (chip) => {
       try {
         chip.in.value = 'fail';
       } catch (e) {
@@ -82,7 +87,7 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
     }),
     expected: compileAndRunResult(
       js`
-      class test_core_ports_LiteralExternal {
+      class test_core_ports_LiteralHidden {
         constructor(value) {
           const $in = Object.seal({
             value

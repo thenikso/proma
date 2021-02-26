@@ -42,8 +42,9 @@ export default class ClassWrapper {
   compileBegin(chip, chipInfo) {
     this.chip = chip;
     this.chipInfo = chipInfo;
-    // TODO reset inlets
+    this.inletsByPort.clear();
   }
+  // Retrieve a reference of an input data outlet
   compileInputDataOutlet(port) {
     return memberExpression(identifier('$in'), identifier(port.name));
   }

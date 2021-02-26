@@ -22,14 +22,10 @@ export class Chip {
 
     info(this, chipInfo);
 
-    const inputs = new PortList(
-      this,
-      chipInfo.inputs.map((p) => info(p)),
-    );
-    const outputs = new PortList(
-      this,
-      chipInfo.outputs.map((p) => info(p)),
-    );
+    const inputPorts = chipInfo.inputs.map((p) => new Port(this, info(p)));
+    const inputs = new PortList(this, inputPorts);
+    const ouptutPorts = chipInfo.outputs.map((p) => new Port(this, info(p)));
+    const outputs = new PortList(this, ouptutPorts);
 
     Object.defineProperties(this, {
       id: {
@@ -70,11 +66,12 @@ export class Chip {
             `Can not set value for port "${portInfo.name}" on chip "${id}"`,
           );
         }
+        const port = inputPorts.find((p) => p.name === portInfo.name);
         if (portInfo.isVariadic) {
-          this.in[portInfo.name] = canonicalValues.slice(i);
+          port.explicitValue = canonicalValues.slice(i);
           break;
         }
-        this.in[portInfo.name] = canonicalValues[i];
+        port.explicitValue = canonicalValues[i];
         i++;
       }
     }
