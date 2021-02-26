@@ -399,6 +399,9 @@ export class ChipInfo {
       source = portB;
       sink = portA;
     }
+    if (sink.isData && sink.isInput && sink.isConceiled) {
+      throw new Error(`Can not connect to conceiled port "${sink.fullName}"`);
+    }
     if (source.type && sink.type && !source.type.match(sink.type)) {
       throw new Error(
         `Invalid types: ${source.fullName} (${source.type.signature}) -> ${sink.fullName} (${sink.type.signature})`,

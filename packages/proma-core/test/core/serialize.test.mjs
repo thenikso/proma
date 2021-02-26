@@ -172,7 +172,7 @@ describe('[core/serialize] to JSON', async (assert) => {
     actual: chip('TestChipSerialize', () => {
       const exec = inputFlow('exec');
       const input = inputData('input', { canonical: true, defaultValue: 3 });
-      const conf = inputConfig('conf', true);
+      const conf = inputConfig('conf', { defaultValue: true });
 
       const pass = new Pass('pass-input');
       pass.id = 'Pass';

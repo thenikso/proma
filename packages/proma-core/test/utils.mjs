@@ -25,10 +25,16 @@ export function compileAndRun(build, run, initData) {
   const compLogs = [];
   console.log = (msg) => compLogs.push(msg);
   // Create compiled chip
-  const code = c.compile();
-  const makeClass = new Function('return (' + code + ')');
-  const CClass = makeClass();
-  const cComp = new CClass(...(initData || []));
+  let code;
+  let cComp;
+  try {
+    code = c.compile();
+    const makeClass = new Function('return (' + code + ')');
+    const CClass = makeClass();
+    cComp = new CClass(...(initData || []));
+  } catch (compileError) {
+    code = compileError;
+  }
   // Run tests
   let live;
   let comp;
@@ -36,10 +42,10 @@ export function compileAndRun(build, run, initData) {
     console.log = (msg) => liveLogs.push(msg);
     live = run(c, liveLogs);
     console.log = (msg) => compLogs.push(msg);
-    comp = run(cComp, compLogs);
+    comp = cComp ? run(cComp, compLogs) : undefined;
   } else {
     live = liveLogs;
-    comp = compLogs;
+    comp = cComp ? compLogs : undefined;
   }
   // Cleanup
   console.log = originalLog;
@@ -59,10 +65,11 @@ export function editCompileAndRun(edit, run, initData) {
 }
 
 export function compileAndRunResult(code, value) {
+  const isError = code instanceof Error;
   return {
     code,
-    live: value,
-    comp: value,
+    live: isError ? code : value,
+    comp: isError ? undefined : value,
   };
 }
 

@@ -58,11 +58,12 @@ export function wire(portA, portB) {
   chipInfo.addConnection(portA, portB);
 }
 
-export function inputConfig(name, defaultValue) {
+// TODO rename to `parameter`?
+export function inputConfig(name, { defaultValue, required, external } = {}) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputDataPort(name, {
-    canonical: true,
-    conceiled: true,
+    canonical: required || external ? 'required' : true,
+    conceiled: external ? 'hidden' : true,
     defaultValue,
   });
 }

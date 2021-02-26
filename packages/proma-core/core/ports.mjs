@@ -92,6 +92,31 @@ export class Port extends Function {
             return self.explicitValue || self.defaultValue;
           },
         },
+        //
+        isCanonical: {
+          enumerable: true,
+          get() {
+            return portInfo.isCanonical;
+          },
+        },
+        isRequired: {
+          enumerable: true,
+          get() {
+            return portInfo.isRequired;
+          },
+        },
+        isConceiled: {
+          enumerable: true,
+          get() {
+            return portInfo.isConceiled;
+          },
+        },
+        isHidden: {
+          enumerable: true,
+          get() {
+            return portInfo.isHidden;
+          },
+        },
       });
     }
 
@@ -139,6 +164,9 @@ export class PortList {
         for (const port of ports) {
           const portInfo = info(port);
           if (portInfo.hasName(key)) {
+            if (portInfo.isHidden) {
+              throw new Error(`Attempting to access hidden port "${key}"`);
+            }
             if (portInfo.isVariadic && portInfo.variadicIndex(key) >= 0) {
               return port.variadic[key];
             }
@@ -151,6 +179,9 @@ export class PortList {
         for (const port of ports) {
           const portInfo = info(port);
           if (portInfo.hasName(key)) {
+            if (portInfo.isHidden) {
+              throw new Error(`Attempting to access hidden port "${key}"`);
+            }
             if (!portInfo.isData || !portInfo.isInput) {
               throw new Error('Can only set initial value to input data ports');
             }
@@ -260,6 +291,18 @@ export class PortOutlet extends Function {
             enumerable: true,
             get() {
               return portInfo.isRequired;
+            },
+          },
+          isConceiled: {
+            enumerable: true,
+            get() {
+              return portInfo.isConceiled;
+            },
+          },
+          isHidden: {
+            enumerable: true,
+            get() {
+              return portInfo.isHidden;
             },
           },
         });
@@ -467,11 +510,16 @@ export class InputDataSinkPortInfo extends PortInfo {
       config.type = type(config.type);
     }
 
-    // The port can receive default value from the chip constructor
+    // Canonical indicates how the port value can be initialized in the
+    // wrapper canonical form (by default as a parameter to the new chip constructor)
+    // - `true` the port can receive default value from the chip constructor
+    // - `'required'` the port must receive a value from the chip constructor
     this.canonical = config.canonical || false;
-    // The port can not be connected but only receive a direct value
-    // TODO honor coneiled attribute when connecting (in compilation)
-    this.conceiled = !!config.conceiled;
+    // Conceiled indicates how the port is hidden
+    // - `true` the port can not be connected but only receive a direct value
+    // - `'hidden'` the port is not accessible. use only with `defaultValue` or
+    //   `canonical` to give any meaninful value
+    this.conceiled = config.conceiled || false;
     // The default value the port should be having
     this.defaultValue = config.defaultValue;
     this.type = config.type;
@@ -505,6 +553,14 @@ export class InputDataSinkPortInfo extends PortInfo {
 
   get isVariadic() {
     return !!this.variadic;
+  }
+
+  get isConceiled() {
+    return !!this.conceiled;
+  }
+
+  get isHidden() {
+    return this.conceiled === 'hidden';
   }
 
   hasName(name) {
