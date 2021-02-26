@@ -6,6 +6,8 @@ import { Compilation } from './compile.mjs';
 import { deserializeChip } from './serialize.mjs';
 import { registry } from './registry.mjs';
 
+const plainChip = makeChipFactory();
+
 const OnCreate = event('OnCreate');
 const OnDestroy = event('OnDestroy');
 
@@ -79,32 +81,13 @@ export function outputHandle(name, execHandle) {
   });
 }
 
-// TODO use chipFactory?
 export function event(name, ...ports) {
-  const eventInfo = new ChipInfo(name);
-  context.push(eventInfo);
-  // TODO funciton with ports and toString
-  const handle = outputHandle('handle', () => then());
-  const then = outputFlow('then');
-  // TODO ports
-  context.pop();
-
-  class EventChip extends ChipBase {
-    constructor() {
-      super(eventInfo);
-      // Add to current chip `build` execution
-      const parentChipInfo = context();
-      if (parentChipInfo instanceof ChipInfo) {
-        parentChipInfo.addChip(this);
-      }
-    }
-
-    get isEvent() {
-      return true;
-    }
-  }
-
-  return EventChip;
+  return plainChip(name, () => {
+    // TODO funciton with ports and toString
+    const handle = outputHandle('handle', () => then());
+    const then = outputFlow('then');
+    // TODO ports
+  });
 }
 
 //
@@ -237,7 +220,7 @@ function makeChipFactory($customChips, $hooks) {
 
       static get customChipClasses() {
         // TODO may make this editable?
-        return customChips.slice();
+        return Array.from(Object.values(customChips));
       }
 
       static get connections() {
