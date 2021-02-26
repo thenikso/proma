@@ -49,11 +49,11 @@ function initRegistry() {
     }
     const chipURI = chip.URI;
     // TODO if URI is internal lib, do not overryde
-    if (hasChip(chipURI) && !override) {
-      return false;
+    if (loadedChips.has(chipURI) && !override) {
+      return loadedChips.get(chipURI);
     }
     loadedChips.set(chipURI, chip);
-    return true;
+    return chip;
   }
 
   function loadChip(chipURI) {

@@ -9,17 +9,20 @@ import {
   wire,
   inputConfig,
   outputHandle,
+  registry,
 } from '../../core/index.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
 
-const Pass = chip('test/serialize/Pass', () => {
-  const exec = inputFlow('exec');
-  const input = inputData('input', { canonical: true });
-  const then = outputFlow('then');
-  const output = outputData('output', then);
-  wire(exec, then);
-  wire(input, output);
-});
+const Pass = registry.add(
+  chip('test/serialize/Pass', () => {
+    const exec = inputFlow('exec');
+    const input = inputData('input', { canonical: true });
+    const then = outputFlow('then');
+    const output = outputData('output', then);
+    wire(exec, then);
+    wire(input, output);
+  }),
+);
 
 const chipJSON = {
   URI: 'TestChipSerialize',

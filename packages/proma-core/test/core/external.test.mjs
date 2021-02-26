@@ -101,6 +101,7 @@ describe('[core/external] set external data', async (assert) => {
         const input = inputData('input', true);
 
         const setData = new SetTestData();
+        setData.id = 'SetExternalData';
         const log = new Log();
 
         wire(exec, setData.in.exec);
@@ -127,7 +128,7 @@ describe('[core/external] set external data', async (assert) => {
             input
           });
 
-          let test_programs_external_SetData_1__value;
+          let SetExternalData__value;
 
           Object.defineProperties(this.in = {}, {
             input: {
@@ -143,8 +144,8 @@ describe('[core/external] set external data', async (assert) => {
                 SET_EXTERNAL_TEST_DATA($in.input);
 
                 {
-                  test_programs_external_SetData_1__value = $in.input;
-                  console.log(test_programs_external_SetData_1__value);
+                  SetExternalData__value = $in.input;
+                  console.log(SetExternalData__value);
                 };
               }
             }

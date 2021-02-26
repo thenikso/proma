@@ -6,16 +6,19 @@ import {
   outputFlow,
   outputData,
   wire,
+  registry,
 } from '../../core/index.mjs';
 
-const Pass = chip('test/edit/Pass', () => {
-  const exec = inputFlow('exec');
-  const input = inputData('input', { canonical: true });
-  const then = outputFlow('then');
-  const output = outputData('output', then);
-  wire(exec, then);
-  wire(input, output);
-});
+const Pass = registry.add(
+  chip('test/edit/Pass', () => {
+    const exec = inputFlow('exec');
+    const input = inputData('input', { canonical: true });
+    const then = outputFlow('then');
+    const output = outputData('output', then);
+    wire(exec, then);
+    wire(input, output);
+  }),
+);
 
 describe('[core/edit] edit connections', async (assert) => {
   assert({

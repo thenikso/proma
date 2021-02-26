@@ -4,7 +4,6 @@ import { runFlowPorts } from './run.mjs';
 import { EditableChipInfo } from './edit.mjs';
 import { Compilation } from './compile.mjs';
 import { deserializeChip } from './serialize.mjs';
-import { registry } from './registry.mjs';
 import { ExternalReference } from './external.mjs';
 
 export const plainChip = makeChipFactory();
@@ -100,6 +99,47 @@ export function externalRef(externalReferenceObj) {
   return new ExternalReference(externalReferenceObj);
 }
 
+const ExternalGetInt = plainChip('ExternalGet', () => {
+  const externalDataRef = inputData('externalDataRef', {
+    canonical: 'required',
+    conceiled: 'hidden',
+  });
+  outputData('value', () => externalDataRef());
+});
+
+export function externalGet(externalReferenceObj) {
+  return class ExternalGet extends ExternalGetInt {
+    constructor() {
+      super(externalRef(externalReferenceObj));
+    }
+  };
+}
+
+const ExternalSetInt = plainChip('ExternalSet', () => {
+  const exec = inputFlow('exec', () => {
+    externalSetRef()(value());
+    then();
+  });
+  const externalSetRef = inputData('externalSetRef', {
+    canonical: 'required',
+    conceiled: 'hidden',
+  });
+  const value = inputData('value', {
+    canonical: true,
+  });
+  const then = outputFlow('then');
+  const outValue = outputData('value');
+  wire(value, outValue);
+});
+
+export function externalSet(externalReferenceObj) {
+  return class ExternalSet extends ExternalSetInt {
+    constructor(...args) {
+      super(externalRef(externalReferenceObj), ...args);
+    }
+  };
+}
+
 //
 // Implementations
 //
@@ -119,8 +159,9 @@ function makeChipFactory($customChips, $hooks) {
     );
     const chipInfo = new ChipInfo(uri);
     context.push(chipInfo);
+    let customChips;
     try {
-      const customChips =
+      customChips =
         (typeof $customChips === 'function' && $customChips(config)) ||
         $customChips ||
         {};
@@ -234,8 +275,7 @@ function makeChipFactory($customChips, $hooks) {
       }
 
       static get customChipClasses() {
-        // TODO may make this editable?
-        return Array.from(Object.values(customChips));
+        return Array.from(Object.values(customChips || {}));
       }
 
       static get connections() {
@@ -257,9 +297,6 @@ function makeChipFactory($customChips, $hooks) {
         );
       }
     }
-
-    // TODO maybe not add automatically?
-    registry.add(Chip);
 
     return Chip;
   }
