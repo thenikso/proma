@@ -265,25 +265,7 @@ function executeCompiler(
       compileOutputFlow(portName) {
         // Follow port connections until an exec port it found
         const port = chip.out[portName];
-        // TODO verify port? how?
-
-        if (isOutlet(port, outterScope)) {
-          return codeWrapper.compileOutputFlowOutlet(port);
-        }
-
-        const parentChip = scope[0];
-        assert(parentChip, `Port "${port.fullName}" should be an outlet`);
-
-        const conns = info(parentChip).getConnectedPorts(port, parentChip);
-        assert(conns.length <= 1, 'unimplemented multi-conns');
-        const conn = conns[0];
-
-        if (conn) {
-          if (conn.chip !== scope[0]) {
-            return compile(conn, [conn.chip, ...scope], codeWrapper);
-          }
-          return compile(conn, scope, codeWrapper);
-        }
+        return compile(port, [chip, ...scope], codeWrapper);
       },
       /**
        * Output data in executes are used like so:
@@ -395,7 +377,11 @@ function makeOutputFlowSinkCompiler(portInfo) {
     // present.
     let continuation;
     if (conn) {
-      continuation = compile(conn, [conn.chip, ...scope], codeWrapper);
+      continuation = compile(
+        conn,
+        conn.chip !== scope[0] ? [conn.chip, ...scope] : scope,
+        codeWrapper,
+      );
     }
 
     // All right, now we have inlets. This is an output flow that is used

@@ -493,13 +493,17 @@ export class InputDataSinkPortInfo extends PortInfo {
   constructor(chipInfo, name, config = {}) {
     super(chipInfo, name);
 
+    if (config === true) {
+      config = {
+        canonical: true,
+      };
+    }
+
     if (typeof config === 'string') {
       config = {
         type: config,
       };
     }
-
-    // Type
     if (typeof config.type === 'string') {
       config.type = type(config.type);
     }
