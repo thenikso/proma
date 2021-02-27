@@ -13,6 +13,88 @@ import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
 import { Log } from '../lib.mjs';
 
 describe('[core/external] get external data', async (assert) => {
+  const EXTERNAL_TEST_FUNC = () => 'test-func-result';
+  assert({
+    given: 'external reference canonical input',
+    should: 'compile referencing the canonical input',
+    actual: compileAndRun(
+      () => {
+        const func = inputData('func', {
+          canonical: 'required',
+          conceiled: 'hidden',
+        });
+        const exec = inputFlow('exec');
+
+        const then = outputFlow('then');
+        const output = outputData('output', () => func()());
+
+        wire(exec, then);
+      },
+      (chip) => {
+        const res = [];
+        chip.out.then(() => {
+          res.push(chip.out.output());
+        });
+        chip.in.exec();
+        return res;
+      },
+      [externalRef({ EXTERNAL_TEST_FUNC })],
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor(func = EXTERNAL_TEST_FUNC) {
+          const $in = Object.seal({
+            func
+          });
+
+          const $out = Object.seal({
+            then: undefined
+          });
+
+          Object.defineProperties(this.in = {}, {
+            func: {
+              get: () => () => $in.func
+            },
+
+            exec: {
+              value: () => {
+                this.out.then();
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            output: {
+              enumerable: true,
+              value: () => $in.func()
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.then = value;
+                  return;
+                }
+
+                ($out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
+      ['test-func-result'],
+    ),
+  });
+
   const GetData = plainChip('test/programs/external/GetData', () => {
     const getData = inputData('getData', {
       canonical: 'required',

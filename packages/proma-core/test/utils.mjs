@@ -7,6 +7,7 @@ import {
   wire,
   Chip,
 } from '../core/index.mjs';
+import { ExternalReference } from '../core/external.mjs';
 
 export function compileAndRun(build, run, initData, externalContext) {
   // Create chip
@@ -35,12 +36,26 @@ export function compileAndRun(build, run, initData, externalContext) {
   let cComp;
   if (!error) {
     try {
+      let compInitData = (initData || []).slice();
+      if (!externalContext && initData) {
+        compInitData = [];
+        externalContext = {};
+        // const newInitData
+        for (const data of initData) {
+          if (data instanceof ExternalReference) {
+            externalContext[data.reference] = data.value;
+            compInitData.push(undefined);
+          } else {
+            compInitData.push(data);
+          }
+        }
+      }
       const context = Object.entries(externalContext || {});
       const contextNames = context.map(([key]) => key);
       const contextValues = context.map(([, value]) => value);
       const makeClass = new Function(...contextNames, 'return (' + code + ')');
       const CClass = makeClass(...contextValues);
-      cComp = new CClass(...(initData || []));
+      cComp = new CClass(...compInitData);
     } catch (e) {
       console.log = originalLog;
       console.log(code);
