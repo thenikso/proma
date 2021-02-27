@@ -55,7 +55,7 @@ export class Compilation {
       // It is important that executions and hooks are compiled before
       // outputFlows that may have `computeOutputs` for outputs that are
       // actually pushed in and execute.
-      // If that't the case, output data portInfo will have their `isPushing`
+      // If that't the case, output data portInfo will have their `$isPushing`
       // set to `true` and can be ignored by the computeOn.
 
       // Executions
@@ -117,7 +117,7 @@ export class Compilation {
         updateBlocksByPort[portInfo.name] = Array.from(portInfo.computeOutputs)
           // If the output data port is being pushed by and exec, we ignore
           // the fact that it should be computed here
-          .filter((outPortInfo) => !outPortInfo.isPushing)
+          .filter((outPortInfo) => !outPortInfo.$isPushing)
           .map((outPortInfo) => {
             return compiler(outPortInfo)(
               rootInfo.getOutputPortOutlet(outPortInfo.name),
@@ -306,7 +306,7 @@ function executeCompiler(
             .join(', ')}]`,
         );
 
-        portInfo.isPushing = true;
+        portInfo.$isPushing = true;
 
         // Generate assignment of local variable
         //    let portName = <assignExpressionBlock>;
@@ -671,6 +671,9 @@ function makeOutputDataSourceCompiler(portInfo) {
     'Can only create compiler for output data ports',
   );
 
+  // Reset any $isPushing set in other compilations
+  portInfo.$isPushing = false;
+
   if (!portInfo.compute && portInfo.computeOn.length === 0) {
     // TODO nothing to do? maybe check that it is used by an exec?
     // throw new Error('unimplemented');
@@ -702,14 +705,14 @@ function makeOutputDataSourceCompiler(portInfo) {
       assert(conn, `Output data port "${portInfo.name}" must be connected`);
 
       // If the connected port is an output data port being pushed by and
-      // input flow execution, it will have this flag `isPushing` set to true.
+      // input flow execution, it will have this flag `$isPushing` set to true.
       // In this case the port should ignore the computeOn and act as an
       // `assignOutputValueCompiler` but returning the ouput outlet reference
       // this port would have computeOn.
-      // The `isPushing` is also stored in this port to avoid compile it as
+      // The `$isPushing` is also stored in this port to avoid compile it as
       // an outlet `OutputFlowPort.computeOutputs`.
-      if (info(conn).isPushing) {
-        portInfo.isPushing = true;
+      if (info(conn).$isPushing) {
+        portInfo.$isPushing = true;
         return codeWrapper.compileOutputDataOutlet(portInstance);
       }
 
@@ -755,7 +758,10 @@ function makeOutputDataSourceCompiler(portInfo) {
 
   // We use the output data compute function
   return function useComputeCompiler(portInstance, outterScope, codeWrapper) {
-    // TODO if used by a connection with a pushing port, we should fail
+    assert(
+      !portInfo.$isPushing,
+      `Can not push a value to a computed output: ${portInstance.fullName}`,
+    );
 
     const makeCompute = portInfo.allowSideEffects
       ? executeCompiler(portInfo, 'compute', 'computeCompiler')
