@@ -77,7 +77,7 @@ describe('[programs/events] events binding', async (assert) => {
           });
 
           const TestEvent_1__handle = (...args) => {
-            $out.output = args[0];;
+            $out.output = args[0];
             this.out.then();
           };
 

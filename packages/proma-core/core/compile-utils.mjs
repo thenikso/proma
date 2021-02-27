@@ -153,13 +153,16 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
       const { path, argPath } = replaceOutputData[portName];
       const block = getPath(ast, argPath);
       let res = compileOutputData(portName, block) || builders.noop();
-      // TODO this is a trick to resovle the situation where a block is returned
-      // but we do not want it! Basically if we explore it right away, paths
-      // for other `replaceOutputData` would be wrong. So we store an array
-      // as a block body idem and we clean it up in `cleanAst`
       if (namedTypes.BlockStatement.check(res)) {
+        // NOTE This is a trick to resovle the situation where a block is returned
+        // but we do not want it! Basically if we explore it right away, paths
+        // for other `replaceOutputData` would be wrong. So we store an array
+        // as a block body idem and we clean it up in `cleanAst`
         res.$explodeMe = true;
-        // Remove the "expression" from path
+        // Replace the hole expression
+        path.pop();
+      } else if (namedTypes.ExpressionStatement.check(res)) {
+        // Replace the hole expression
         path.pop();
       }
       ast = replaceAstPath(ast, path, res);
@@ -219,8 +222,6 @@ export function cleanAst(ast) {
     visitVariableDeclaration(path) {
       // Clean cases in which we have variable declarations inside expressions
       // which would lead to a double semicolon (let test = 2;;)
-      // TODO this chould be addressed in `astBuilder` while replacing
-      // `replaceOutputData` like in the block case
       if (namedTypes.ExpressionStatement.check(path.parentPath.value)) {
         path.parentPath.replace(path.value);
       }
