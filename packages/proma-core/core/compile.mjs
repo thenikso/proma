@@ -52,32 +52,11 @@ export class Compilation {
     } else {
       // Chips with flow
 
-      // Output data with compute but no computeOn will be initialized once
-      // This covers stuff like handlers
-      for (const portOutlet of rootInfo.outputDataPorts) {
-        const portInfo = info(portOutlet);
-        if (portInfo.compute && portInfo.computeOn.length === 0) {
-          const block = compiler(portInfo)(portOutlet, scope, codeWrapper);
-          outputBlocksByPort[portInfo.name] = block;
-        }
-      }
-
-      // Output flows
-
-      for (const portOutlet of rootInfo.outputFlowPorts) {
-        const portInfo = info(portOutlet);
-        if (portInfo.computeOutputs.size === 0) continue;
-
-        updateBlocksByPort[portInfo.name] = Array.from(
-          portInfo.computeOutputs,
-        ).map((outPortInfo) => {
-          return compiler(outPortInfo)(
-            rootInfo.getOutputPortOutlet(outPortInfo.name),
-            scope,
-            codeWrapper,
-          );
-        });
-      }
+      // It is important that executions and hooks are compiled before
+      // outputFlows that may have `computeOutputs` for outputs that are
+      // actually pushed in and execute.
+      // If that't the case, output data portInfo will have their `isPushing`
+      // set to `true` and can be ignored by the computeOn.
 
       // Executions
 
@@ -117,6 +96,35 @@ export class Compilation {
           hookBlocks.push(block);
         }
         hooksBlocksByLabel[label] = hookBlocks;
+      }
+
+      // Output data with compute but no computeOn will be initialized once
+      // This covers stuff like handlers
+      for (const portOutlet of rootInfo.outputDataPorts) {
+        const portInfo = info(portOutlet);
+        if (portInfo.compute && portInfo.computeOn.length === 0) {
+          const block = compiler(portInfo)(portOutlet, scope, codeWrapper);
+          outputBlocksByPort[portInfo.name] = block;
+        }
+      }
+
+      // Output flows
+
+      for (const portOutlet of rootInfo.outputFlowPorts) {
+        const portInfo = info(portOutlet);
+        if (portInfo.computeOutputs.size === 0) continue;
+
+        updateBlocksByPort[portInfo.name] = Array.from(portInfo.computeOutputs)
+          // If the output data port is being pushed by and exec, we ignore
+          // the fact that it should be computed here
+          .filter((outPortInfo) => !outPortInfo.isPushing)
+          .map((outPortInfo) => {
+            return compiler(outPortInfo)(
+              rootInfo.getOutputPortOutlet(outPortInfo.name),
+              scope,
+              codeWrapper,
+            );
+          });
       }
     }
 
@@ -298,40 +306,64 @@ function executeCompiler(
             .join(', ')}]`,
         );
 
+        portInfo.isPushing = true;
+
         // Generate assignment of local variable
         //    let portName = <assignExpressionBlock>;
+        // Or if the connection is an outlet, assign to it.
 
         const parentChip = scope[0];
         assert(parentChip, `Port "${port.fullName}" should be an outlet`);
 
         const conns = info(parentChip).getConnectedPorts(port, parentChip);
-        assert(conns.length <= 1, 'unimplemented multi-conns');
-        const conn = conns[0];
 
-        if (conn) {
-          let outputIdentifier;
-          if (conn.chip !== scope[0]) {
-            outputIdentifier = compile(
-              conn,
-              [conn.chip, ...scope],
-              codeWrapper,
-            );
-          } else {
-            outputIdentifier = compile(conn, scope, codeWrapper);
+        const declarations = [];
+        for (const conn of conns) {
+          if (conn) {
+            let outputIdentifier;
+            if (conn.chip !== scope[0]) {
+              outputIdentifier = compile(
+                conn,
+                [conn.chip, ...scope],
+                codeWrapper,
+              );
+            } else {
+              outputIdentifier = compile(conn, scope, codeWrapper);
+            }
+
+            let decl;
+
+            // Assign to whatever the outlet is
+            if (isOutlet(conn, scope)) {
+              decl = builders.expressionStatement(
+                builders.assignmentExpression(
+                  '=',
+                  outputIdentifier,
+                  assignExpressionBlock,
+                ),
+              );
+            }
+            // Local variable assignment
+            else {
+              assert(
+                namedTypes.Identifier.check(outputIdentifier),
+                `Expected identifier or member expression got: ${outputIdentifier}`,
+              );
+
+              decl = builders.variableDeclaration('let', [
+                builders.variableDeclarator(
+                  outputIdentifier,
+                  assignExpressionBlock,
+                ),
+              ]);
+            }
+
+            declarations.push(decl);
           }
-
-          assert(
-            namedTypes.Identifier.check(outputIdentifier),
-            `Expected identifier got: ${outputIdentifier}`,
-          );
-
-          return builders.variableDeclaration('let', [
-            builders.variableDeclarator(
-              outputIdentifier,
-              assignExpressionBlock,
-            ),
-          ]);
         }
+        if (declarations.length === 0) return;
+        if (declarations.length === 1) return declarations[0];
+        return builders.blockStatement(declarations);
       },
     });
   };
@@ -669,6 +701,18 @@ function makeOutputDataSourceCompiler(portInfo) {
 
       assert(conn, `Output data port "${portInfo.name}" must be connected`);
 
+      // If the connected port is an output data port being pushed by and
+      // input flow execution, it will have this flag `isPushing` set to true.
+      // In this case the port should ignore the computeOn and act as an
+      // `assignOutputValueCompiler` but returning the ouput outlet reference
+      // this port would have computeOn.
+      // The `isPushing` is also stored in this port to avoid compile it as
+      // an outlet `OutputFlowPort.computeOutputs`.
+      if (info(conn).isPushing) {
+        portInfo.isPushing = true;
+        return codeWrapper.compileOutputDataOutlet(portInstance);
+      }
+
       // If connecting to an output data outlet (ie: an output port of the root
       // chip)
       if (isOutlet(portInstance, outterScope)) {
@@ -695,22 +739,24 @@ function makeOutputDataSourceCompiler(portInfo) {
           portInstance,
           assignExpressionBlock,
         );
-      } else {
-        // Read an inlet (aka a computeOn port of a chip instance within
-        // the root chip). Note how we use the inlet without an assignment,
-        // meaning that we expect to read the inlet value.
-        // This should return something like the variable name created for
-        // the inlet.
-        // The actual assignment is deferred to the output flow port computing
-        // this output data. See forwardSourceCompiler#findSourceCompiler for
-        // more.
-        return codeWrapper.compileVariableInlet(portInstance);
       }
+
+      // Read an inlet (aka a computeOn port of a chip instance within
+      // the root chip). Note how we use the inlet without an assignment,
+      // meaning that we expect to read the inlet value.
+      // This should return something like the variable name created for
+      // the inlet.
+      // The actual assignment is deferred to the output flow port computing
+      // this output data. See forwardSourceCompiler#findSourceCompiler for
+      // more.
+      return codeWrapper.compileVariableInlet(portInstance);
     };
   }
 
   // We use the output data compute function
   return function useComputeCompiler(portInstance, outterScope, codeWrapper) {
+    // TODO if used by a connection with a pushing port, we should fail
+
     const makeCompute = portInfo.allowSideEffects
       ? executeCompiler(portInfo, 'compute', 'computeCompiler')
       : computeCompiler(portInfo);

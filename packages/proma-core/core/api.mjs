@@ -6,11 +6,13 @@ import { Compilation } from './compile.mjs';
 import { deserializeChip } from './serialize.mjs';
 import { ExternalReference } from './external.mjs';
 
+// Creates a chip
 export const plainChip = makeChipFactory();
 
 const OnCreate = event('OnCreate');
 const OnDestroy = event('OnDestroy');
 
+// Creates a chip with OnCreate and OnDestroy provided custom chips
 export const chip = makeChipFactory(
   () => {
     return { OnCreate, OnDestroy };
@@ -58,7 +60,6 @@ export function wire(portA, portB) {
   chipInfo.addConnection(portA, portB);
 }
 
-// TODO rename to `parameter`?
 export function inputConfig(name, { defaultValue, required } = {}) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputDataPort(name, {
@@ -82,12 +83,27 @@ export function outputHandle(name, execHandle) {
   });
 }
 
-export function event(name, ...ports) {
+export function event(name, ports) {
+  ports = (ports || []).map((p) => {
+    if (typeof p === 'string') {
+      return { name: p };
+    }
+    return p;
+  });
   return plainChip(name, () => {
-    // TODO funciton with ports and toString
-    const handle = outputHandle('handle', () => then());
+    const handler = (...args) => {
+      for (let i = 0, l = outputs.length; i < l; i++) {
+        outputs[i](args[i]);
+      }
+      then();
+    };
+    handler.toString = () => `(...args) => {
+      ${ports.map(({ name }, i) => `${name}(args[${i}]);`).join('\n')}
+      then();
+    }`;
+    const handle = outputHandle('handle', handler);
     const then = outputFlow('then');
-    // TODO ports
+    const outputs = ports.map(({ name, type }) => outputData(name, { type }));
   });
 }
 

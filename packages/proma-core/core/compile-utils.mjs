@@ -100,25 +100,28 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
           }
           replaceInputData[portName] = {
             path: pathFromNodePath(path),
-            block: path.value,
           };
           return false;
         }
         // Collect output flows and data
         sourcePortOutlet = chipInfo.getOutputPortOutlet(portName);
         if (sourcePortOutlet) {
-          // TODO may need to save call args and/or compile it first
+          // Resolve potential arguments that may be other ports
+          this.traverse(path);
+          // Output flows
           if (info(sourcePortOutlet).isFlow) {
             // TODO check that it is used as a continuation, not an expression
             replaceOutputFlows[portName] = {
               path: pathFromNodePath(path),
-              block: path.value,
             };
             return false;
           }
+          // Output data, this is a case like `output(input() + 1)`
+          // if there is no argument, the output data port is being used badly
+          const pathArray = pathFromNodePath(path);
           replaceOutputData[portName] = {
-            path: pathFromNodePath(path),
-            block: path.value.arguments[0],
+            path: pathArray,
+            argPath: [...pathArray, 'arguments', 0],
           };
           return false;
         }
@@ -147,8 +150,18 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
     }
 
     for (const portName in replaceOutputData) {
-      const { path, block } = replaceOutputData[portName];
-      const res = compileOutputData(portName, block) || builders.noop();
+      const { path, argPath } = replaceOutputData[portName];
+      const block = getPath(ast, argPath);
+      let res = compileOutputData(portName, block) || builders.noop();
+      // TODO this is a trick to resovle the situation where a block is returned
+      // but we do not want it! Basically if we explore it right away, paths
+      // for other `replaceOutputData` would be wrong. So we store an array
+      // as a block body idem and we clean it up in `cleanAst`
+      if (namedTypes.BlockStatement.check(res)) {
+        res.$explodeMe = true;
+        // Remove the "expression" from path
+        path.pop();
+      }
       ast = replaceAstPath(ast, path, res);
     }
 
@@ -173,10 +186,26 @@ export function cleanAst(ast) {
         path.parentPath.replace();
         return false;
       }
+      if (namedTypes.ArrowFunctionExpression.check(parentValue)) {
+        return builders.blockStatement([]);
+      }
       console.warn(' TODO may need to clean more');
       this.traverse(path);
     },
     visitBlockStatement(path) {
+      // Special block marked to be exploded
+      if (
+        path.value.$explodeMe === true &&
+        Array.isArray(path.parentPath.value)
+      ) {
+        const body = path.parentPath.value;
+        const exploreAtIndex = body.indexOf(path.value);
+        path.parentPath.replace([
+          ...body.slice(0, exploreAtIndex),
+          ...path.value.body,
+          ...body.slice(exploreAtIndex + 1),
+        ]);
+      }
       // replace expression > block > expression to just expression
       if (
         path.value.body.length === 1 &&
@@ -190,6 +219,8 @@ export function cleanAst(ast) {
     visitVariableDeclaration(path) {
       // Clean cases in which we have variable declarations inside expressions
       // which would lead to a double semicolon (let test = 2;;)
+      // TODO this chould be addressed in `astBuilder` while replacing
+      // `replaceOutputData` like in the block case
       if (namedTypes.ExpressionStatement.check(path.parentPath.value)) {
         path.parentPath.replace(path.value);
       }

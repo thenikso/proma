@@ -34,12 +34,18 @@ export function compileAndRun(build, run, initData, externalContext) {
   }
   let cComp;
   if (!error) {
-    const context = Object.entries(externalContext || {});
-    const contextNames = context.map(([key]) => key);
-    const contextValues = context.map(([, value]) => value);
-    const makeClass = new Function(...contextNames, 'return (' + code + ')');
-    const CClass = makeClass(...contextValues);
-    cComp = new CClass(...(initData || []));
+    try {
+      const context = Object.entries(externalContext || {});
+      const contextNames = context.map(([key]) => key);
+      const contextValues = context.map(([, value]) => value);
+      const makeClass = new Function(...contextNames, 'return (' + code + ')');
+      const CClass = makeClass(...contextValues);
+      cComp = new CClass(...(initData || []));
+    } catch (e) {
+      console.log = originalLog;
+      console.log(code);
+      throw e;
+    }
   }
   // Run tests
   let live;

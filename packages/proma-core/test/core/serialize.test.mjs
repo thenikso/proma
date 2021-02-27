@@ -103,12 +103,12 @@ const chipJS = js`
         then: undefined
       });
 
+      let Pass__output;
+
       const $__handle = o => {
         $out.output = o;
         this.out.then();
       };
-
-      let Pass__output;
 
       Object.defineProperties(this.in = {}, {
         input: {

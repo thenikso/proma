@@ -441,6 +441,12 @@ export class OutputDataSourcePortInfo extends PortInfo {
     this.allowSideEffects = config.allowSideEffects || false;
     this.type = config.type;
 
+    // Used by compiler to indicate a port that is being
+    // set by an execution (rather than be computed)
+    // TODO may need to reset, actually the compiler should save
+    // its own state
+    this.isPushing = false;
+
     let computeOn;
 
     Object.defineProperties(this, {

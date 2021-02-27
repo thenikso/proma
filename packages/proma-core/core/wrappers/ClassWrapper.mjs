@@ -60,22 +60,35 @@ export default class ClassWrapper {
     );
   }
   // Generate an assignment to an outlet:
-  //     this.out.value = <assignExpressionBlock>
+  //
+  //     $out.value = <assignExpressionBlock>
+  //
+  // Or an access to that outlet if no assign expression is specified
+  //
+  //     $out.value
+  //
   compileOutputDataOutlet(port, assignExpressionBlock) {
-    return assignmentExpression(
-      '=',
-      memberExpression(identifier('$out'), identifier(port.name)),
-      assignExpressionBlock,
+    const outletUse = memberExpression(
+      identifier('$out'),
+      identifier(port.name),
     );
+    if (!assignExpressionBlock) return outletUse;
+    return assignmentExpression('=', outletUse, assignExpressionBlock);
   }
   // An inlet is an outlet of an instanced port. It will need local storage
   // provided by the wrapper main body.
   // Used to generate chip instances' `computeOn` output ports. Should generate
   // something like:
+  //
   //     // To add to the wrapper main body
   //     let InnerChip_1__outputPort;
   //     // To return with this function
   //     InnerChip_1__outputPort = <assignExpressionBlock>
+  //
+  // Or an access to the generated inlet variable if no assign expression is given:
+  //
+  //     InnerChip_1__outputPort
+  //
   compileVariableInlet(port, assignExpressionBlock, kind = 'let') {
     let inletUse;
     if (this.inletsByPort.has(port)) {

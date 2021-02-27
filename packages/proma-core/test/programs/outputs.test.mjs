@@ -238,6 +238,80 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
     expected: compileAndRunResult(connectedOutputExpected, ['hello world']),
   });
 
+  const PushLiteral = chip('test/programs/outputs/PushLiterla', () => {
+    const exec = inputFlow('exec', () => {
+      output(value());
+      then();
+    });
+    const value = inputData('value', true);
+
+    const then = outputFlow('then');
+    const output = outputData('output');
+  });
+
+  assert({
+    given: 'an output connected manually (pushed by an exec)',
+    should: 'compile',
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
+      const msg = new PushLiteral('hello world');
+      const log = new Log();
+      const then = outputFlow('then');
+      const output = outputData('output', then);
+
+      wire(onCreate.out.then, msg.in.exec);
+      wire(msg.out.then, log.in.exec);
+      wire(msg.out.output, log.in.message);
+      wire(log.out.then, then);
+      wire(msg.out.output, output);
+    }),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          const $out = Object.seal({
+            output: undefined,
+            then: undefined
+          });
+
+          Object.defineProperties(this.out = {}, {
+            output: {
+              value: () => $out.output
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.then = value;
+                  return;
+                }
+
+                ($out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          {
+            let output = "hello world";
+            $out.output = "hello world";
+
+            {
+              console.log(output);
+              this.out.then();
+            };
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
+      ['hello world'],
+    ),
+  });
+
   const Pass = chip('Pass', () => {
     const exec = inputFlow('exec');
     const input = inputData('input');
