@@ -6,6 +6,7 @@
   export let id = 'ChipView';
   export let chip;
   export let instance = null;
+  export let selection = [];
 
   const shortcuts = {
     '[port] alt+click': 'port:delete',
@@ -23,8 +24,8 @@
     dispatch('change', { chip });
   }
 
-  function dispatchChipRequest(detail) {
-    dispatch('chipRequest', detail);
+  function dispatchSubChipAddRequest(detail) {
+    dispatch('sub-chip:request', detail);
   }
 
   //
@@ -120,7 +121,7 @@
   function handleBoardContextmenu({
     detail: { boardX, boardY, fromChip, fromSide, fromPort, event },
   }) {
-    dispatchChipRequest({
+    dispatchSubChipAddRequest({
       chip,
       clientX: event.clientX,
       clientY: event.clientY,
@@ -199,6 +200,7 @@
     on:wire:start={handleWireStart}
     on:wire:probe={handleWireProbe}
     on:wire:end={handleWireEnd}
+    bind:selectedChips={selection}
   >
     {#if inputOutlets.length > 0}
       <Chip

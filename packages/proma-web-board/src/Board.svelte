@@ -10,6 +10,8 @@
   export let maxZoom = 2;
   export let snap = 5;
   export let newWirePath = WirePath;
+  // IDs of the selected chips. Double-bindable.
+  export let selectedChips = [];
 
   //
   // Dispatchers
@@ -53,12 +55,38 @@
   // Selected chips
   //
 
-  const selectedChips = new Set();
+  const selectedChipsSet = new Set();
 
   function deselectAllChips() {
-    for (const chip of selectedChips) {
+    for (const chip of selectedChipsSet) {
       chip.deselect();
     }
+  }
+
+  function selectedChipsIdArray() {
+    return Array.from(selectedChipsSet).map((c) => c.id);
+  }
+
+  function updateSelectedChips() {
+    const newSelection = selectedChipsIdArray();
+    if (!eqArray(newSelection, selectedChips)) {
+      selectedChips = newSelection;
+    }
+  }
+
+  $: if (
+    boardContentEl &&
+    selectedChips &&
+    !eqArray(selectedChipsSet, selectedChipsIdArray())
+  ) {
+    deselectAllChips();
+    selectedChipsSet.clear();
+    for (const el of boardContentEl.children) {
+      if (el.$promaChip && selectedChips.includes(el.$promaChip.id)) {
+        selectedChipsSet.add(el.$promaChip);
+      }
+    }
+    updateSelectedChips();
   }
 
   //
@@ -69,16 +97,17 @@
     type: 'board',
     // Chip
     selectChip(chip, e) {
-      if (selectedChips.has(chip)) return;
+      if (selectedChipsSet.has(chip)) return;
       if (!e || !e.shiftKey) {
         deselectAllChips();
-        selectedChips.clear();
+        selectedChipsSet.clear();
       }
-      selectedChips.add(chip);
+      selectedChipsSet.add(chip);
       chip.select();
+      updateSelectedChips();
     },
     deselectChip(chip) {
-      selectedChips.delete(chip);
+      selectedChipsSet.delete(chip);
     },
     // Wires
     addWire(outputChip, outputPort, inputChip, inputPort, wirePath, id) {
@@ -318,8 +347,8 @@
         select: (e, pathSoFar) =>
           e.type === 'keydown' &&
           !pathSoFar.includes('chip') &&
-          selectedChips.size > 0 &&
-          Array.from(selectedChips),
+          selectedChipsSet.size > 0 &&
+          Array.from(selectedChipsSet),
         present: (c) => c.map((x) => x.eventDetails),
       },
       {
@@ -357,6 +386,8 @@
       '[chip|selection] mouseup': ({ target }) => {
         if (!selectionRect && target.type === 'selection') {
           deselectAllChips();
+          selectedChipsSet.clear();
+          updateSelectedChips();
         }
         selectionRect = null;
       },
@@ -421,7 +452,7 @@
   function handleDragChip(event) {
     const deltaX = (event.pageX - dragging.x) / zoom;
     const deltaY = (event.pageY - dragging.y) / zoom;
-    for (const chip of selectedChips) {
+    for (const chip of selectedChipsSet) {
       chip.movePosition(deltaX, deltaY, snap);
       board.updateWires(chip);
     }
@@ -434,7 +465,7 @@
     // TODO throttle?
     if (selectionEl) {
       const selectionElRect = selectionEl.getBoundingClientRect();
-      selectedChips.clear();
+      selectedChipsSet.clear();
       const children = boardContentEl.children;
       for (let i = 0, l = children.length; i < l; i++) {
         const chipEl = children[i];
@@ -442,12 +473,13 @@
         if (chip) {
           if (intersectRect(selectionElRect, chipEl.getBoundingClientRect())) {
             chip.select();
-            selectedChips.add(chip);
+            selectedChipsSet.add(chip);
           } else {
             chip.deselect();
           }
         }
       }
+      updateSelectedChips();
     }
 
     dragging = { x: event.pageX, y: event.pageY };
@@ -494,6 +526,11 @@
       x: (x - boardX - width / 2 - panX) / zoom,
       y: (y - boardY - height / 2 - panY) / zoom,
     };
+  }
+
+  function eqArray(a, b) {
+    if (a.length !== b.length) return false;
+    return !a.some((x, i) => x !== b[i]);
   }
 </script>
 

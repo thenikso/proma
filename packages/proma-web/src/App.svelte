@@ -22,6 +22,9 @@
   $: myChip = targetEl && new MyChip(targetEl);
 
   let chipRequest;
+  let mainBoardSelection;
+
+  $: console.log(mainBoardSelection)
 
   //
   // Listing chips
@@ -58,7 +61,12 @@
     <input type="text" placeholder="What's your name?" />
     <button type="button">Greet me</button>
   </div>
-  <ChipView id="MainBoard" chip={MyChip} on:chipRequest={handleChipRequest} />
+  <ChipView
+    id="MainBoard"
+    chip={MyChip}
+    on:sub-chip:request={handleChipRequest}
+    bind:selection={mainBoardSelection}
+  />
   <div>
     <OutletsView />
   </div>
