@@ -9,3 +9,8 @@
   --proma-board--type-tuple: #cd82a3;
   --proma-board--type-function: #d6557c;
 }
+
+html,
+body {
+  overflow: hidden;
+}

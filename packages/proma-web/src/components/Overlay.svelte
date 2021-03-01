@@ -1,5 +1,5 @@
 <script context="module">
-  // TODO onMount of a modal, hide others
+  // TODO onMount of a overlay, hide others
   // TODO onMound stop body events
 </script>
 
@@ -14,7 +14,7 @@
     dispatch('dismiss');
   }
 
-  $: modalStyle = anchor
+  $: overlayStyle = anchor
     ? `
     top: ${anchor.y}px;
     left: ${anchor.x}px;
@@ -23,15 +23,15 @@
 </script>
 
 <div
-  class="ModalContainer"
+  class="OverlayContainer"
   on:mousewheel|stopPropagation={dispatchDismiss}
   on:mousedown|stopPropagation={dispatchDismiss}
   on:mouseup|stopPropagation={dispatchDismiss}
   on:click|stopPropagation={dispatchDismiss}
 >
   <div
-    class="Modal"
-    style={modalStyle}
+    class="Overlay"
+    style={overlayStyle}
     on:mousewheel|stopPropagation
     on:mousedown|stopPropagation
     on:mouseup|stopPropagation
@@ -42,7 +42,7 @@
 </div>
 
 <style>
-  .ModalContainer {
+  .OverlayContainer {
     position: fixed;
     overflow: hidden;
     top: 0;
@@ -51,7 +51,7 @@
     height: 100vh;
   }
 
-  .Modal {
+  .Overlay {
     position: absolute;
     overflow: auto;
 

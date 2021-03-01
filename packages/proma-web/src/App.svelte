@@ -1,8 +1,9 @@
 <script>
   // TODO used compiled version instead
   import * as proma from '@proma/core/core/index.mjs';
+  import Overlay from './components/Overlay.svelte';
   import ChipView from './ChipView.svelte';
-  import Modal from './components/Modal.svelte';
+  import OutletsView from './OutletsView.svelte';
 
   const MyChip = proma.chip('MyChip', ({ OnCreate }) => {
     const exec = proma.inputFlow('exec');
@@ -47,10 +48,13 @@
     <button type="button">Greet me</button>
   </div>
   <ChipView chip={MyChip} on:chipRequest={handleChipRequest} />
+  <div>
+    <OutletsView />
+  </div>
 </main>
 
 {#if chipRequest}
-  <Modal
+  <Overlay
     anchor={{ x: chipRequest.clientX - 5, y: chipRequest.clientY - 5 }}
     on:dismiss={() => (chipRequest = null)}
   >
@@ -84,7 +88,7 @@
         </div>
       {/each}
     </div>
-  </Modal>
+  </Overlay>
 {/if}
 
 <style>
@@ -96,7 +100,7 @@
     height: 100vh;
 
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1fr 2fr 300px;
     grid-template-rows: 1fr;
   }
 </style>
