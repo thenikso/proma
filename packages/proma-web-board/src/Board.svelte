@@ -405,8 +405,9 @@
           panY -= sourceEvent.deltaY;
         }
       },
-      '[board] contextmenu': ({ target, sourceEvent }) => {
-        dispatchContextmenu('board', target.eventDetails, sourceEvent);
+      '[port|chip|board] contextmenu': ({ target, sourceEvent }) => {
+        sourceEvent.preventDefault();
+        dispatchContextmenu(target.type, target.eventDetails, sourceEvent);
       },
     },
   );

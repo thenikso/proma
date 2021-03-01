@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { createShortcutDispatcher } from '@proma/web-controls';
+  import { createShortcutDispatcher, action } from '@proma/web-controls';
   import { Board, Chip, Inputs, Outputs, Port, Wire } from '@proma/web-board';
 
   export let id = 'ChipView';
@@ -26,6 +26,20 @@
   function dispatchChipRequest(detail) {
     dispatch('chipRequest', detail);
   }
+
+  //
+  // Actions
+  //
+
+  action.provide('ChipView.removeChip', ({ path: [chipView, chip] }) => {
+    for (const c of chip) {
+      chipView.removeChip(c.chip);
+    }
+  });
+
+  action.provide('ChipView.removeConnection', ({ path: [chipView, port] }) => {
+    chipView.removeConnection(port);
+  });
 
   //
   // Shortcuts target
