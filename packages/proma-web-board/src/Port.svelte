@@ -39,24 +39,6 @@
     set connectionCount(value) {
       connectionCount = value;
     },
-    // Handlers
-    mouseUp(e) {
-      if (chip.board.endNewWire(port, e)) {
-        e.stopPropagation();
-      }
-    },
-    drag(e) {
-      // Start a new wire if dragging away from the port
-      // TODO wait for drag distanct to be > delta
-      if (!e.altKey && !e.ctrlKey && !e.metaKey && e.button === 0) {
-        chip.board.startNewWire(port);
-      }
-      chip.board.probeNewWire(e);
-      e.stopPropagation();
-    },
-    contextmenu(e) {
-      console.log('context menu');
-    },
   };
 
   $: port.name = name;

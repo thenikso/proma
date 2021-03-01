@@ -10,7 +10,7 @@ export const shortcuts = readable({}, (set) => {
 });
 
 const resolvedGlobalShortcuts = new Map();
-const globalShortcutsMathers = [];
+let globalShortcutsMathers = [];
 
 shortcuts.set = function addGlobalShortcut(shortcut, action) {
   resolvedGlobalShortcuts.set(
@@ -21,6 +21,16 @@ shortcuts.set = function addGlobalShortcut(shortcut, action) {
   // TODO update shortcuts store
   // setShortcuts(Object.fromEntries());
 };
+
+export class ShortcutEvent {
+  constructor(shortcut, targetPath, sourceEvent) {
+    this.type = 'shortcut';
+    this.shortcut = shortcut;
+    this.target = targetPath[targetPath.length - 1];
+    this.path = targetPath;
+    this.sourceEvent = sourceEvent;
+  }
+}
 
 //
 // Shortcut matching
@@ -91,16 +101,34 @@ function dispatchShortcuts(event, targetPathResolvers, localShortcuts) {
   }
   // Prepare targets
   const targetPathLastIndex = targetPathResolvers.length - 1;
-  const targetsPath = targetPathResolvers.map((singleTargetResolver, i) => {
+  let targetsPath = targetPathResolvers.map((singleTargetResolver, i) => {
     const targets = singleTargetResolver(event);
     return targets;
   });
   // Match targets
   // These generates objects like:
   // { targetsPath: [[obj], [obj, obj]], shortcut: '[board] cmd+c', action: (ShortcutEvent) => void }
-  matchTargetAndDispatch(localMatches, targetsPath, event);
-  if (event.cancelBubble) return;
-  matchTargetAndDispatch(globalMatches, targetsPath, event);
+  if (localMatches.length > 0) {
+    matchTargetAndDispatch(
+      localMatches,
+      [targetsPath[targetsPath.length - 1]],
+      event,
+    );
+  }
+  if (globalMatches.length > 0) {
+    targetsPath = targetsPath.map((singleTarget) =>
+      singleTarget.map(({ id, target, present }) => ({
+        id,
+        target:
+          typeof present === 'function'
+            ? present(target)
+            : typeof present === 'undefined'
+            ? target
+            : present,
+      })),
+    );
+    matchTargetAndDispatch(globalMatches, targetsPath, event);
+  }
 }
 
 function matchTargetAndDispatch(resolvedShortcuts, fullTargetsPath, event) {
@@ -112,12 +140,7 @@ function matchTargetAndDispatch(resolvedShortcuts, fullTargetsPath, event) {
     }))
     .filter(({ targetPath }) => targetPath.length > 0);
   for (const { targetPath, shortcut, action } of shortcuts) {
-    action({
-      target: targetPath[targetPath.length - 1],
-      targetPath,
-      shortcut,
-      event,
-    });
+    action(new ShortcutEvent(shortcut, targetPath, event));
   }
 }
 
@@ -127,7 +150,7 @@ function matchTargetAndDispatch(resolvedShortcuts, fullTargetsPath, event) {
 
 // From an array or `selectors` like:
 //     [
-//       { id: 'board', select: board },
+//       { id: 'board', select: board, present: () => 'something-for-global-view' },
 //       { id: 'selection', select: e => !grab && e.button === 0 ? selection : null },
 //       { id: 'chip', select: e => !grab && e.path.filter(p => p.$promaChip).map(p => p.promaChip)[0] },
 //       { id: 'chip', select: (e, pathSoFar) => !grab && e.type === 'keydown' && !pathSoFar.includes('chip') && selectedChips },
@@ -142,11 +165,11 @@ function makeSingleTargetResolver(selectors) {
     const targetsPath = [];
     const targetsIdsPath = [];
     for (let i = 0, l = selectors.length; i < l; i++) {
-      const { select, id } = selectors[i];
+      const { id, select, present } = selectors[i];
       const target =
         typeof select === 'function' ? select(event, targetsIdsPath) : select;
       if (target) {
-        targetsPath.push({ id, target });
+        targetsPath.push({ id, target, present });
         targetsIdsPath.push(id);
       }
     }
@@ -157,30 +180,33 @@ function makeSingleTargetResolver(selectors) {
 // Given a targetsString like `parent:subTarget` return a function that accepts
 // a targets path like:
 //     [ [ { id: 'parent', target: obj } ], [ { id: 'subTarget', target: obj2 }, { id: 'subTarget2', target: obj3 } ] ]
-// And returns an array like:
+// And returns an array:
 //     [ { id: 'parent', target: obj }, { id: 'subTarget', target: obj2 } ]
 function makeTargetMatcher(targetsString) {
-  const targetIdsToMatch = targetsString.split(':').map((x) => x.trim());
+  const targetIdsToMatch = targetsString
+    .split(':')
+    .map((x) => x.split('|').map((x) => x.trim()));
   const idsLen = targetIdsToMatch.length;
-  return function targetMatcher(targetsPath) {
+  return function matchTarget(targetsPath) {
     const pathLen = targetsPath.length;
     if (pathLen > idsLen) return 0;
-    const targets = [];
-    for (let i = 1, l = idsLen; i <= l; i++) {
-      const segmentTargets = targetsPath[pathLen - i];
-      const idToMatch = targetIdsToMatch[idsLen - i];
+    const res = [];
+    for (let i = idsLen - 1; i >= 0; i--) {
+      const segmentTargets = targetsPath[i];
+      const idsToMatch = targetIdsToMatch[i];
       let segmentSelection;
-      for (let j = 0, jl = segmentTargets.length; j < jl; j++) {
+      for (let j = segmentTargets.length - 1; j >= 0; j--) {
         const { id, target } = segmentTargets[j];
-        if (id === idToMatch) {
+        // TODO support for *?
+        if (idsToMatch.includes(id)) {
           segmentSelection = target;
           break;
         }
       }
       if (!segmentSelection) break;
-      targets.unshift(segmentSelection);
+      res.unshift(segmentSelection);
     }
-    return targets;
+    return res;
   };
 }
 
@@ -208,7 +234,7 @@ function resolveSingleShortcut(shortcut, action) {
   }
   const targets = targetString.trim() || '*';
   const matchEvent = makeShortcutMatcher(eventsString);
-  const matchTarget = targets === '*' ? () => 1 : makeTargetMatcher(targets);
+  const matchTarget = makeTargetMatcher(targets);
   return { shortcut, matchTarget, matchEvent, action };
 }
 
@@ -267,6 +293,7 @@ function makeShortcutTokenMatcher(shortcutToken) {
     case 'mouseleave':
     case 'mousedown':
     case 'mouseup':
+    case 'mousemove':
     case 'contextmenu':
       return (e) => e.type === shortcutToken;
     case 'alt':
@@ -280,7 +307,7 @@ function makeShortcutTokenMatcher(shortcutToken) {
     default:
       return (e) =>
         (e.type === 'keydown' || e.type === 'keyup') &&
-        e.key.toLowerCase() === shortcutToken;
+        (e.type === shortcutToken || e.code.toLowerCase() === shortcutToken);
   }
 }
 

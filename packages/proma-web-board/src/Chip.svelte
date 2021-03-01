@@ -40,6 +40,21 @@
       selected = false;
     },
     //
+    movePosition(deltaX, deltaY, snap) {
+      if (!rawX) {
+        rawX = x;
+        rawY = y;
+      }
+      rawX += deltaX;
+      rawY += deltaY;
+      if (snap > 0) {
+        x = Math.round(rawX / snap) * snap;
+        y = Math.round(rawY / snap) * snap;
+      } else {
+        x = rawX;
+        y = rawY;
+      }
+    },
     addPort(side, portEl) {
       switch (side) {
         case INPUT:
@@ -75,35 +90,6 @@
         default:
           throw new Error(`Invalid port side "${side}"`);
       }
-    },
-    // Handlers
-    mouseDown(e) {
-      board.selectChip(chip, e);
-      chip.select();
-      e.stopPropagation();
-    },
-    mouseUp(e) {
-      // Avoid selection to deselect if clicking on chip
-      e.stopPropagation();
-    },
-    drag(e) {
-      const deltaX = e.dragX / e.zoom;
-      const deltaY = e.dragY / e.zoom;
-      if (!rawX) {
-        rawX = x;
-        rawY = y;
-      }
-      rawX += deltaX;
-      rawY += deltaY;
-      if (e.snap > 0) {
-        x = Math.round(rawX / e.snap) * e.snap;
-        y = Math.round(rawY / e.snap) * e.snap;
-      } else {
-        x = rawX;
-        y = rawY;
-      }
-      board.updateWires(chip);
-      e.stopPropagation();
     },
   });
 

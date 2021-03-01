@@ -1,6 +1,7 @@
 <script>
   // TODO used compiled version instead
   import * as proma from '@proma/core/core/index.mjs';
+  import { shortcuts } from '@proma/web-controls';
   import Overlay from './components/Overlay.svelte';
   import ChipView from './ChipView.svelte';
   import OutletsView from './OutletsView.svelte';
@@ -39,6 +40,25 @@
   function handleChipRequest(e) {
     chipRequest = e.detail;
   }
+
+  //
+  // Shortcuts
+  //
+
+  // TODO use actions instead
+
+  shortcuts.set('[MainBoard:chip] backspace', ({ path: [mainBoard, chip] }) => {
+    for (const c of chip) {
+      mainBoard.removeChip(c.chip);
+    }
+  });
+  shortcuts.set('[MainBoard:port] alt+click', ({ path: [mainBoard, port] }) => {
+    mainBoard.removeConnection(port);
+  });
+  shortcuts.set('[MainBoard:board] contextmenu', ({ sourceEvent }) => {
+    // console.log(evt);
+    sourceEvent.preventDefault();
+  });
 </script>
 
 <main>
@@ -47,7 +67,7 @@
     <input type="text" placeholder="What's your name?" />
     <button type="button">Greet me</button>
   </div>
-  <ChipView chip={MyChip} on:chipRequest={handleChipRequest} />
+  <ChipView id="MainBoard" chip={MyChip} on:chipRequest={handleChipRequest} />
   <div>
     <OutletsView />
   </div>

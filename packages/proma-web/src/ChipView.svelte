@@ -1,7 +1,9 @@
 <script>
   import { createEventDispatcher } from 'svelte';
+  import { createShortcutDispatcher } from '@proma/web-controls';
   import { Board, Chip, Inputs, Outputs, Port, Wire } from '@proma/web-board';
 
+  export let id = 'ChipView';
   export let chip;
   export let instance = null;
 
@@ -24,6 +26,24 @@
   function dispatchChipRequest(detail) {
     dispatch('chipRequest', detail);
   }
+
+  //
+  // Shortcuts target
+  //
+
+  const chipView = {
+    removeChip(chipId) {
+      if (chipId === '$in' || chipId === '$out') return;
+      edit.removeChip(chipId);
+    },
+    removeConnection(port) {
+      edit.removeConnection(makePortPath(port.chip, port.side, port.name));
+    },
+  };
+
+  const shortcutDispatcher = createShortcutDispatcher([
+    { id, select: chipView },
+  ]);
 
   //
   // Data
@@ -106,15 +126,6 @@
     });
   }
 
-  function handleChipDelete({ detail: { chip } }) {
-    if (chip === '$in' || chip === '$out') return;
-    edit.removeChip(chip);
-  }
-
-  function handlePortDelete({ detail }) {
-    edit.removeConnection(makePortPath(detail.chip, detail.side, detail.name));
-  }
-
   function handleWireStart({ detail }) {
     // TODO highlight available ports
     // console.log('start', detail);
@@ -168,12 +179,9 @@
   }
 </script>
 
-<div class="ChipView">
+<div {id} class="ChipView">
   <Board
-    {shortcuts}
     on:board:contextmenu={handleBoardContextmenu}
-    on:chip:delete={handleChipDelete}
-    on:port:delete={handlePortDelete}
     on:wire:start={handleWireStart}
     on:wire:probe={handleWireProbe}
     on:wire:end={handleWireEnd}

@@ -1,5 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
+  import { createShortcutDispatcher } from '@proma/web-controls';
   import { setBoard, INPUT, OUTPUT } from './lib/context';
   import { shortUID } from './lib/utils';
   import WirePath from './WirePath.svelte';
@@ -9,7 +10,6 @@
   export let maxZoom = 2;
   export let snap = 5;
   export let newWirePath = WirePath;
-  export let shortcuts = {};
 
   //
   // Dispatchers
@@ -30,38 +30,8 @@
     dispatch('wire:end', makeDispatchDetail(detail, event));
   }
 
-  function dispatchShortcuts(event) {
-    // Match event
-    const matchedEvents = resolvedShortcuts.filter(({ matchEvent }) =>
-      matchEvent(event),
-    );
-    if (matchedEvents.length === 0) return;
-    // Prepare targets
-    let targets = getEventTargets(event, true);
-    if (
-      targets.length === 1 &&
-      selectedChips.size > 0 &&
-      (event.type === 'keydown' || event.type === 'keyup')
-    ) {
-      targets.unshift(Array.from(selectedChips));
-    }
-    targets = targets[0];
-    if (!Array.isArray(targets)) targets = [targets];
-    // Check targets
-    for (const { matchTarget, actions } of matchedEvents) {
-      // Account for selected chip target array
-      if (matchTarget(targets[0].type)) {
-        for (const t of targets) {
-          const details = makeDispatchDetail(t.eventDetails, event);
-          for (const action of actions) {
-            dispatch(action, details);
-          }
-          if (event.cancelBubble) return;
-        }
-        // Match only the top most target
-        return;
-      }
-    }
+  function dispatchContextmenu(sourceType, detail, event) {
+    dispatch(`${sourceType}:contextmenu`, makeDispatchDetail(detail, event));
   }
 
   function makeDispatchDetail(detail, event) {
@@ -77,69 +47,6 @@
       },
       detail,
     );
-  }
-
-  //
-  // Shortcuts
-  //
-
-  const shortcutTargetRegExp = /^(?:\[(.+)\])?\s*(.+)$/;
-
-  $: resolvedShortcuts = Object.entries(shortcuts || {}).reduce(
-    (acc, [shortcut, actions]) => {
-      const [, targetsString, eventsString] =
-        shortcutTargetRegExp.exec(shortcut) || [];
-      if (!eventsString) {
-        console.warn(
-          `Invalid Proma-Board shortcut: "${shortcut}": "${actions}"`,
-        );
-        return acc;
-      }
-      const targets = targetsString
-        ? targetsString.split(',').map((s) => s.trim().toLocaleLowerCase())
-        : ['*'];
-      const eventsMatchers = eventsString
-        .split(',')
-        .map(makeShortcutEventMatcher);
-      const matchTarget = targets.includes('*')
-        ? () => true
-        : (t) => targets.includes(t);
-      const matchEvent = (e) => eventsMatchers.some((m) => m(e));
-      acc.push({ matchTarget, matchEvent, actions: actions.split(',') });
-      return acc;
-    },
-    [],
-  );
-
-  function makeShortcutEventMatcher(eventString) {
-    // parts = ['alt', 'click'];
-    const parts = eventString.split('+').map((s) => s.trim().toLowerCase());
-    const matchers = parts.map((part) => {
-      switch (part) {
-        case 'click':
-          return (e) => e.type === 'click';
-        case 'contextmenu':
-          return (e) => e.type === 'contextmenu';
-        case 'alt':
-          return (e) => e.altKey;
-        case 'ctrl':
-          return (e) => e.ctrlKey;
-        case 'cmd':
-        case 'meta':
-        case 'win':
-          return (e) => e.metaKey;
-        default:
-          return (e) => e.type === 'keydown' && e.key.toLowerCase() === part;
-      }
-    });
-    return function shortcutEventMatcher(event) {
-      for (let i = 0, l = matchers.length; i < l; i++) {
-        if (!matchers[i](event)) {
-          return false;
-        }
-      }
-      return true;
-    };
   }
 
   //
@@ -168,6 +75,7 @@
         selectedChips.clear();
       }
       selectedChips.add(chip);
+      chip.select();
     },
     deselectChip(chip) {
       selectedChips.delete(chip);
@@ -216,14 +124,6 @@
       inputPort.connectionCount++;
       return id;
     },
-    probeNewWire(e) {
-      if (newWireFromPoint) {
-        const target = getEventTargets(e, true)[0];
-        if (newWireProbeEnd === target) return;
-        newWireProbeEnd = target;
-        dispatchWireProbe(target.eventDetails, e);
-      }
-    },
     removeWire(id) {
       const wireIndex = wires.findIndex((w) => w.id === id);
       let wire;
@@ -241,6 +141,7 @@
       updateWiresLimit = limitChip;
       updateWiresTimer = requestAnimationFrame(updateWiresPoints);
     },
+    //
     startNewWire(port) {
       if (newWireFromPort) return false;
       newWireFromPort = port;
@@ -250,6 +151,13 @@
         port: port.name,
       });
       return true;
+    },
+    probeNewWire(target, e) {
+      if (newWireFromPoint) {
+        if (newWireProbeEnd === target) return;
+        newWireProbeEnd = target;
+        dispatchWireProbe(target.eventDetails, e);
+      }
     },
     endNewWire(port, e) {
       if (!newWireFromPort) return false;
@@ -266,32 +174,6 @@
       newWireFromPort = null;
       return true;
     },
-    // Handlers
-    drag(e) {
-      panX += e.dragX;
-      panY += e.dragY;
-    },
-    keyDown(e) {
-      if (e.code === 'Space') {
-        grab = true;
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    },
-    keyUp(e) {
-      if (e.code === 'Space') {
-        grab = false;
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    },
-    mouseUp(e) {
-      if (newWireFromPort) {
-        board.endNewWire(null, e);
-      }
-      e.stopPropagation();
-      e.preventDefault();
-    },
   });
 
   //
@@ -304,37 +186,6 @@
 
   const selection = {
     type: 'selection',
-    mouseUp(e) {
-      if (!e.didDrag) {
-        deselectAllChips();
-      }
-      selectionRect = null;
-    },
-    drag(e) {
-      selectionRect = selectionRectFromPoints(draggingStart, dragging);
-
-      // TODO throttle?
-      if (selectionEl) {
-        const selectionElRect = selectionEl.getBoundingClientRect();
-        selectedChips.clear();
-        const children = boardContentEl.children;
-        for (let i = 0, l = children.length; i < l; i++) {
-          const chipEl = children[i];
-          const chip = chipEl.$promaChip;
-          if (chip) {
-            if (
-              intersectRect(selectionElRect, chipEl.getBoundingClientRect())
-            ) {
-              chip.select();
-              selectedChips.add(chip);
-            } else {
-              chip.deselect();
-            }
-          }
-        }
-      }
-      e.stopPropagation();
-    },
   };
 
   function selectionRectFromPoints({ x: x1, y: y1 }, { x: x2, y: y2 }) {
@@ -440,71 +291,7 @@
   }
 
   //
-  // Event target
-  //
-
-  function getEventTargets(e, straightPath) {
-    if (grab) {
-      return [board];
-    }
-    // Get event path (with firefox fix)
-    let path = e.path;
-    if (!path) {
-      path = [];
-      let cursor = e.target;
-      while (cursor) {
-        path.unshift(cursor);
-        cursor = cursor.parentElement;
-      }
-    }
-    // Map to known objects
-    const promaPath = [];
-    for (const p of path) {
-      if (p.$promaPort) {
-        promaPath.push(p.$promaPort);
-      } else if (p.$promaChip) {
-        if (!straightPath && selectedChips.has(p.$promaChip)) {
-          promaPath.push(Array.from(selectedChips));
-        } else {
-          promaPath.push(p.$promaChip);
-        }
-      }
-    }
-    if (e.button === 0) {
-      promaPath.push(selection);
-    }
-    promaPath.push(board);
-    return promaPath;
-  }
-
-  function withEventTargets(targetsPath, f, e) {
-    for (const target of targetsPath) {
-      if (Array.isArray(target)) {
-        for (const t of target) {
-          if (t[f]) {
-            t[f](e);
-          }
-        }
-      } else if (target[f]) {
-        target[f](e);
-      }
-      if (e.cancelBubble) break;
-    }
-  }
-
-  function hasEventTarget(targets, type) {
-    if (targets) {
-      for (const target of targets) {
-        if (target.type === type) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  //
-  // Dragging and other interaction event handlers
+  // Shortctus and event handling
   //
 
   let draggingEventTargets;
@@ -512,101 +299,179 @@
   let dragging;
   let zoomRaw = zoom;
 
-  function handleMouseDown(e) {
-    draggingEventTargets = getEventTargets(e);
-    draggingStart = dragging = { x: e.pageX, y: e.pageY };
-    withEventTargets(draggingEventTargets, 'mouseDown', e);
+  const NEWdispatchShortcuts = createShortcutDispatcher(
+    [
+      { id: 'board', select: board, present: { type: 'board' } },
+      {
+        id: 'selection',
+        select: (e) => (e.button === 0 ? selection : null),
+        present: { type: 'selection' },
+      },
+      {
+        id: 'chip',
+        select: (e) =>
+          e.path.filter((p) => p.$promaChip).map((p) => p.$promaChip)[0],
+        present: (c) => c.eventDetails,
+      },
+      {
+        id: 'chip',
+        select: (e, pathSoFar) =>
+          e.type === 'keydown' &&
+          !pathSoFar.includes('chip') &&
+          selectedChips.size > 0 &&
+          Array.from(selectedChips),
+        present: (c) => c.map((x) => x.eventDetails),
+      },
+      {
+        id: 'port',
+        select: (e) =>
+          e.path.filter((p) => p.$promaPort).map((p) => p.$promaPort)[0],
+        present: (c) => c.eventDetails,
+      },
+    ],
+    {
+      '[port|chip|selection] mousedown': ({ target, sourceEvent }) => {
+        draggingStart = dragging = {
+          x: sourceEvent.pageX,
+          y: sourceEvent.pageY,
+        };
+        if (target.type === 'port') {
+          if (
+            !sourceEvent.altKey &&
+            !sourceEvent.ctrlKey &&
+            !sourceEvent.metaKey &&
+            sourceEvent.button === 0
+          ) {
+            board.startNewWire(target);
+            boardEl.addEventListener('mousemove', handleDragPort);
+          }
+        } else if (target.type === 'chip') {
+          board.selectChip(target, sourceEvent);
+          boardEl.addEventListener('mousemove', handleDragChip);
+        } else if (!grab) {
+          boardEl.addEventListener('mousemove', handleDragSelection);
+        } else {
+          boardEl.addEventListener('mousemove', handleDragBoard);
+        }
+      },
+      '[chip|selection] mouseup': ({ target }) => {
+        if (!selectionRect && target.type === 'selection') {
+          deselectAllChips();
+        }
+        selectionRect = null;
+      },
+      '[board] keydown+space': ({ sourceEvent }) => {
+        if (!grab) {
+          grab = true;
+        }
+        sourceEvent.stopPropagation();
+        sourceEvent.preventDefault();
+      },
+      '[board] keyup+space': ({ sourceEvent }) => {
+        if (grab) {
+          grab = false;
+          boardMouseLeaveAction();
+          sourceEvent.stopPropagation();
+          sourceEvent.preventDefault();
+        }
+      },
+      '[port|board] mousemove': ({ target, sourceEvent }) => {
+        board.probeNewWire(target, sourceEvent);
+      },
+      '[port|board] mouseup': ({ target, sourceEvent }) => {
+        if (newWireFromPort) {
+          board.endNewWire(target.type === 'port' ? target : null, sourceEvent);
+        }
+        boardMouseLeaveAction();
+      },
+      '[board] mouseleave': boardMouseLeaveAction,
+      '[board] mousewheel': ({ sourceEvent }) => {
+        if (sourceEvent.ctrlKey) {
+          const prevZoom = zoomRaw;
+          const delta = sourceEvent.deltaY * 2;
+          zoomRaw -= delta / 100;
+          if (zoomRaw > maxZoom) {
+            zoomRaw = maxZoom;
+          } else if (zoomRaw < minZoom) {
+            zoomRaw = minZoom;
+          }
+          if (prevZoom !== zoomRaw) {
+            panX += delta;
+            panY += delta;
+          }
+          zoom = Math.abs(zoomRaw - 1) < 0.05 ? 1 : zoomRaw;
+        } else {
+          panX -= sourceEvent.deltaX;
+          panY -= sourceEvent.deltaY;
+        }
+      },
+      '[board] contextmenu': ({ target, sourceEvent }) => {
+        dispatchContextmenu('board', target.eventDetails, sourceEvent);
+      },
+    },
+  );
+
+  function handleDragPort(event) {
+    NEWdispatchShortcuts(event);
+
+    dragging = { x: event.pageX, y: event.pageY };
   }
 
-  function handleMouseMove(e) {
-    if (!dragging) {
-      return;
+  function handleDragChip(event) {
+    const deltaX = (event.pageX - dragging.x) / zoom;
+    const deltaY = (event.pageY - dragging.y) / zoom;
+    for (const chip of selectedChips) {
+      chip.movePosition(deltaX, deltaY, snap);
+      board.updateWires(chip);
+    }
+    dragging = { x: event.pageX, y: event.pageY };
+  }
+
+  function handleDragSelection(event) {
+    selectionRect = selectionRectFromPoints(draggingStart, dragging);
+
+    // TODO throttle?
+    if (selectionEl) {
+      const selectionElRect = selectionEl.getBoundingClientRect();
+      selectedChips.clear();
+      const children = boardContentEl.children;
+      for (let i = 0, l = children.length; i < l; i++) {
+        const chipEl = children[i];
+        const chip = chipEl.$promaChip;
+        if (chip) {
+          if (intersectRect(selectionElRect, chipEl.getBoundingClientRect())) {
+            chip.select();
+            selectedChips.add(chip);
+          } else {
+            chip.deselect();
+          }
+        }
+      }
     }
 
-    const dragY = e.pageY - dragging.y;
-    const dragX = e.pageX - dragging.x;
-
-    withEventTargets(
-      draggingEventTargets,
-      'drag',
-      Object.assign(e, {
-        dragStartX: draggingStart.x,
-        dragStartY: draggingStart.y,
-        dragX,
-        dragY,
-        zoom,
-        snap,
-      }),
-    );
-
-    dragging = { x: e.pageX, y: e.pageY };
+    dragging = { x: event.pageX, y: event.pageY };
   }
 
-  function handleMouseUp(e) {
-    draggingEventTargets = getEventTargets(e);
-    withEventTargets(
-      draggingEventTargets,
-      'mouseUp',
-      Object.assign(e, {
-        didDrag:
-          draggingStart &&
-          (draggingStart.x !== e.pageX || draggingStart.y !== e.pageY),
-      }),
-    );
-    handleMouseLeave(e);
+  function handleDragBoard(event) {
+    panX += event.pageX - dragging.x;
+    panY += event.pageY - dragging.y;
+
+    dragging = { x: event.pageX, y: event.pageY };
   }
 
-  function handleMouseLeave(e) {
+  function boardMouseLeaveAction() {
     if (newWireFromPort) {
       newWireFromPort.connectionCount--;
     }
     newWireFromPort = null;
     draggingStart = null;
     dragging = null;
-    draggingEventTargets = null;
-  }
+    grab = false;
 
-  function handleMouseWheel(e) {
-    if (e.ctrlKey) {
-      const prevZoom = zoomRaw;
-      const delta = e.deltaY * 2;
-      zoomRaw -= delta / 100;
-      if (zoomRaw > maxZoom) {
-        zoomRaw = maxZoom;
-      } else if (zoomRaw < minZoom) {
-        zoomRaw = minZoom;
-      }
-      if (prevZoom !== zoomRaw) {
-        panX += delta;
-        panY += delta;
-      }
-      zoom = Math.abs(zoomRaw - 1) < 0.05 ? 1 : zoomRaw;
-    } else {
-      panX -= e.deltaX;
-      panY -= e.deltaY;
-    }
-  }
-
-  function handleKeydown(e) {
-    const targets = getEventTargets(e);
-    dispatchShortcuts(e);
-    withEventTargets(targets, 'keyDown', e);
-  }
-
-  function handleKeyup(e) {
-    const targets = getEventTargets(e);
-    withEventTargets(targets, 'keyUp', e);
-  }
-
-  function handleContextmenu(e) {
-    dispatchShortcuts(e);
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  function handleClick(e) {
-    const targets = getEventTargets(e);
-    dispatchShortcuts(e);
+    boardEl.removeEventListener('mousemove', handleDragPort);
+    boardEl.removeEventListener('mousemove', handleDragChip);
+    boardEl.removeEventListener('mousemove', handleDragSelection);
+    boardEl.removeEventListener('mousemove', handleDragBoard);
   }
 
   //
@@ -639,16 +504,15 @@
   bind:this={boardEl}
   bind:offsetWidth={boardWidth}
   bind:offsetHeight={boardHeight}
-  on:mousedown={handleMouseDown}
-  on:mouseup={handleMouseUp}
-  on:mousemove={handleMouseMove}
-  on:mouseleave={handleMouseLeave}
-  on:mousewheel|preventDefault={handleMouseWheel}
+  on:mousedown={NEWdispatchShortcuts}
+  on:mouseup={NEWdispatchShortcuts}
+  on:mouseleave={NEWdispatchShortcuts}
+  on:mousewheel|preventDefault={NEWdispatchShortcuts}
   on:dragstart|preventDefault
-  on:keydown={handleKeydown}
-  on:keyup={handleKeyup}
-  on:contextmenu={handleContextmenu}
-  on:click={handleClick}
+  on:keydown={NEWdispatchShortcuts}
+  on:keyup={NEWdispatchShortcuts}
+  on:contextmenu={NEWdispatchShortcuts}
+  on:click={NEWdispatchShortcuts}
 >
   <svg
     bind:this={wiresEl}

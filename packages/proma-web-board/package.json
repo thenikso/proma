@@ -21,5 +21,7 @@
     "svelte": "^3.0.0",
     "svelte-testbench": "^0.2.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@proma/web-controls": "^0.1.0"
+  }
 }
