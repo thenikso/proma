@@ -1,4 +1,4 @@
-import { describe } from '../runner/riteway.mjs';
+import { describe, Try } from '../runner/riteway.mjs';
 import {
   chip,
   inputFlow,
@@ -145,5 +145,72 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addConnection('Pass.out.then', 'then')
       .Chip.toJSON(),
     expected,
+  });
+});
+
+describe('[core/edit] edit ports', async (assert) => {
+  assert({
+    given: 'a port rename operation',
+    should: 'rename the outlet port',
+    actual: chip('EditChip', () => {
+      const exec = inputFlow('exec');
+      const inValue = inputData('value');
+      const then = outputFlow('then');
+      const outValue = outputData('value');
+      wire(inValue, outValue);
+    })
+      .edit()
+      .renamePort('in.value', 'input')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      in: [
+        {
+          name: 'exec',
+          kind: 'flow',
+        },
+        {
+          name: 'input',
+          kind: 'data',
+        },
+      ],
+      out: [
+        {
+          name: 'then',
+          kind: 'flow',
+        },
+        {
+          name: 'value',
+          kind: 'data',
+          computeOn: ['then'],
+        },
+      ],
+      connections: [
+        {
+          source: 'in.input',
+          sink: 'out.value',
+        },
+      ],
+    },
+  });
+
+  assert({
+    given: 'a port rename with invalid name',
+    should: 'throw',
+    actual: Try(() => {
+      chip('EditChip', () => {
+        const exec = inputFlow('exec');
+        const inValue = inputData('value');
+        const then = outputFlow('then');
+        const outValue = outputData('value');
+        wire(inValue, outValue);
+      })
+        .edit()
+        // NOTE the last `true` param is for "dry run". It can be used to check
+        // if a rename operation would succeed
+        .renamePort('in.value', 'exec', true)
+        .Chip.toJSON();
+    }),
+    expected: new Error('Port with name "in.exec" already exist'),
   });
 });

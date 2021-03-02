@@ -212,10 +212,25 @@ export class EditableChipInfo {
     return this;
   }
 
+  renamePort(portPath, newName, dryRun) {
+    const chipInfo = info(this);
+    const port = chipInfo.getPort(portPath);
+    if (!port.isOutlet) {
+      throw new Error(`Can only rename chip outlets, got "${port}"`);
+    }
+    const portInfo = info(port);
+    portInfo.assertValidName(newName);
+    if (!dryRun) {
+      portInfo.name = newName;
+    }
+    return this;
+  }
+
+  movePort(port, beforePort) {}
+
   removePort(port) {}
   removeInputPort(name) {}
   removeOutputPort(name) {}
-  movePort(port, beforePort) {}
 
   //
   // Single port

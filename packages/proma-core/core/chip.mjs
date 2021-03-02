@@ -235,6 +235,7 @@ export class ChipInfo {
   }
 
   getPort(path, defaultSide) {
+    // TODO path could be an Outlet
     if (typeof path === 'string') {
       path = path.split('.');
     }
