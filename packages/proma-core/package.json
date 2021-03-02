@@ -7,11 +7,13 @@
   "author": "Nicola Peduzzi <thenikso@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "dev": "serve .",
     "build": "rollup -c"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "17.1.0",
     "@rollup/plugin-node-resolve": "11.2.0",
-    "rollup": "2.39.0"
+    "rollup": "2.39.0",
+    "serve": "11.3.2"
   }
 }

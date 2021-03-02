@@ -4,6 +4,9 @@ import { makePortRun } from './run.mjs';
 import { serializePortInfo } from './serialize.mjs';
 import { type } from './types.mjs';
 
+export const INPUT = 'in';
+export const OUTPUT = 'out';
+
 //
 // Public
 //
@@ -20,9 +23,6 @@ export class Port extends Function {
     info(self, portInfo);
 
     const isVariadic = variadicIndex >= 0;
-    const portName = isVariadic
-      ? portInfo.variadicName(variadicIndex)
-      : portInfo.name;
 
     Object.defineProperties(self, {
       chip: {
@@ -31,12 +31,16 @@ export class Port extends Function {
       },
       name: {
         enumerable: true,
-        value: portName,
+        get() {
+          return isVariadic
+            ? portInfo.variadicName(variadicIndex)
+            : portInfo.name;
+        },
       },
       fullName: {
         enumerable: true,
         get() {
-          return `${chip.id}.${portInfo.isInput ? 'in' : 'out'}.${portName}`;
+          return `${chip.id}.${portInfo.isInput ? INPUT : OUTPUT}.${self.name}`;
         },
       },
       // Common port accessors
@@ -315,11 +319,50 @@ const validPortName = /^[a-z_$][a-z_$0-9]*$/i;
 
 export class PortInfo {
   constructor(chipInfo, name) {
-    if (!validPortName.test(name)) {
-      throw new Error(`Invalid name for port "${name}"`);
-    }
+    this.assertValidName(name);
     this.chipInfo = chipInfo;
     this.name = name;
+  }
+
+  get side() {
+    if (this.chipInfo) {
+      if (this.chipInfo.inputs.find((outlet) => info(outlet) === this)) {
+        return INPUT;
+      }
+      if (this.chipInfo.outputs.find((outlet) => info(outlet) === this)) {
+        return OUTPUT;
+      }
+    }
+  }
+
+  assertValidName(name, side) {
+    if (!validPortName.test(name)) {
+      throw new Error(`Formally invalid port name "${name}"`);
+    }
+    if (!side) {
+      side = this.side;
+    }
+    let ports;
+    switch (side) {
+      case INPUT:
+        ports = this.chipInfo.inputs.filter(
+          (outlet) => info(outlet).name === name,
+        );
+        break;
+      case OUTPUT:
+        ports = this.chipInfo.outputs.filter(
+          (outlet) => info(outlet).name === name,
+        );
+        break;
+      default:
+        ports = [];
+        break;
+    }
+    ports = ports.filter((outlet) => info(outlet) !== this);
+    if (ports.length > 0) {
+      throw new Error(`Port with name "${side}.${name}" already exist`);
+    }
+    return true;
   }
 
   hasName(name) {
@@ -327,9 +370,10 @@ export class PortInfo {
   }
 
   get fullName() {
-    // TODO not distinguising between input/output is a problem if using
-    // same name for an input and output port
-    // return (this.isInput ? 'in' : 'out') + '.' + this.name;
+    // const side = this.side;
+    // if (side) {
+    //   return `${side}.${this.name}`;
+    // }
     return this.name;
   }
 

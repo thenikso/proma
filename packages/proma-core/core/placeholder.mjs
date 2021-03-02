@@ -1,4 +1,5 @@
 import { info } from './utils.mjs';
+import { INPUT, OUTPUT } from './ports.mjs';
 
 let placeholderCount = 0;
 
@@ -55,13 +56,13 @@ export class PlaceholderChip {
         enumerable: true,
         value: chipInstancePromise,
       },
-      in: {
+      [INPUT]: {
         enumerable: true,
-        value: new PlaceholderPortList(this, 'in'),
+        value: new PlaceholderPortList(this, INPUT),
       },
-      out: {
+      [OUTPUT]: {
         enumerable: true,
-        value: new PlaceholderPortList(this, 'out'),
+        value: new PlaceholderPortList(this, OUTPUT),
       },
       toJSON: {
         value() {
@@ -126,10 +127,10 @@ export class PlaceholderPort {
       isData: true,
       isFlow: false,
       get isInput() {
-        return side === 'in';
+        return side === INPUT;
       },
       get isOutput() {
-        return side === 'out';
+        return side === OUTPUT;
       },
       get isSink() {
         return !!(placeholderPortInfo.isFlow ^ placeholderPortInfo.isInput);

@@ -8,6 +8,8 @@ import {
   OutputDataSourcePortInfo,
   InputDataSinkPortInfo,
   OutputFlowSinkPortInfo,
+  INPUT,
+  OUTPUT,
 } from './ports.mjs';
 import { serializeChipInfo, serializeChipInstance } from './serialize.mjs';
 import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
@@ -40,11 +42,11 @@ export class Chip {
           id = value;
         },
       },
-      in: {
+      [INPUT]: {
         enumerable: true,
         value: inputs,
       },
-      out: {
+      [OUTPUT]: {
         enumerable: true,
         value: outputs,
       },
@@ -173,12 +175,12 @@ export class ChipInfo {
       let replaceKey;
       let replaceValue;
       if (key instanceof PlaceholderPort && key.chip === chip) {
-        replaceKey = actualChip[info(key).isInput ? 'in' : 'out'][key.name];
+        replaceKey = actualChip[info(key).isInput ? INPUT : OUTPUT][key.name];
         replaceValue = value;
       } else if (value instanceof PlaceholderPort && value.chip === chip) {
         replaceKey = key;
         replaceValue =
-          actualChip[info(value).isInput ? 'in' : 'out'][value.name];
+          actualChip[info(value).isInput ? INPUT : OUTPUT][value.name];
       }
       if (replaceKey) {
         this.sinkConnection.delete(key);
@@ -189,7 +191,7 @@ export class ChipInfo {
       let replaceKey;
       let replaceValues;
       if (key instanceof PlaceholderPort && key.chip === chip) {
-        replaceKey = actualChip[info(key).isInput ? 'in' : 'out'][key.name];
+        replaceKey = actualChip[info(key).isInput ? INPUT : OUTPUT][key.name];
         replaceValues = values;
       } else if (
         values.some((v) => v instanceof PlaceholderPort && v.chip === chip)
@@ -197,7 +199,7 @@ export class ChipInfo {
         replaceKey = key;
         replaceValues = values.map((v) => {
           if (v instanceof PlaceholderPort && v.chip === chip) {
-            return actualChip[info(v).isInput ? 'in' : 'out'][v.name];
+            return actualChip[info(v).isInput ? INPUT : OUTPUT][v.name];
           } else {
             return v;
           }
@@ -260,10 +262,10 @@ export class ChipInfo {
       }
       return chip[side][portName];
     }
-    if (side === 'in' || defaultSide === 'in') {
+    if (side === INPUT || defaultSide === INPUT) {
       return this.getInputPortOutlet(portName);
     }
-    if (side === 'out' || defaultSide === 'out') {
+    if (side === OUTPUT || defaultSide === OUTPUT) {
       return this.getOutputPortOutlet(portName);
     }
     const port1 = this.getInputPortOutlet(portName);
@@ -294,6 +296,7 @@ export class ChipInfo {
 
   addInputFlowPort(name, config) {
     const portInfo = new InputFlowSourcePortInfo(this, name, config);
+    portInfo.assertValidName(name, INPUT);
     const portOutlet = new PortOutlet(portInfo);
     this.inputs.push(portOutlet);
     return portOutlet;
@@ -301,6 +304,7 @@ export class ChipInfo {
 
   addOutputDataPort(name, config) {
     const portInfo = new OutputDataSourcePortInfo(this, name, config);
+    portInfo.assertValidName(name, OUTPUT);
     const portOutlet = new PortOutlet(portInfo);
     this.outputs.push(portOutlet);
     return portOutlet;
@@ -310,6 +314,7 @@ export class ChipInfo {
 
   addOutputFlowPort(name) {
     const portInfo = new OutputFlowSinkPortInfo(this, name);
+    portInfo.assertValidName(name, OUTPUT);
     const portOutlet = new PortOutlet(portInfo);
     this.outputs.push(portOutlet);
     return portOutlet;
@@ -318,6 +323,7 @@ export class ChipInfo {
   // TODO accept a beforePort param to insert in specific position?
   addInputDataPort(name, config) {
     const portInfo = new InputDataSinkPortInfo(this, name, config);
+    portInfo.assertValidName(name, INPUT);
     if (portInfo.isRequired) {
       const otherCanonicalInputs = this.inputs.filter(
         (outlet) => outlet.isData && outlet.isCanonical && !outlet.isRequired,
@@ -339,10 +345,10 @@ export class ChipInfo {
 
   addConnection(portA, portB, dryRun, shouldReplace) {
     if (typeof portA === 'string' || Array.isArray(portA)) {
-      portA = this.getPort(portA, 'in');
+      portA = this.getPort(portA, INPUT);
     }
     if (typeof portB === 'string' || Array.isArray(portB)) {
-      portB = this.getPort(portB, 'out');
+      portB = this.getPort(portB, OUTPUT);
     }
     if (portA instanceof PortOutlet) {
       portA = info(portA);
@@ -484,7 +490,7 @@ export class ChipInfo {
       for (const outletInfo of conn) {
         if (outletInfo instanceof PortInfo) {
           const parentPort =
-            chipInstance[outletInfo.isInput ? 'in' : 'out'][outletInfo.name];
+            chipInstance[outletInfo.isInput ? INPUT : OUTPUT][outletInfo.name];
           if (info(parentPort) !== outletInfo) {
             throw new Error('Invalid port found in given parent');
           }
