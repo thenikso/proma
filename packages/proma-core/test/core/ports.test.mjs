@@ -9,6 +9,19 @@ import {
 } from '../../core/index.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
 
+describe('[core/ports] port naming', async (assert) => {
+  assert({
+    given: 'two input ports with the same name',
+    should:
+      'throw an error, two ports on the same side can not have the same name',
+    actual: Try(chip, () => {
+      inputData('value');
+      inputData('value');
+    }),
+    expected: new Error('Port with name "in.value" already exist'),
+  });
+});
+
 describe('[core/ports] (input data) canonical ports', async (assert) => {
   assert({
     given: 'a canonical required port',

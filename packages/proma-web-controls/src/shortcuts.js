@@ -307,7 +307,9 @@ function makeShortcutTokenMatcher(shortcutToken) {
     default:
       return (e) =>
         (e.type === 'keydown' || e.type === 'keyup') &&
-        (e.type === shortcutToken || e.code.toLowerCase() === shortcutToken);
+        (e.type === shortcutToken ||
+          e.code.toLowerCase() === shortcutToken ||
+          e.key.toLowerCase() === shortcutToken);
   }
 }
 

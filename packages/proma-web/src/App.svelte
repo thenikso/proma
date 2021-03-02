@@ -6,7 +6,7 @@
   import ChipView from './ChipView.svelte';
   import OutletsView from './OutletsView.svelte';
 
-  const MyChip = proma.chip('MyChip', ({ OnCreate }) => {
+  const chipClass = proma.chip('MyChip', ({ OnCreate }) => {
     const exec = proma.inputFlow('exec');
     const target = proma.inputData('target', { canonical: true });
 
@@ -19,12 +19,20 @@
   });
 
   let targetEl;
-  $: myChip = targetEl && new MyChip(targetEl);
 
-  let chipRequest;
-  let mainBoardSelection;
+  $: chipInstance = targetEl && new chipClass(targetEl);
 
-  $: console.log(mainBoardSelection)
+  let newSubChipRequest;
+
+  //
+  // Shortcuts
+  //
+
+  shortcuts.set('[MainBoard:chip] backspace', action('ChipView.removeChip'));
+  shortcuts.set(
+    '[MainBoard:port] alt+click',
+    action('ChipView.removeConnection'),
+  );
 
   //
   // Listing chips
@@ -41,18 +49,12 @@
   //
 
   function handleChipRequest(e) {
-    chipRequest = e.detail;
+    newSubChipRequest = e.detail;
   }
 
-  //
-  // Shortcuts
-  //
-
-  shortcuts.set('[MainBoard:chip] backspace', action('ChipView.removeChip'));
-  shortcuts.set(
-    '[MainBoard:port] alt+click',
-    action('ChipView.removeConnection'),
-  );
+  function handleSelectionChange(e) {
+    console.log(e.detail);
+  }
 </script>
 
 <main>
@@ -63,29 +65,33 @@
   </div>
   <ChipView
     id="MainBoard"
-    chip={MyChip}
-    on:sub-chip:request={handleChipRequest}
-    bind:selection={mainBoardSelection}
+    chip={chipClass}
+    on:subChip:request={handleChipRequest}
+    on:selection:change={handleSelectionChange}
   />
   <div>
-    <OutletsView />
+    <OutletsView title="Inputs" outlets={chipClass.inputOutlets} />
+    <OutletsView title="Outputs" outlets={chipClass.outputOutlets} />
   </div>
 </main>
 
-{#if chipRequest}
+{#if newSubChipRequest}
   <Overlay
-    anchor={{ x: chipRequest.clientX - 5, y: chipRequest.clientY - 5 }}
-    on:dismiss={() => (chipRequest = null)}
+    anchor={{
+      x: newSubChipRequest.clientX - 5,
+      y: newSubChipRequest.clientY - 5,
+    }}
+    on:dismiss={() => (newSubChipRequest = null)}
   >
     <div>
       <div><b>Context chips</b></div>
-      {#each chipRequest.chip.customChipClasses as chipClass (chipClass.URI)}
+      {#each newSubChipRequest.chip.customChipClasses as chipClass (chipClass.URI)}
         <div>
           <button
             type="button"
             on:click={() => {
-              chipRequest.provideChipInstance(new chipClass());
-              chipRequest = null;
+              newSubChipRequest.provideChipInstance(new chipClass());
+              newSubChipRequest = null;
             }}
           >
             {chipClass.URI}
@@ -93,13 +99,13 @@
         </div>
       {/each}
       <div><b>All chips</b></div>
-      {#each registryListExcluding(chipRequest.chip) as chipClass (chipClass.URI)}
+      {#each registryListExcluding(newSubChipRequest.chip) as chipClass (chipClass.URI)}
         <div>
           <button
             type="button"
             on:click={() => {
-              chipRequest.provideChipInstance(new chipClass());
-              chipRequest = null;
+              newSubChipRequest.provideChipInstance(new chipClass());
+              newSubChipRequest = null;
             }}
           >
             {chipClass.URI}

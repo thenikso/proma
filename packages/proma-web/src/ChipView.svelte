@@ -6,13 +6,6 @@
   export let id = 'ChipView';
   export let chip;
   export let instance = null;
-  export let selection = [];
-
-  const shortcuts = {
-    '[port] alt+click': 'port:delete',
-    '[chip] delete,backspace': 'chip:delete',
-    '[board] contextmenu': 'board:contextmenu',
-  };
 
   //
   // Dispatchers
@@ -25,7 +18,11 @@
   }
 
   function dispatchSubChipAddRequest(detail) {
-    dispatch('sub-chip:request', detail);
+    dispatch('subChip:request', detail);
+  }
+
+  function dispatchSelectionChange(details) {
+    dispatch('selection:change', details);
   }
 
   //
@@ -48,6 +45,7 @@
 
   const chipView = {
     removeChip(chipId) {
+      // TODO remove outlet connections?
       if (chipId === '$in' || chipId === '$out') return;
       edit.removeChip(chipId);
     },
@@ -61,6 +59,28 @@
   ]);
 
   //
+  // Selection
+  //
+
+  let selectedChipIds;
+  const outletNameMap = {
+    $in: 'input',
+    $out: 'output',
+  };
+
+  $: if (selectedChipIds) {
+    const outlets = selectedChipIds
+      .filter((id) => id === '$in' || id === '$out')
+      .map((id) => outletNameMap[id]);
+    const chips = selectedChipIds.filter((id) => !id.startsWith('$'));
+    dispatchSelectionChange({
+      outlets,
+      chips,
+      hasSelection: outlets.length > 0 || chips.length > 0,
+    });
+  }
+
+  //
   // Data
   //
 
@@ -69,6 +89,7 @@
   let outputOutlets;
   let innerChips;
   let connections;
+
   $: if (stableChip !== chip) {
     stableChip = chip;
     inputOutlets = stableChip.inputOutlets;
@@ -200,7 +221,7 @@
     on:wire:start={handleWireStart}
     on:wire:probe={handleWireProbe}
     on:wire:end={handleWireEnd}
-    bind:selectedChips={selection}
+    bind:selectedChips={selectedChipIds}
   >
     {#if inputOutlets.length > 0}
       <Chip
