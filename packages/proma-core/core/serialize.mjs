@@ -1,6 +1,7 @@
 import { info } from './utils.mjs';
 import { registry } from './registry.mjs';
 import { isChipClass } from './chip.mjs';
+import { INPUT, OUTPUT } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
 
 //
@@ -55,7 +56,10 @@ export function serializeChipInfo(chipInfo) {
       let sourceName = source.fullName;
       let sinkName = sink.fullName;
       // If one of the ports is a flow outlet we need to invert the logic
-      if (sink.__proto__ !== source.__proto__ && (sink.isFlow || source.isFlow)) {
+      if (
+        sink.__proto__ !== source.__proto__ &&
+        (sink.isFlow || source.isFlow)
+      ) {
         const tmp = sourceName;
         sourceName = sinkName;
         sinkName = tmp;
@@ -70,10 +74,10 @@ export function serializeChipInfo(chipInfo) {
     URI: chipInfo.URI,
   };
   if (inputs.length > 0) {
-    res.inputs = inputs;
+    res[INPUT] = inputs;
   }
   if (outputs.length > 0) {
-    res.outputs = outputs;
+    res[OUTPUT] = outputs;
   }
   if (chips.length > 0) {
     res.chips = chips;
@@ -136,7 +140,7 @@ export function deserializeChip(chip, data, editable) {
   const res = chip(data.URI, null, { editable });
   const build = res.edit();
   const portsToCompile = [];
-  for (const port of data.inputs || []) {
+  for (const port of data[INPUT] || []) {
     if (port.kind === 'flow') {
       build.addInputFlowPort(port.name);
       if (port.execute) {
@@ -150,7 +154,7 @@ export function deserializeChip(chip, data, editable) {
       });
     }
   }
-  for (const port of data.outputs || []) {
+  for (const port of data[OUTPUT] || []) {
     if (port.kind === 'flow') {
       build.addOutputFlowPort(port.name);
     } else {

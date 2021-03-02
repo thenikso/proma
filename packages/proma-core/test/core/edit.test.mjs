@@ -32,13 +32,13 @@ describe('[core/edit] edit connections', async (assert) => {
       .Chip.toJSON(),
     expected: {
       URI: 'EditChip',
-      inputs: [
+      in: [
         {
           name: 'exec',
           kind: 'flow',
         },
       ],
-      outputs: [
+      out: [
         {
           name: 'then',
           kind: 'flow',
@@ -46,8 +46,8 @@ describe('[core/edit] edit connections', async (assert) => {
       ],
       connections: [
         {
-          source: 'exec',
-          sink: 'then',
+          source: 'in.exec',
+          sink: 'out.then',
         },
       ],
     },
@@ -57,13 +57,13 @@ describe('[core/edit] edit connections', async (assert) => {
 describe('[core/edit] edit sub-chips', async (assert) => {
   const expected = {
     URI: 'EditChip',
-    inputs: [
+    in: [
       {
         name: 'exec',
         kind: 'flow',
       },
     ],
-    outputs: [
+    out: [
       {
         name: 'then',
         kind: 'flow',
@@ -83,16 +83,16 @@ describe('[core/edit] edit sub-chips', async (assert) => {
     ],
     connections: [
       {
-        source: 'exec',
+        source: 'in.exec',
         sink: 'Pass.in.exec',
       },
       {
         source: 'Pass.out.output',
-        sink: 'value',
+        sink: 'out.value',
       },
       {
         source: 'Pass.out.then',
-        sink: 'then',
+        sink: 'out.then',
       },
     ],
   };

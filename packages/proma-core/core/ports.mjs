@@ -370,10 +370,10 @@ export class PortInfo {
   }
 
   get fullName() {
-    // const side = this.side;
-    // if (side) {
-    //   return `${side}.${this.name}`;
-    // }
+    const side = this.side;
+    if (side) {
+      return `${side}.${this.name}`;
+    }
     return this.name;
   }
 

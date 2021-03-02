@@ -26,7 +26,7 @@ const Pass = registry.add(
 
 const chipJSON = {
   URI: 'TestChipSerialize',
-  inputs: [
+  in: [
     {
       name: 'exec',
       kind: 'flow',
@@ -45,7 +45,7 @@ const chipJSON = {
       defaultValue: true,
     },
   ],
-  outputs: [
+  out: [
     {
       name: 'then',
       kind: 'flow',
@@ -72,20 +72,20 @@ const chipJSON = {
   ],
   connections: [
     {
-      source: 'exec',
+      source: 'in.exec',
       sink: 'Pass.in.exec',
     },
     {
       source: 'Pass.out.then',
-      sink: 'then',
+      sink: 'out.then',
     },
     {
-      source: 'input',
+      source: 'in.input',
       sink: 'Pass.in.input',
     },
     {
       source: 'Pass.out.output',
-      sink: 'output',
+      sink: 'out.output',
     },
   ],
 };
