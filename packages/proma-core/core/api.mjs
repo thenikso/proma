@@ -90,7 +90,7 @@ export function event(name, ports) {
     }
     return p;
   });
-  return plainChip(name, () => {
+  const EventChip = plainChip(name, () => {
     const handler = (...args) => {
       for (let i = 0, l = outputs.length; i < l; i++) {
         outputs[i](args[i]);
@@ -105,6 +105,11 @@ export function event(name, ports) {
     const then = outputFlow('then');
     const outputs = ports.map(({ name, type }) => outputData(name, { type }));
   });
+  Object.defineProperty(EventChip, 'isEvent', {
+    enumerable: true,
+    value: true,
+  });
+  return EventChip;
 }
 
 // NOTE externalReferenceObj must be specified as `{ myReference }` so that
@@ -328,8 +333,13 @@ function makeChipFactory($customChips, $hooks) {
       Object.assign({}, $hooks, hooks),
     );
   };
-  chip.fromJSON = (data) => {
-    const ChipClass = deserializeChip(chip, data, data.editable !== false);
+  chip.fromJSON = (data, withErrors) => {
+    const ChipClass = deserializeChip(
+      chip,
+      data,
+      data.editable !== false,
+      withErrors,
+    );
     ChipClass.metadata = data.metadata;
     return ChipClass;
   };

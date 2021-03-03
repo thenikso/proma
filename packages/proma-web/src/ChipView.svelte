@@ -235,6 +235,7 @@
       <Chip
         id="$in"
         title="Input"
+        color="#446C8F"
         bind:x={chip.metadata.$in.x}
         bind:y={chip.metadata.$in.y}
       >
@@ -250,6 +251,7 @@
       <Chip
         id={innerChip.id}
         title={innerChip.id}
+        color={innerChip.constructor.isEvent ? '#b63434' : '#3a764f'}
         bind:x={chip.metadata[innerChip.id].x}
         bind:y={chip.metadata[innerChip.id].y}
       >
@@ -274,6 +276,7 @@
       <Chip
         id="$out"
         title="Output"
+        color="#446C8F"
         bind:x={chip.metadata.$out.x}
         bind:y={chip.metadata.$out.y}
       >

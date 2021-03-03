@@ -19,7 +19,7 @@ export default function install({
       });
 
       const then = outputFlow('then');
-      const element = outputData('element');
+      const element = outputData('element', 'Element');
     }),
   );
 }

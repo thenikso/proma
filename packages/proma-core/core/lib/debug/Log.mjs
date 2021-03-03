@@ -5,7 +5,7 @@ export default function install({ registry, chip, inputFlow, inputData, outputFl
         console.log(message());
         then();
       });
-      const message = inputData('message', { canonical: true, type: 'String' });
+      const message = inputData('message', { canonical: true });
       const then = outputFlow('then');
     }),
   );

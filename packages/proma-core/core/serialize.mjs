@@ -135,53 +135,73 @@ function funcToString(func) {
 // Deserialization
 //
 
-export function deserializeChip(chip, data, editable) {
+export function deserializeChip(chip, data, editable, withErrors) {
   // TODO validate `data`
   const res = chip(data.URI, null, { editable });
   const build = res.edit();
+  const errors = [];
   const portsToCompile = [];
   for (const port of data[INPUT] || []) {
-    if (port.kind === 'flow') {
-      build.addInputFlowPort(port.name);
-      if (port.execute) {
-        portsToCompile.push(port);
+    try {
+      if (port.kind === 'flow') {
+        build.addInputFlowPort(port.name);
+        if (port.execute) {
+          portsToCompile.push(port);
+        }
+      } else {
+        build.addInputDataPort(port.name, {
+          canonical: port.canonical,
+          conceiled: port.conceiled,
+          defaultValue: port.defaultValue,
+        });
       }
-    } else {
-      build.addInputDataPort(port.name, {
-        canonical: port.canonical,
-        conceiled: port.conceiled,
-        defaultValue: port.defaultValue,
-      });
+    } catch (e) {
+      errors.push(e);
     }
   }
   for (const port of data[OUTPUT] || []) {
-    if (port.kind === 'flow') {
-      build.addOutputFlowPort(port.name);
-    } else {
-      build.addOutputDataPort(port.name, {
-        computeOn: (port.computeOn || []).map((portPath) =>
-          build.getPort(portPath, 'out'),
-        ),
-        inline: port.inline,
-        allowSideEffects: port.allowSideEffects,
-      });
-      if (port.compute) {
-        portsToCompile.push(port);
+    try {
+      if (port.kind === 'flow') {
+        build.addOutputFlowPort(port.name);
+      } else {
+        build.addOutputDataPort(port.name, {
+          computeOn: (port.computeOn || []).map((portPath) =>
+            build.getPort(portPath, 'out'),
+          ),
+          inline: port.inline,
+          allowSideEffects: port.allowSideEffects,
+        });
+        if (port.compute) {
+          portsToCompile.push(port);
+        }
       }
+    } catch (e) {
+      errors.push(e);
     }
   }
   for (const chipData of data.chips || []) {
     build.addChip(chipData.chipURI, chipData.args, chipData.id);
   }
   for (const conn of data.connections || []) {
-    build.addConnection(conn.source, conn.sink);
+    try {
+      build.addConnection(conn.source, conn.sink);
+    } catch (e) {
+      errors.push(e);
+    }
   }
   for (const port of portsToCompile) {
-    if (port.execute) {
-      build.setPortExecute(port.name, port.execute);
-    } else if (port.compute) {
-      build.setPortCompute(port.name, port.compute);
+    try {
+      if (port.execute) {
+        build.setPortExecute(port.name, port.execute);
+      } else if (port.compute) {
+        build.setPortCompute(port.name, port.compute);
+      }
+    } catch (e) {
+      errors.push(e);
     }
+  }
+  if (errors.length > 0 && typeof withErrors === 'function') {
+    withErrors(errors);
   }
   return build.Chip;
 }
