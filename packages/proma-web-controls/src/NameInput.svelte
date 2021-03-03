@@ -35,7 +35,11 @@
 
   function confirmValue() {
     try {
-      value = validate ? validate(internalValue) : internalValue;
+      const newValue = validate ? validate(internalValue) : internalValue;
+      if (newValue !== value) {
+        value = newValue;
+        dispatchInput({ value });
+      }
     } catch (e) {
       error = e;
       internalValue = value;

@@ -70,8 +70,7 @@
     on:selection:change={handleSelectionChange}
   />
   <div>
-    <OutletsView title="Inputs" outlets={chipClass.inputOutlets} />
-    <OutletsView title="Outputs" outlets={chipClass.outputOutlets} />
+    <OutletsView chip={chipClass} />
   </div>
 </main>
 

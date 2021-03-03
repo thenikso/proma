@@ -85,6 +85,8 @@
   //
 
   let stableChip;
+  let edit;
+
   let inputOutlets;
   let outputOutlets;
   let innerChips;
@@ -96,10 +98,6 @@
     outputOutlets = stableChip.outputOutlets;
     innerChips = stableChip.chips;
     connections = stableChip.connections;
-  }
-
-  let edit;
-  $: {
     if (edit) {
       edit.off();
     }
@@ -111,6 +109,15 @@
     edit.on('connection', () => {
       connections = stableChip.connections;
     });
+    edit.on(
+      'port',
+      () => {
+        inputOutlets = stableChip.inputOutlets;
+        outputOutlets = stableChip.outputOutlets;
+        connections = stableChip.connections;
+      },
+      true,
+    );
   }
 
   function connectionId({ source, sink }) {
@@ -231,7 +238,7 @@
         bind:y={chip.metadata.$in.y}
       >
         <Outputs>
-          {#each inputOutlets as outlet (outlet.name)}
+          {#each inputOutlets as outlet}
             <Port name={outlet.name} type={getPortType(outlet)} />
           {/each}
         </Outputs>
@@ -270,7 +277,7 @@
         bind:y={chip.metadata.$out.y}
       >
         <Inputs>
-          {#each outputOutlets as outlet (outlet.name)}
+          {#each outputOutlets as outlet}
             <Port name={outlet.name} type={getPortType(outlet)} />
           {/each}
         </Inputs>
