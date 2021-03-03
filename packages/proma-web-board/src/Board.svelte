@@ -194,6 +194,7 @@
         fromChip: newWireFromPort.chip.id,
         fromSide: newWireFromPort.side,
         fromPort: newWireFromPort.name,
+        fromType: newWireFromPort.dataType,
         toChip: port && port.chip.id,
         toSide: port && port.side,
         toPort: port && port.name,

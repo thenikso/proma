@@ -16,10 +16,6 @@
     URI: 'Main',
     in: [
       {
-        name: 'exec',
-        kind: 'flow',
-      },
-      {
         name: 'target',
         kind: 'data',
         canonical: true,
@@ -41,10 +37,6 @@
         sink: 'OnCreate_1.out.then',
       },
       {
-        source: 'in.exec',
-        sink: 'lib_debug_Log_1.in.exec',
-      },
-      {
         source: 'in.target',
         sink: 'lib_debug_Log_1.in.message',
       },
@@ -59,25 +51,25 @@
         y: 0,
       },
       OnCreate_1: {
-        x: -310,
-        y: -135,
+        x: -405,
+        y: -110,
       },
       lib_debug_Log_1: {
-        x: -130,
-        y: 30,
+        x: -35,
+        y: 90,
       },
     },
   };
 
-  // const chipClass = proma.chip('MyChip', ({ OnCreate }) => {
-  //   const exec = proma.inputFlow('exec');
+  // const chipClass = proma.chip('Main', ({ OnCreate }) => {
+  //   // const exec = proma.inputFlow('exec');
   //   const target = proma.inputData('target', { canonical: true });
 
   //   const onCreate = new OnCreate();
   //   const log = new proma.lib.debug.Log();
 
   //   proma.wire(onCreate.out.then, log.in.exec);
-  //   proma.wire(exec, log.in.exec);
+  //   // proma.wire(exec, log.in.exec);
   //   proma.wire(target, log.in.message);
   // });
   const chipClass = proma.chip.fromJSON(initChipJson);
@@ -101,7 +93,6 @@
   onMount(() => {
     const preventDefaultShortcuts = (e) => {
       if (dispatchShortcuts(e)) {
-        console.log(e);
         e.preventDefault();
         e.stopPropagation();
       }
@@ -150,6 +141,7 @@
 
   function handleChipRequest(e) {
     newSubChipRequest = e.detail;
+    console.log(newSubChipRequest);
   }
 
   function handleSelectionChange(e) {

@@ -147,7 +147,7 @@
   //
 
   function handleBoardContextmenu({
-    detail: { boardX, boardY, fromChip, fromSide, fromPort, event },
+    detail: { boardX, boardY, fromChip, fromSide, fromPort, fromType, event },
   }) {
     dispatchSubChipAddRequest({
       chip,
@@ -158,6 +158,7 @@
       fromChip,
       fromSide,
       fromPort,
+      fromType,
       provideChipInstance(chipInstance) {
         chip.metadata[chipInstance.id] = {
           x: boardX,
