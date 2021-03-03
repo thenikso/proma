@@ -12,6 +12,7 @@
   export let newWirePath = WirePath;
   // IDs of the selected chips. Double-bindable.
   export let selectedChips = [];
+  export let refreshKey = undefined;
 
   //
   // Dispatchers
@@ -257,6 +258,8 @@
   $: newWireFromPoint =
     newWireFromPort && getElementCenter(newWireFromPort.outletElement);
 
+  $: refreshKey && board.updateWires();
+
   function updateWiresPoints() {
     for (const wire of wires) {
       if (
@@ -330,7 +333,7 @@
   let zoomRaw = zoom;
   let newWireWhenDraggingFromPort;
 
-  const NEWdispatchShortcuts = createShortcutDispatcher(
+  const dispatchShortcuts = createShortcutDispatcher(
     [
       { id: 'board', select: board, present: { type: 'board' } },
       {
@@ -448,7 +451,7 @@
   );
 
   function handleDragPort(event) {
-    NEWdispatchShortcuts(event);
+    dispatchShortcuts(event);
 
     dragging = { x: event.pageX, y: event.pageY };
   }
@@ -547,15 +550,15 @@
   bind:this={boardEl}
   bind:offsetWidth={boardWidth}
   bind:offsetHeight={boardHeight}
-  on:mousedown={NEWdispatchShortcuts}
-  on:mouseup={NEWdispatchShortcuts}
-  on:mouseleave={NEWdispatchShortcuts}
-  on:mousewheel|preventDefault={NEWdispatchShortcuts}
+  on:mousedown={dispatchShortcuts}
+  on:mouseup={dispatchShortcuts}
+  on:mouseleave={dispatchShortcuts}
+  on:mousewheel|preventDefault={dispatchShortcuts}
   on:dragstart|preventDefault
-  on:keydown={NEWdispatchShortcuts}
-  on:keyup={NEWdispatchShortcuts}
-  on:contextmenu={NEWdispatchShortcuts}
-  on:click={NEWdispatchShortcuts}
+  on:keydown={dispatchShortcuts}
+  on:keyup={dispatchShortcuts}
+  on:contextmenu={dispatchShortcuts}
+  on:click={dispatchShortcuts}
 >
   <svg
     bind:this={wiresEl}

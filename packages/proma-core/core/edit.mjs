@@ -289,6 +289,29 @@ export class EditableChipInfo {
     return this;
   }
 
+  setPortValue(port, value) {
+    const chipInfo = info(this);
+    port = chipInfo.getPort(port);
+    if (!port.isData || !port.isInput) {
+      throw new Error('port is not a data input');
+    }
+    if (port.type && !port.type.check(value)) {
+      throw new Error(
+        `invalid type for default value. expected: ${port.type.signature}`,
+      );
+    }
+    const oldValue = port.explicitValue;
+    port.explicitValue = value;
+    this.dispatch('port:value', {
+      subject: 'port',
+      operation: 'value',
+      port,
+      value,
+      oldValue,
+    });
+    return this;
+  }
+
   movePort(port, beforePort) {}
 
   removePort(port) {}
@@ -342,6 +365,11 @@ export class EditableChipInfo {
   //
   // Connections
   //
+
+  hasConnections(port) {
+    const chipInfo = info(this);
+    return chipInfo.getConnectedPorts(port).length > 0;
+  }
 
   probeConnection(portA, portB) {
     // TODO return error if not connectable and order from/to

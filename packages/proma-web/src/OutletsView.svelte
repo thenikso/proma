@@ -1,5 +1,5 @@
 <script>
-  import { NameInput } from '@proma/web-controls';
+  import { StringInput } from '@proma/web-controls';
 
   export let chip;
 
@@ -31,7 +31,7 @@
   <header>Inputs</header>
   {#each inputOutlets as outlet}
     <div>
-      <NameInput
+      <StringInput
         value={outlet.name}
         placeholder="Port name"
         validate={(name) => edit.renamePort(outlet, name, true)}
@@ -45,7 +45,7 @@
   <header>Outputs</header>
   {#each outputOutlets as outlet}
     <div>
-      <NameInput value={outlet.name} placeholder="Port name" />
+      <StringInput value={outlet.name} placeholder="Port name" />
     </div>
   {/each}
 </section>

@@ -67,6 +67,11 @@
     </div>
   {/if}
   <div class="PortLabel">{name}</div>
+  {#if $$slots.default}
+    <div class="PortInput">
+      <slot />
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -95,6 +100,10 @@
 
   .PortLabel {
     padding: 0 8px;
+  }
+
+  .PortInput {
+    max-width: 150px;
   }
 
   .Port .PortOutlet {

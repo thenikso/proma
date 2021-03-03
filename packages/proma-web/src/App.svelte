@@ -10,6 +10,11 @@
   import Overlay from './components/Overlay.svelte';
   import ChipView from './ChipView.svelte';
   import OutletsView from './OutletsView.svelte';
+  import SubChipView from './SubChipView.svelte';
+
+  //
+  // Chip loading
+  //
 
   const initChipData = localStorage.getItem('Main');
   const initChipJson = (initChipData && JSON.parse(initChipData)) || {
@@ -79,8 +84,15 @@
   });
   window.ChipClass = chipClass;
 
+  //
+  // Data
+  //
+
   let targetEl;
   let newSubChipRequest;
+
+  let selectedOutlets;
+  let selectedSubChipId;
 
   //
   // Shortcuts
@@ -149,7 +161,10 @@
   }
 
   function handleSelectionChange(e) {
-    // TODO change side bar content based on selection
+    const { chips, outlets } = e.detail;
+    selectedSubChipId =
+      chips.length === 1 && outlets.length === 0 ? chips[0] : null;
+    selectedOutlets = chips.length === 0;
   }
 
   function handleSave() {
@@ -171,7 +186,11 @@
   />
   <div style="display: flex; flex-direction: column;">
     <div style="flex-grow: 2">
-      <OutletsView chip={chipClass} />
+      {#if selectedOutlets}
+        <OutletsView chip={chipClass} />
+      {:else if selectedSubChipId}
+        <SubChipView />
+      {/if}
     </div>
     <footer style="padding: 5px;">
       <div style="margin-bottom: 10px;">

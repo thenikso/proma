@@ -55,6 +55,7 @@
       case 'Enter':
         event.preventDefault();
         confirmValue();
+        event.srcElement.blur();
         break;
       case 'Escape':
         event.preventDefault();
@@ -80,3 +81,10 @@
     <div class="error">{error.message}</div>
   {/if}
 </div>
+
+<style>
+  input {
+    min-width: 100px;
+    width: 100%;
+  }
+</style>

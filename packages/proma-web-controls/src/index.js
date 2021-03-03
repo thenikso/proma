@@ -1,3 +1,3 @@
 export * from './shortcuts';
 export * from './actions';
-export { default as NameInput } from './NameInput.svelte';
+export { default as StringInput } from './StringInput.svelte';

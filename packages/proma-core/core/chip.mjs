@@ -235,6 +235,18 @@ export class ChipInfo {
   }
 
   getPort(path, defaultSide) {
+    if (path instanceof Port) {
+      if (!this.chips.includes(path.chip)) {
+        throw new Error('port is not visible to this Chip');
+      }
+      return path;
+    }
+    if (path instanceof PortOutlet) {
+      if (!this.inputs.includes(path) && !this.outputs.includes(path)) {
+        throw new Error('port is not an outlet of this Chip');
+      }
+      return path;
+    }
     // TODO path could be an Outlet
     if (typeof path === 'string') {
       path = path.split('.');

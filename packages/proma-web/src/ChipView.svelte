@@ -16,6 +16,7 @@
   import { createEventDispatcher } from 'svelte';
   import { createShortcutDispatcher } from '@proma/web-controls';
   import { Board, Chip, Inputs, Outputs, Port, Wire } from '@proma/web-board';
+  import PortValueInput from './PortValueInput.svelte';
 
   export let id = 'ChipView';
   export let chip;
@@ -91,6 +92,7 @@
   let outputOutlets;
   let innerChips;
   let connections;
+  let updatePortsKey = 1;
 
   $: if (stableChip !== chip) {
     stableChip = chip;
@@ -108,6 +110,7 @@
     });
     edit.on('connection', () => {
       connections = stableChip.connections;
+      updatePortsKey++;
     });
     edit.on(
       'port',
@@ -225,6 +228,7 @@
 
 <div {id} class="ChipView">
   <Board
+    refreshKey={updatePortsKey}
     on:board:contextmenu={handleBoardContextmenu}
     on:wire:start={handleWireStart}
     on:wire:probe={handleWireProbe}
@@ -258,7 +262,11 @@
         {#if innerChip.in.length > 0}
           <Inputs>
             {#each innerChip.in as port}
-              <Port name={port.name} type={getPortType(port)} />
+              <Port name={port.name} type={getPortType(port)}>
+                {#if updatePortsKey && port.isData && port.type && !edit.hasConnections(port)}
+                  <PortValueInput {edit} {port} />
+                {/if}
+              </Port>
             {/each}
           </Inputs>
         {/if}
