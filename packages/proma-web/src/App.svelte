@@ -1,7 +1,12 @@
 <script>
+  import { onMount } from 'svelte';
   // TODO used compiled version instead
   import * as proma from '@proma/core/core/index.mjs';
-  import { shortcuts, action } from '@proma/web-controls';
+  import {
+    createShortcutDispatcher,
+    shortcuts,
+    action,
+  } from '@proma/web-controls';
   import Overlay from './components/Overlay.svelte';
   import ChipView from './ChipView.svelte';
   import OutletsView from './OutletsView.svelte';
@@ -89,6 +94,24 @@
     '[MainBoard:port] alt+click',
     action('ChipView.removeConnection'),
   );
+  shortcuts.set('cmd+S', handleSave);
+
+  const dispatchShortcuts = createShortcutDispatcher();
+
+  onMount(() => {
+    const preventDefaultShortcuts = (e) => {
+      if (dispatchShortcuts(e)) {
+        console.log(e);
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener('keydown', preventDefaultShortcuts);
+
+    return () => {
+      document.removeEventListener('keyup', preventDefaultShortcuts);
+    };
+  });
 
   //
   // Instance run
@@ -132,6 +155,10 @@
   function handleSelectionChange(e) {
     // TODO change side bar content based on selection
   }
+
+  function handleSave() {
+    localStorage.setItem(chipClass.URI, JSON.stringify(chipClass.toJSON()));
+  }
 </script>
 
 <main>
@@ -165,16 +192,7 @@
         <button type="button" on:click={() => console.log(chipClass.compile())}>
           Print code
         </button>
-        <button
-          type="button"
-          on:click={() =>
-            localStorage.setItem(
-              chipClass.URI,
-              JSON.stringify(chipClass.toJSON()),
-            )}
-        >
-          Save
-        </button>
+        <button type="button" on:click={handleSave}>Save</button>
       </div>
     </footer>
   </div>

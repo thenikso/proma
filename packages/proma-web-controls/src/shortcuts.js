@@ -45,14 +45,20 @@ export function createShortcutDispatcher(targetSelectors, localShortcuts) {
   // to the current shortcut
   const parentTargetPathResolvers = getContext(TARGET_PATH_RESOLVERS) || [];
   const targetPathResolvers = parentTargetPathResolvers.slice();
-  const localTargetResolvers = makeSingleTargetResolver(targetSelectors);
-  targetPathResolvers.push(localTargetResolvers);
+  if (Array.isArray(targetSelectors) && targetSelectors.length > 0) {
+    const localTargetResolvers = makeSingleTargetResolver(targetSelectors);
+    targetPathResolvers.push(localTargetResolvers);
+  }
   setContext(TARGET_PATH_RESOLVERS, targetPathResolvers);
 
   let resolvedLocalShortcuts = [];
 
   function dispatch(event) {
-    dispatchShortcuts(event, targetPathResolvers, resolvedLocalShortcuts);
+    return dispatchShortcuts(
+      event,
+      targetPathResolvers,
+      resolvedLocalShortcuts,
+    );
   }
 
   Object.defineProperty(dispatch, 'localShortcuts', {
@@ -105,14 +111,17 @@ function dispatchShortcuts(event, targetPathResolvers, localShortcuts) {
     return targets;
   });
   // Match targets
+  let anyDispatched = false;
   // These generates objects like:
   // { targetsPath: [[obj], [obj, obj]], shortcut: '[board] cmd+c', action: (ShortcutEvent) => void }
   if (localMatches.length > 0) {
-    matchTargetAndDispatch(
-      localMatches,
-      [targetsPath[targetsPath.length - 1]],
-      event,
-    );
+    anyDispatched =
+      anyDispatched ||
+      matchTargetAndDispatch(
+        localMatches,
+        [targetsPath[targetsPath.length - 1]],
+        event,
+      );
   }
   if (globalMatches.length > 0) {
     targetsPath = targetsPath.map((singleTarget) =>
@@ -126,8 +135,11 @@ function dispatchShortcuts(event, targetPathResolvers, localShortcuts) {
             : present,
       })),
     );
-    matchTargetAndDispatch(globalMatches, targetsPath, event);
+    anyDispatched =
+      anyDispatched ||
+      matchTargetAndDispatch(globalMatches, targetsPath, event);
   }
+  return anyDispatched;
 }
 
 function matchTargetAndDispatch(resolvedShortcuts, fullTargetsPath, event) {
@@ -137,10 +149,11 @@ function matchTargetAndDispatch(resolvedShortcuts, fullTargetsPath, event) {
       shortcut,
       action,
     }))
-    .filter(({ targetPath }) => targetPath.length > 0);
+    .filter(({ targetPath }) => targetPath !== false);
   for (const { targetPath, shortcut, action } of shortcuts) {
     action(new ShortcutEvent(shortcut, targetPath, event));
   }
+  return shortcuts.length > 0;
 }
 
 //
@@ -160,11 +173,6 @@ function matchTargetAndDispatch(resolvedShortcuts, fullTargetsPath, event) {
 // And returns the last element as the target (wrapping target as an array if not already):
 //     { id: 'chip', target: [chip, chip] }
 function makeSingleTargetResolver(selectors) {
-  if (!Array.isArray(selectors) || selectors.length === 0) {
-    return function emptyTargetResolver() {
-      return [];
-    };
-  }
   return function singleTargetResolver(event) {
     const targetsPath = [];
     const targetsIdsPath = [];
@@ -187,27 +195,33 @@ function makeSingleTargetResolver(selectors) {
 // And returns an array:
 //     [ { id: 'parent', target: obj }, { id: 'subTarget', target: obj2 } ]
 function makeTargetMatcher(targetsString) {
-  const targetIdsToMatch = targetsString
+  const templateIds = targetsString
     .split(':')
     .map((x) => x.split('|').map((x) => x.trim()));
-  const idsLen = targetIdsToMatch.length;
+  const templateIdsLen = templateIds.length;
   return function matchTarget(targetsPath) {
-    const res = [];
-    const pathLen = targetsPath.length;
-    if (idsLen > pathLen) return res;
-    for (let i = 1, l = idsLen; i <= l; i++) {
-      const segmentTargets = targetsPath[pathLen - i];
-      const idsToMatch = targetIdsToMatch[idsLen - i];
+    let res = false;
+    const targetsPathLen = targetsPath.length;
+    // if (templateIdsLen > targetsPathLen) return res;
+    for (let i = 1, l = templateIdsLen; i <= l; i++) {
+      const idsToMatch = templateIds[templateIdsLen - i];
+      const segmentTargets = targetsPath[targetsPathLen - i];
+      if (idsToMatch.includes('*')) {
+        res = res || [];
+        if (!segmentTargets || !segmentTargets[0]) break;
+        res.unshift(segmentTargets[0].target);
+        continue;
+      }
       let segmentSelection;
       for (let j = segmentTargets.length - 1; j >= 0; j--) {
         const { id, target } = segmentTargets[j];
-        // TODO support for *?
         if (idsToMatch.includes(id)) {
           segmentSelection = target;
           break;
         }
       }
       if (!segmentSelection) break;
+      res = res || [];
       res.unshift(segmentSelection);
     }
     return res;
@@ -236,7 +250,7 @@ function resolveSingleShortcut(shortcut, action) {
     console.warn(`Invalid shortcut "${shortcut}"`);
     return null;
   }
-  const targets = targetString.trim() || '*';
+  const targets = (targetString && targetString.trim()) || '*';
   const matchEvent = makeShortcutMatcher(eventsString);
   const matchTarget = makeTargetMatcher(targets);
   return { shortcut, matchTarget, matchEvent, action };
