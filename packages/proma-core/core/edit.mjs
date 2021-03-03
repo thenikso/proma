@@ -126,10 +126,14 @@ export class EditableChipInfo {
 
   addChip(chipToAdd, canonicalValues, id) {
     if (typeof chipToAdd === 'string') {
-      const chipClass = registry.load(chipToAdd);
+      // Search in context chips or registry
+      const chipClass =
+        this.Chip.customChipClasses[chipToAdd] || registry.load(chipToAdd);
       if (isChipClass(chipClass)) {
         chipToAdd = chipClass;
-      } else {
+      }
+      // Add placeholder chip
+      else {
         chipToAdd = new PlaceholderChip(chipClass, chipToAdd, canonicalValues);
       }
     } else if (chipToAdd instanceof Chip) {

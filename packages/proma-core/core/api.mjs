@@ -291,7 +291,7 @@ function makeChipFactory($customChips, $hooks) {
       }
 
       static get customChipClasses() {
-        return Array.from(Object.values(customChips || {}));
+        return customChips;
       }
 
       static get connections() {

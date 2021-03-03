@@ -6,17 +6,76 @@
   import ChipView from './ChipView.svelte';
   import OutletsView from './OutletsView.svelte';
 
-  const chipClass = proma.chip('MyChip', ({ OnCreate }) => {
-    const exec = proma.inputFlow('exec');
-    const target = proma.inputData('target', { canonical: true });
+  const initChipData = localStorage.getItem('Main');
+  const initChipJson = (initChipData && JSON.parse(initChipData)) || {
+    URI: 'Main',
+    in: [
+      {
+        name: 'exec',
+        kind: 'flow',
+      },
+      {
+        name: 'target',
+        kind: 'data',
+        canonical: true,
+      },
+    ],
+    chips: [
+      {
+        id: 'OnCreate_1',
+        chipURI: 'OnCreate',
+      },
+      {
+        id: 'lib_debug_Log_1',
+        chipURI: 'lib/debug/Log',
+      },
+    ],
+    connections: [
+      {
+        source: 'lib_debug_Log_1.in.exec',
+        sink: 'OnCreate_1.out.then',
+      },
+      {
+        source: 'in.exec',
+        sink: 'lib_debug_Log_1.in.exec',
+      },
+      {
+        source: 'in.target',
+        sink: 'lib_debug_Log_1.in.message',
+      },
+    ],
+    metadata: {
+      $in: {
+        x: -400,
+        y: 0,
+      },
+      $out: {
+        x: -400,
+        y: 0,
+      },
+      OnCreate_1: {
+        x: -310,
+        y: -135,
+      },
+      lib_debug_Log_1: {
+        x: -130,
+        y: 30,
+      },
+    },
+  };
 
-    const onCreate = new OnCreate();
-    const log = new proma.lib.debug.Log();
+  // const chipClass = proma.chip('MyChip', ({ OnCreate }) => {
+  //   const exec = proma.inputFlow('exec');
+  //   const target = proma.inputData('target', { canonical: true });
 
-    proma.wire(onCreate.out.then, log.in.exec);
-    proma.wire(exec, log.in.exec);
-    proma.wire(target, log.in.message);
-  });
+  //   const onCreate = new OnCreate();
+  //   const log = new proma.lib.debug.Log();
+
+  //   proma.wire(onCreate.out.then, log.in.exec);
+  //   proma.wire(exec, log.in.exec);
+  //   proma.wire(target, log.in.message);
+  // });
+  const chipClass = proma.chip.fromJSON(initChipJson);
 
   let targetEl;
   let newSubChipRequest;
@@ -106,6 +165,16 @@
         <button type="button" on:click={() => console.log(chipClass.compile())}>
           Print code
         </button>
+        <button
+          type="button"
+          on:click={() =>
+            localStorage.setItem(
+              chipClass.URI,
+              JSON.stringify(chipClass.toJSON()),
+            )}
+        >
+          Save
+        </button>
       </div>
     </footer>
   </div>
@@ -121,7 +190,7 @@
   >
     <div>
       <div><b>Context chips</b></div>
-      {#each newSubChipRequest.chip.customChipClasses as chipClass (chipClass.URI)}
+      {#each Object.values(newSubChipRequest.chip.customChipClasses) as chipClass (chipClass.URI)}
         <div>
           <button
             type="button"
