@@ -257,17 +257,31 @@ export class EditableChipInfo {
     return this;
   }
 
-  renamePort(portPath, newName, dryRun) {
+  renamePort(port, newName, dryRun) {
     const chipInfo = info(this);
-    const port = chipInfo.getPort(portPath);
+    if (!(port instanceof PortOutlet)) {
+      port = chipInfo.getPort(portPath);
+    }
     if (!port.isOutlet) {
       throw new Error(`Can only rename chip outlets, got "${port}"`);
     }
     const portInfo = info(port);
-    portInfo.assertValidName(newName);
-    if (!dryRun) {
-      portInfo.name = newName;
+    if (portInfo.chipInfo !== chipInfo) {
+      throw new Error('Port outlet is not owned by chip');
     }
+    newName = portInfo.assertValidName(newName);
+    if (dryRun) {
+      return newName;
+    }
+    const oldName = port.name;
+    portInfo.name = newName;
+    this.dispatch('port:rename', {
+      subject: 'port',
+      operation: 'rename',
+      port,
+      name: newName,
+      oldName,
+    });
     return this;
   }
 

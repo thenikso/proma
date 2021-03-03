@@ -362,7 +362,7 @@ export class PortInfo {
     if (ports.length > 0) {
       throw new Error(`Port with name "${side}.${name}" already exist`);
     }
-    return true;
+    return name;
   }
 
   hasName(name) {

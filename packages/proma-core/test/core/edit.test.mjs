@@ -208,8 +208,7 @@ describe('[core/edit] edit ports', async (assert) => {
         .edit()
         // NOTE the last `true` param is for "dry run". It can be used to check
         // if a rename operation would succeed
-        .renamePort('in.value', 'exec', true)
-        .Chip.toJSON();
+        .renamePort('in.value', 'exec', true);
     }),
     expected: new Error('Port with name "in.exec" already exist'),
   });
