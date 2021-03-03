@@ -44,10 +44,9 @@ export function createShortcutDispatcher(targetSelectors, localShortcuts) {
   // Parent `<Shortcuts>` will define additional target selectors, making a path
   // to the current shortcut
   const parentTargetPathResolvers = getContext(TARGET_PATH_RESOLVERS) || [];
-  const targetPathResolvers = [
-    ...parentTargetPathResolvers,
-    makeSingleTargetResolver(targetSelectors),
-  ];
+  const targetPathResolvers = parentTargetPathResolvers.slice();
+  const localTargetResolvers = makeSingleTargetResolver(targetSelectors);
+  targetPathResolvers.push(localTargetResolvers);
   setContext(TARGET_PATH_RESOLVERS, targetPathResolvers);
 
   let resolvedLocalShortcuts = [];
@@ -161,6 +160,11 @@ function matchTargetAndDispatch(resolvedShortcuts, fullTargetsPath, event) {
 // And returns the last element as the target (wrapping target as an array if not already):
 //     { id: 'chip', target: [chip, chip] }
 function makeSingleTargetResolver(selectors) {
+  if (!Array.isArray(selectors) || selectors.length === 0) {
+    return function emptyTargetResolver() {
+      return [];
+    };
+  }
   return function singleTargetResolver(event) {
     const targetsPath = [];
     const targetsIdsPath = [];
@@ -188,12 +192,12 @@ function makeTargetMatcher(targetsString) {
     .map((x) => x.split('|').map((x) => x.trim()));
   const idsLen = targetIdsToMatch.length;
   return function matchTarget(targetsPath) {
-    const pathLen = targetsPath.length;
-    if (pathLen > idsLen) return 0;
     const res = [];
-    for (let i = idsLen - 1; i >= 0; i--) {
-      const segmentTargets = targetsPath[i];
-      const idsToMatch = targetIdsToMatch[i];
+    const pathLen = targetsPath.length;
+    if (idsLen > pathLen) return res;
+    for (let i = 1, l = idsLen; i <= l; i++) {
+      const segmentTargets = targetsPath[pathLen - i];
+      const idsToMatch = targetIdsToMatch[idsLen - i];
       let segmentSelection;
       for (let j = segmentTargets.length - 1; j >= 0; j--) {
         const { id, target } = segmentTargets[j];
