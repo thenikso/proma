@@ -4,6 +4,44 @@ import { PortOutlet } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
 import { registry } from './registry.mjs';
 
+const sharedEventsByChipInfo = new WeakMap();
+
+function onSharedEvent(chipInfo, eventName, listener) {
+  const sharedEvents = sharedEventsByChipInfo.get(chipInfo) || new Map();
+
+  const listeners = sharedEvents.get(eventName) || new Set();
+  listeners.add(listener);
+  sharedEvents.set(eventName, listeners);
+
+  sharedEventsByChipInfo.set(chipInfo, sharedEvents);
+}
+
+function offSharedEvent(chipInfo, eventName, listener) {
+  const sharedEvents = sharedEventsByChipInfo.get(chipInfo);
+  if (sharedEvents) {
+    if (typeof eventName === 'undefined') {
+      sharedEvents.clear();
+      return true;
+    }
+    if (typeof listener === 'undefined') {
+      sharedEvents.delete(eventName);
+      return true;
+    }
+    const listeners = sharedEvents.get(eventName);
+    if (listeners) {
+      listeners.delete(listener);
+      return true;
+    }
+  }
+  return false;
+}
+
+function getSharedEvents(chipInfo, eventName) {
+  const sharedEvents = sharedEventsByChipInfo.get(chipInfo);
+  if (!sharedEvents) return [];
+  return [...(sharedEvents.get(eventName) || [])];
+}
+
 export class EditableChipInfo {
   constructor(chipClass, chipInfo) {
     info(this, chipInfo);
@@ -24,26 +62,32 @@ export class EditableChipInfo {
     const events = new Map();
     Object.defineProperties(this, {
       on: {
-        value: function on(eventName, listener) {
-          const listeners = events.get(eventName) || new Set();
-          listeners.add(listener);
-          events.set(eventName, listeners);
+        value: function on(eventName, listener, onAllChipEditors) {
+          if (onAllChipEditors) {
+            onSharedEvent(chipInfo, eventName, listener);
+          } else {
+            const listeners = events.get(eventName) || new Set();
+            listeners.add(listener);
+            events.set(eventName, listeners);
+          }
           return self;
         },
       },
       off: {
         value: function off(eventName, listener) {
-          if (typeof eventName === 'undefined') {
-            events.clear();
-            return self;
-          }
-          if (typeof listener === 'undefined') {
-            events.delete(eventName);
-            return self;
-          }
-          const listeners = events.get(eventName);
-          if (listeners) {
-            listeners.delete(listener);
+          if (!offSharedEvent(chipInfo, eventName, listener)) {
+            if (typeof eventName === 'undefined') {
+              events.clear();
+              return self;
+            }
+            if (typeof listener === 'undefined') {
+              events.delete(eventName);
+              return self;
+            }
+            const listeners = events.get(eventName);
+            if (listeners) {
+              listeners.delete(listener);
+            }
           }
           return self;
         },
@@ -56,6 +100,7 @@ export class EditableChipInfo {
           for (const n of names) {
             partialName += n;
             listeners.push(...(events.get(partialName) || []));
+            listeners.push(...getSharedEvents(chipInfo, partialName));
             partialName += ':';
           }
           if (listeners.length === 0) return true;
