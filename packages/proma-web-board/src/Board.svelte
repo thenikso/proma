@@ -77,7 +77,7 @@
   $: if (
     boardContentEl &&
     selectedChips &&
-    !eqArray(selectedChipsSet, selectedChipsIdArray())
+    !eqArray(selectedChips, selectedChipsIdArray())
   ) {
     deselectAllChips();
     selectedChipsSet.clear();
