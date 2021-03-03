@@ -141,7 +141,6 @@
 
   function handleChipRequest(e) {
     newSubChipRequest = e.detail;
-    console.log(newSubChipRequest);
   }
 
   function handleSelectionChange(e) {

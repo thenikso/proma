@@ -206,12 +206,16 @@ function makeTargetMatcher(targetsString) {
     for (let i = 1, l = templateIdsLen; i <= l; i++) {
       const idsToMatch = templateIds[templateIdsLen - i];
       const segmentTargets = targetsPath[targetsPathLen - i];
+      // Match anything
       if (idsToMatch.includes('*')) {
         res = res || [];
         if (!segmentTargets || !segmentTargets[0]) break;
         res.unshift(segmentTargets[0].target);
         continue;
       }
+      // Nothing to match agains, we fail
+      if (!segmentTargets) return false;
+      // Check for actual match
       let segmentSelection;
       for (let j = segmentTargets.length - 1; j >= 0; j--) {
         const { id, target } = segmentTargets[j];
