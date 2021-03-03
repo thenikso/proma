@@ -213,13 +213,13 @@ export default class ClassWrapper {
         [...inPath, ...sealObjPath],
         this.chipInfo.inputDataPorts.map((portOutlet) => {
           let init = identifier('undefined');
-          const port = this.chip.in[portOutlet.name];
+          const port = this.chip && this.chip.in[portOutlet.name];
           if (portOutlet.canonical) {
             canonical.push([
               portOutlet.name,
-              port.defaultValue !== port.value ? port.value : undefined,
+              port && port.defaultValue !== port.value ? port.value : undefined,
             ]);
-            if (typeof port.defaultValue !== 'undefined') {
+            if (port && typeof port.defaultValue !== 'undefined') {
               init = logicalExpression(
                 '||',
                 identifier(portOutlet.name),
@@ -228,7 +228,7 @@ export default class ClassWrapper {
             } else {
               init = null;
             }
-          } else {
+          } else if (port) {
             if (typeof port.value !== 'undefined') {
               if (
                 typeof port.defaultValue !== 'undefined' &&

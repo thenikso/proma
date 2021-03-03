@@ -69,8 +69,18 @@
     on:subChip:request={handleChipRequest}
     on:selection:change={handleSelectionChange}
   />
-  <div>
-    <OutletsView chip={chipClass} />
+  <div style="display: flex; flex-direction: column;">
+    <div style="flex-grow: 2">
+      <OutletsView chip={chipClass} />
+    </div>
+    <footer>
+      <button type="button" on:click={() => console.log(chipClass.toJSON())}>
+        Print JSON
+      </button>
+      <button type="button" on:click={() => console.log(chipClass.compile())}>
+        Print code
+      </button>
+    </footer>
   </div>
 </main>
 

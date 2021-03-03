@@ -235,7 +235,7 @@ function makeChipFactory($customChips, $hooks) {
 
       static compile(wrapper) {
         const compilation = new Compilation(chipInfo, null);
-        return compilation.compile(wrapper);
+        return compilation.compile(wrapper, $hooks);
       }
 
       static toJSON() {

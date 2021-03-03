@@ -10,6 +10,7 @@ import {
   makeAstBuilder,
   cleanAst,
 } from './compile-utils.mjs';
+import { INPUT, OUTPUT } from './ports.mjs';
 
 const {
   prettyPrint,
@@ -27,7 +28,7 @@ export class Compilation {
 
     // TODO compile each input exec ports
     const rootInfo = this.rootChipInfo;
-    const rootChip = this.rootChip || info({}, this.rootChipInfo);
+    const rootChip = this.rootChip || makeChipInstanceMock(this.rootChipInfo);
     const scope = [rootChip];
     const outputBlocksByPort = {};
     const executeBlocksByPort = {};
@@ -183,6 +184,26 @@ function getHookPorts(chip, selectPorts, scope) {
 function isOutlet(port, scope) {
   const rootInfo = info(scope[scope.length - 1]);
   return rootInfo === info(port).chipInfo;
+}
+
+function makeChipInstanceMock(chipInfo) {
+  const input = chipInfo.inputs.reduce((acc, outlet) => {
+    acc[outlet.name] = outlet;
+    return acc;
+  }, {});
+  const output = chipInfo.outputs.reduce((acc, outlet) => {
+    acc[outlet.name] = outlet;
+    return acc;
+  }, {});
+
+  return info(
+    {
+      isMock: true,
+      [INPUT]: input,
+      [OUTPUT]: output,
+    },
+    chipInfo,
+  );
 }
 
 //
