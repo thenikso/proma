@@ -5,7 +5,7 @@ export function action(actionId) {
   if (typeof handler === 'function') {
     return handler;
   }
-  // TODO fallback?
+  throw new Error(`Can not find action "${actionId}"`);
 }
 
 action.provide = function provideAction(actionId, handler) {

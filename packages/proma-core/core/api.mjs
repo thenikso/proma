@@ -213,7 +213,7 @@ function makeChipFactory($customChips, $hooks) {
       destroy() {
         if (
           $hooks &&
-          hooks.onDestroy &&
+          $hooks.onDestroy &&
           typeof $hooks.onDestroy.selectPorts === 'function'
         ) {
           runFlowPorts(this, $hooks.onDestroy.selectPorts);

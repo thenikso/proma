@@ -19,9 +19,6 @@
   });
 
   let targetEl;
-
-  $: chipInstance = targetEl && new chipClass(targetEl);
-
   let newSubChipRequest;
 
   //
@@ -33,6 +30,27 @@
     '[MainBoard:port] alt+click',
     action('ChipView.removeConnection'),
   );
+
+  //
+  // Instance run
+  //
+
+  let useCompiled = false;
+  let chipInstance;
+
+  function runChipInstance() {
+    if (chipInstance) {
+      chipInstance.destroy();
+    }
+    if (useCompiled) {
+      const code = chipClass.compile();
+      const makeCompiledChip = new Function('return (' + code + ')');
+      const ChipCompiled = makeCompiledChip();
+      chipInstance = new ChipCompiled(targetEl);
+    } else {
+      chipInstance = new chipClass(targetEl);
+    }
+  }
 
   //
   // Listing chips
@@ -53,7 +71,7 @@
   }
 
   function handleSelectionChange(e) {
-    console.log(e.detail);
+    // TODO change side bar content based on selection
   }
 </script>
 
@@ -73,13 +91,22 @@
     <div style="flex-grow: 2">
       <OutletsView chip={chipClass} />
     </div>
-    <footer>
-      <button type="button" on:click={() => console.log(chipClass.toJSON())}>
-        Print JSON
-      </button>
-      <button type="button" on:click={() => console.log(chipClass.compile())}>
-        Print code
-      </button>
+    <footer style="padding: 5px;">
+      <div style="margin-bottom: 10px;">
+        <button type="button" on:click={runChipInstance}>Run</button>
+        <label>
+          <input type="checkbox" bind:checked={useCompiled} />
+          compiled
+        </label>
+      </div>
+      <div>
+        <button type="button" on:click={() => console.log(chipClass.toJSON())}>
+          Print JSON
+        </button>
+        <button type="button" on:click={() => console.log(chipClass.compile())}>
+          Print code
+        </button>
+      </div>
     </footer>
   </div>
 </main>
