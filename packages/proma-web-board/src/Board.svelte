@@ -328,6 +328,7 @@
   let draggingStart;
   let dragging;
   let zoomRaw = zoom;
+  let newWireWhenDraggingFromPort;
 
   const NEWdispatchShortcuts = createShortcutDispatcher(
     [
@@ -372,7 +373,7 @@
             !sourceEvent.metaKey &&
             sourceEvent.button === 0
           ) {
-            board.startNewWire(target);
+            newWireWhenDraggingFromPort = target;
             boardEl.addEventListener('mousemove', handleDragPort);
           }
         } else if (target.type === 'chip') {
@@ -408,7 +409,9 @@
         }
       },
       '[port|board] mousemove': ({ target, sourceEvent }) => {
-        board.probeNewWire(target, sourceEvent);
+        if (!board.startNewWire(newWireWhenDraggingFromPort)) {
+          board.probeNewWire(target, sourceEvent);
+        }
       },
       '[port|board] mouseup': ({ target, sourceEvent }) => {
         if (newWireFromPort) {
@@ -501,6 +504,7 @@
     draggingStart = null;
     dragging = null;
     grab = false;
+    newWireWhenDraggingFromPort = null;
 
     boardEl.removeEventListener('mousemove', handleDragPort);
     boardEl.removeEventListener('mousemove', handleDragChip);
