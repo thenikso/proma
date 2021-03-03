@@ -33,6 +33,8 @@ export function serializeChipInstance(chip) {
   for (let i = canonicalData.length - 1; i >= 0; i--) {
     if (typeof canonicalData[i] === 'undefined') {
       canonicalData.pop();
+    } else {
+      break;
     }
   }
   if (canonicalData.length > 0) {

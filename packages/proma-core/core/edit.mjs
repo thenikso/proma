@@ -264,7 +264,7 @@ export class EditableChipInfo {
   renamePort(port, newName, dryRun) {
     const chipInfo = info(this);
     if (!(port instanceof PortOutlet)) {
-      port = chipInfo.getPort(portPath);
+      port = chipInfo.getPort(port);
     }
     if (!port.isOutlet) {
       throw new Error(`Can only rename chip outlets, got "${port}"`);

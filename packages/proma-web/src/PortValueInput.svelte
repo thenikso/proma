@@ -4,6 +4,8 @@
   export let edit;
   export let port;
 
+  // TODO switch input based on port type
+
   function handleInput({ detail }) {
     edit.setPortValue(port, detail.value);
   }
