@@ -112,47 +112,53 @@
     },
     // Wires
     addWire(outputChip, outputPort, inputChip, inputPort, wirePath, id) {
-      if (typeof outputChip === 'string') {
-        outputChip = boardContentEl.getElementsByClassName(
-          'Chip-' + outputChip,
-        )[0].$promaChip;
+      try {
+        if (typeof outputChip === 'string') {
+          outputChip = boardContentEl.getElementsByClassName(
+            'Chip-' + outputChip,
+          )[0].$promaChip;
+        }
+        if (typeof outputPort === 'string') {
+          outputPort = outputChip.getPort(OUTPUT, outputPort);
+        }
+        if (typeof inputChip === 'string') {
+          inputChip = boardContentEl.getElementsByClassName(
+            'Chip-' + inputChip,
+          )[0].$promaChip;
+        }
+        if (typeof inputPort === 'string') {
+          inputPort = inputChip.getPort(INPUT, inputPort);
+        }
+        if (id) {
+          board.removeWire(id);
+        } else {
+          id = `wire-${shortUID()}`;
+        }
+        const type =
+          outputPort.dataType === inputPort.dataType
+            ? inputPort.dataType
+            : `${outputPort.dataType}-to-${inputPort.dataType}`;
+        wires = [
+          ...wires,
+          {
+            id,
+            outputChip,
+            outputPort,
+            inputChip,
+            inputPort,
+            type,
+            wirePath,
+            ...wirePoints({ outputPort, inputPort }),
+          },
+        ];
+        outputPort.connectionCount++;
+        inputPort.connectionCount++;
+        return id;
+      } catch (e) {
+        console.warn(
+          `Could not add wire: ${outputChip}.out.${outputPort} -> ${inputChip}.in.${inputPort}`,
+        );
       }
-      if (typeof outputPort === 'string') {
-        outputPort = outputChip.getPort(OUTPUT, outputPort);
-      }
-      if (typeof inputChip === 'string') {
-        inputChip = boardContentEl.getElementsByClassName(
-          'Chip-' + inputChip,
-        )[0].$promaChip;
-      }
-      if (typeof inputPort === 'string') {
-        inputPort = inputChip.getPort(INPUT, inputPort);
-      }
-      if (id) {
-        board.removeWire(id);
-      } else {
-        id = `wire-${shortUID()}`;
-      }
-      const type =
-        outputPort.dataType === inputPort.dataType
-          ? inputPort.dataType
-          : `${outputPort.dataType}-to-${inputPort.dataType}`;
-      wires = [
-        ...wires,
-        {
-          id,
-          outputChip,
-          outputPort,
-          inputChip,
-          inputPort,
-          type,
-          wirePath,
-          ...wirePoints({ outputPort, inputPort }),
-        },
-      ];
-      outputPort.connectionCount++;
-      inputPort.connectionCount++;
-      return id;
     },
     removeWire(id) {
       const wireIndex = wires.findIndex((w) => w.id === id);
