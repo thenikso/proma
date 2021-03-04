@@ -76,6 +76,23 @@ export class Type {
       },
     });
 
+    if (definitions.container === 'function') {
+      Object.defineProperties(this, {
+        argumentsTypes: {
+          enumerable: true,
+          get() {
+            return definitions.of.map((d) => new Type(d));
+          },
+        },
+        returnType: {
+          enumerable: true,
+          get() {
+            return new Type(definitions.to);
+          },
+        },
+      });
+    }
+
     typeCache.set(signature, this);
   }
 }
