@@ -182,6 +182,9 @@ function hasBaseType(definitionObject) {
     case 'Null':
     case 'null':
       return 'null';
+    case 'Void':
+    case 'void':
+      return 'void';
     case 'String':
     case 'string':
       return 'String';
@@ -622,13 +625,6 @@ function consumeTypes(tokens) {
   for (;;) {
     const typeObj = consumeType(tokens);
     let { type, container } = typeObj;
-    if (maybeConsumeOp(tokens, '=>')) {
-      if (container !== 'tuple') {
-        throw new Error('function types arguments must be in a tuple');
-      }
-      typeObj.container = container = 'function';
-      typeObj.to = consumeTypes(tokens);
-    }
     if (!typesSoFar[type]) {
       types.push(typeObj);
     }
@@ -666,12 +662,28 @@ function consumeType(tokens) {
 }
 
 function peek(tokens) {
-  var token;
-  token = tokens[0];
-  if (token == null) {
+  const token = tokens[0];
+  if (token === null) {
     throw new Error('Unexpected end of input.');
   }
   return token;
+}
+
+function peekAfterBalanced(tokens, open, close) {
+  if (peek(tokens) !== open) {
+    throw new Error('Unexpected characted: ' + tokens[0]);
+  }
+  let balanceCount = 0;
+  for (let i = 1, l = tokens.length; i < l; i++) {
+    const token = tokens[i];
+    if (token === close) {
+      if (balanceCount === 0) return tokens[i + 1];
+      balanceCount--;
+    } else if (token === open) {
+      balanceCount++;
+    }
+  }
+  throw new Error('Unexpected end of input.');
 }
 
 function consumeIdent(tokens) {
@@ -699,6 +711,20 @@ function maybeConsumeOp(tokens, op) {
   }
 }
 
+function maybeConsumeStructure(tokens) {
+  switch (tokens[0]) {
+    case '[':
+      return consumeArray(tokens);
+    case '(':
+      if (peekAfterBalanced(tokens, '(', ')') === '=>') {
+        return consumeFunction(tokens);
+      }
+      return consumeTuple(tokens);
+    case '{':
+      return consumeObjectFields(tokens);
+  }
+}
+
 function consumeArray(tokens) {
   consumeOp(tokens, '[');
   if (peek(tokens) === ']') {
@@ -710,6 +736,37 @@ function consumeArray(tokens) {
     container: 'array',
     of: types,
   };
+}
+
+function consumeObjectFields(tokens) {
+  const fields = {};
+  consumeOp(tokens, '{');
+  let subset = false;
+  for (;;) {
+    if (maybeConsumeOp(tokens, '...')) {
+      subset = true;
+      break;
+    }
+    const [key, types] = consumeObjectField(tokens);
+    fields[key] = types;
+    maybeConsumeOp(tokens, ',');
+    if ('}' === peek(tokens)) {
+      break;
+    }
+  }
+  consumeOp(tokens, '}');
+  return {
+    container: 'object',
+    of: fields,
+    subset,
+  };
+}
+
+function consumeObjectField(tokens) {
+  const key = consumeIdent(tokens);
+  consumeOp(tokens, ':');
+  const types = consumeTypes(tokens);
+  return [key, types];
 }
 
 function consumeTuple(tokens) {
@@ -734,46 +791,33 @@ function consumeTuple(tokens) {
   };
 }
 
-function consumeObjectFields(tokens) {
-  const fields = {};
-  consumeOp(tokens, '{');
+function consumeFunction(tokens) {
+  const args = [];
   let subset = false;
+  consumeOp(tokens, '(');
   for (;;) {
     if (maybeConsumeOp(tokens, '...')) {
       subset = true;
       break;
     }
-    const [key, types] = consumeObjectField(tokens);
-    fields[key] = types;
+    if (')' === peek(tokens)) {
+      break;
+    }
+    args.push(consumeTypes(tokens));
     maybeConsumeOp(tokens, ',');
-    if ('}' === peek(tokens)) {
+    if (')' === peek(tokens)) {
       break;
     }
   }
-  consumeOp(tokens, '}');
+  consumeOp(tokens, ')');
+  consumeOp(tokens, '=>');
+  const to = consumeTypes(tokens);
   return {
-    container: 'object',
-    of: fields,
-    subset: subset,
+    container: 'function',
+    of: args,
+    subset,
+    to,
   };
-}
-
-function consumeObjectField(tokens) {
-  const key = consumeIdent(tokens);
-  consumeOp(tokens, ':');
-  const types = consumeTypes(tokens);
-  return [key, types];
-}
-
-function maybeConsumeStructure(tokens) {
-  switch (tokens[0]) {
-    case '[':
-      return consumeArray(tokens);
-    case '(':
-      return consumeTuple(tokens);
-    case '{':
-      return consumeObjectFields(tokens);
-  }
 }
 
 //

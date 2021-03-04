@@ -43,6 +43,13 @@ describe('[core/types] type parsing and serializing', async (assert) => {
     actual: type('( Event , number ) => String').signature,
     expected: '(Event, Number) => String',
   });
+
+  assert({
+    given: 'a function type with no arguments',
+    should: 'render the normalized signature',
+    actual: type('() => Void').signature,
+    expected: '() => void',
+  });
 });
 
 describe('[core/types] type checking', async (assert) => {
