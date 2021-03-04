@@ -2,6 +2,7 @@ import { describe } from '../runner/riteway.mjs';
 import {
   Chip,
   chip,
+  event,
   inputFlow,
   inputData,
   outputFlow,
@@ -10,7 +11,9 @@ import {
   inputConfig,
   outputHandle,
   registry,
+  fromJSON,
 } from '../../core/index.mjs';
+import { info } from '../../core/utils.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
 
 const Pass = registry.add(
@@ -194,34 +197,56 @@ describe('[core/serialize] to JSON', async (assert) => {
     }).toJSON(),
     expected: chipJSON,
   });
+
+  const TestEvent = event('TestEvent', [
+    { name: 'event', type: 'Event' },
+    'num:Number',
+  ]);
+
+  assert({
+    given: 'an event sub-chip',
+    should: 'serialize with its port definition',
+    actual: chip('TestChipEventSerialize', () => {
+      const evt = new TestEvent();
+    }).toJSON(),
+    expected: {
+      URI: 'TestChipEventSerialize',
+      chips: [
+        {
+          id: 'TestEvent_1',
+          chipURI: 'TestEvent:event<event:Event, num:Number>',
+        },
+      ],
+    },
+  });
 });
 
 describe('[core/serialize] from JSON', async (assert) => {
   assert({
     given: 'a chip in JSON format',
     should: 'deserialize to a Chip class',
-    actual: chip.fromJSON(chipJSON).__proto__,
+    actual: fromJSON(chip, chipJSON).__proto__,
     expected: Chip,
   });
 
   assert({
     given: 'a chip from JSON',
     should: 'have a loaded state',
-    actual: chip.fromJSON(chipJSON).isLoaded,
+    actual: fromJSON(chip, chipJSON).isLoaded,
     expected: true,
   });
 
   assert({
     given: 'a chip from JSON',
     should: 'wait for it to be loaded',
-    actual: await chip.fromJSON(chipJSON).loaded,
+    actual: await fromJSON(chip, chipJSON).loaded,
     expected: true,
   });
 
   assert({
     given: 'a chip from JSON',
     should: 'compile and run',
-    actual: compileAndRun(chip.fromJSON(chipJSON), (chip) => {
+    actual: compileAndRun(fromJSON(chip, chipJSON), (chip) => {
       const res = [];
       chip.out.then(() => {
         res.push(chip.out.output());
@@ -233,6 +258,26 @@ describe('[core/serialize] from JSON', async (assert) => {
       return res;
     }),
     expected: compileAndRunResult(chipJS, [3, 7, 7]),
+  });
+
+  assert({
+    given: 'an event sub-chip',
+    should: 'properly deserializes',
+    actual: (() => {
+      const EventChip = fromJSON(chip, {
+        URI: 'TestChipEventSerialize',
+        chips: [
+          {
+            id: 'TestEvent',
+            chipURI: 'TestEvent:event<event:Event, num:Number>',
+          },
+        ],
+      });
+      const chipInfo = info(EventChip);
+      const subChipInfo = info(chipInfo.chips[0]);
+      return subChipInfo.outputs.map((o) => o.name);
+    })(),
+    expected: ['handle', 'then', 'event', 'num'],
   });
 });
 
@@ -259,14 +304,14 @@ describe('[core/serialize] from JSON with async chips', async (assert) => {
   assert({
     given: 'a JSON chip with async chips',
     should: 'have a false loaded state',
-    actual: chip.fromJSON(asyncChipJSON).isLoaded,
+    actual: fromJSON(chip, asyncChipJSON).isLoaded,
     expected: false,
   });
 
   assert({
     given: 'a JSON chip with async chips',
     should: 'wait for it to be loaded',
-    actual: await chip.fromJSON(asyncChipJSON).loaded,
+    actual: await fromJSON(chip, asyncChipJSON).loaded,
     expected: true,
   });
 
@@ -274,7 +319,7 @@ describe('[core/serialize] from JSON with async chips', async (assert) => {
     given: 'a JSON chip with async chips',
     should: 'compile and run after being loaded',
     actual: await (async () => {
-      const C = chip.fromJSON(asyncChipJSON);
+      const C = fromJSON(chip, asyncChipJSON);
       await C.loaded;
       return compileAndRun(C, (chip) => {
         const res = [];

@@ -1,8 +1,5 @@
 import { info } from './utils.mjs';
-import { registry } from './registry.mjs';
-import { isChipClass } from './chip.mjs';
 import { INPUT, OUTPUT } from './ports.mjs';
-import { PlaceholderChip } from './placeholder.mjs';
 
 //
 // Serialization
@@ -131,79 +128,4 @@ export function serializePortInfo(portInfo) {
 function funcToString(func) {
   // TODO use recast to clean this
   return String(func);
-}
-
-//
-// Deserialization
-//
-
-export function deserializeChip(chip, data, editable, withErrors) {
-  // TODO validate `data`
-  const res = chip(data.URI, null, { editable });
-  const build = res.edit();
-  const errors = [];
-  const portsToCompile = [];
-  for (const port of data[INPUT] || []) {
-    try {
-      if (port.kind === 'flow') {
-        build.addInputFlowPort(port.name);
-        if (port.execute) {
-          portsToCompile.push(port);
-        }
-      } else {
-        build.addInputDataPort(port.name, {
-          canonical: port.canonical,
-          conceiled: port.conceiled,
-          defaultValue: port.defaultValue,
-        });
-      }
-    } catch (e) {
-      errors.push(e);
-    }
-  }
-  for (const port of data[OUTPUT] || []) {
-    try {
-      if (port.kind === 'flow') {
-        build.addOutputFlowPort(port.name);
-      } else {
-        build.addOutputDataPort(port.name, {
-          computeOn: (port.computeOn || []).map((portPath) =>
-            build.getPort(portPath, 'out'),
-          ),
-          inline: port.inline,
-          allowSideEffects: port.allowSideEffects,
-        });
-        if (port.compute) {
-          portsToCompile.push(port);
-        }
-      }
-    } catch (e) {
-      errors.push(e);
-    }
-  }
-  for (const chipData of data.chips || []) {
-    build.addChip(chipData.chipURI, chipData.args, chipData.id);
-  }
-  for (const conn of data.connections || []) {
-    try {
-      build.addConnection(conn.source, conn.sink);
-    } catch (e) {
-      errors.push(e);
-    }
-  }
-  for (const port of portsToCompile) {
-    try {
-      if (port.execute) {
-        build.setPortExecute(port.name, port.execute);
-      } else if (port.compute) {
-        build.setPortCompute(port.name, port.compute);
-      }
-    } catch (e) {
-      errors.push(e);
-    }
-  }
-  if (errors.length > 0 && typeof withErrors === 'function') {
-    withErrors(errors);
-  }
-  return build.Chip;
 }
