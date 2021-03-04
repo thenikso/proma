@@ -170,6 +170,19 @@
   function handleSave() {
     localStorage.setItem(chipClass.URI, JSON.stringify(chipClass.toJSON()));
   }
+
+  //
+  // Utils
+  //
+
+  function newEventChipFromType(functionType) {
+    const ports = functionType.argumentsTypes.map((t, i) => ({
+      name: t.label || `arg${i + 1}`,
+      type: t.signature,
+    }));
+    const CustomEventChip = proma.event('CustomEvent', ports);
+    return new CustomEventChip();
+  }
 </script>
 
 <main>
@@ -222,6 +235,20 @@
     on:dismiss={() => (newSubChipRequest = null)}
   >
     <div>
+      {#if newSubChipRequest.fromType && newSubChipRequest.fromType.definitionKind === 'function'}
+        <button
+          type="button"
+          on:click={() => {
+            newSubChipRequest.provideChipInstance(
+              newEventChipFromType(newSubChipRequest.fromType),
+              // TODO also send connection hint
+            );
+            newSubChipRequest = null;
+          }}
+        >
+          Create custom event
+        </button>
+      {/if}
       <div><b>Context chips</b></div>
       {#each Object.values(newSubChipRequest.chip.customChipClasses) as chipClass (chipClass.URI)}
         <div>
