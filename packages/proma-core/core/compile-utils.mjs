@@ -150,7 +150,7 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
     }
 
     for (const portName in replaceOutputData) {
-      const { path, argPath } = replaceOutputData[portName];
+      let { path, argPath } = replaceOutputData[portName];
       const block = getPath(ast, argPath);
       let res = compileOutputData(portName, block) || builders.noop();
       if (namedTypes.BlockStatement.check(res)) {
@@ -160,10 +160,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
         // as a block body idem and we clean it up in `cleanAst`
         res.$explodeMe = true;
         // Replace the hole expression
-        path.pop();
+        path = path.slice(0, path.length - 1);
       } else if (namedTypes.ExpressionStatement.check(res)) {
         // Replace the hole expression
-        path.pop();
+        path = path.slice(0, path.length - 1);
       }
       ast = replaceAstPath(ast, path, res);
     }
