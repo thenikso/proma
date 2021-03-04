@@ -1,4 +1,5 @@
 <script>
+  import { edit as editChip } from '@proma/core/core/index.mjs';
   import { StringInput } from '@proma/web-controls';
 
   export let chip;
@@ -19,7 +20,7 @@
     if (edit) {
       edit.off();
     }
-    edit = stableChip.edit();
+    edit = editChip(stableChip);
     edit.on('port', () => {
       inputOutlets = stableChip.inputOutlets;
       outputOutlets = stableChip.outputOutlets;

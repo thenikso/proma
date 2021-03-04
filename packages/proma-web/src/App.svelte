@@ -77,7 +77,7 @@
   //   // proma.wire(exec, log.in.exec);
   //   proma.wire(target, log.in.message);
   // });
-  const chipClass = proma.chip.fromJSON(initChipJson, (errors) => {
+  const chipClass = proma.fromJSON(proma.chip, initChipJson, (errors) => {
     for (const e of errors) {
       console.log(e.message);
     }

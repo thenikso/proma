@@ -15,6 +15,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { createShortcutDispatcher } from '@proma/web-controls';
+  import { edit as editChip } from '@proma/core/core/index.mjs';
   import { Board, Chip, Inputs, Outputs, Port, Wire } from '@proma/web-board';
   import PortValueInput from './PortValueInput.svelte';
 
@@ -103,7 +104,7 @@
     if (edit) {
       edit.off();
     }
-    edit = stableChip.edit();
+    edit = editChip(stableChip);
     edit.on('chip', () => {
       innerChips = stableChip.chips;
       connections = stableChip.connections;
@@ -165,6 +166,7 @@
       fromSide,
       fromPort,
       fromType,
+      // TODO also accept connection hint
       provideChipInstance(chipInstance) {
         chip.metadata[chipInstance.id] = {
           x: boardX,
