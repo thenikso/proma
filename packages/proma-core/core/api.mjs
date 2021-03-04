@@ -69,18 +69,24 @@ export function inputConfig(name, { defaultValue, required } = {}) {
   });
 }
 
-export function outputHandle(name, execHandle) {
+export function outputHandle(name, execHandle, type) {
   assert(
     typeof execHandle === 'function',
     'A handler should specify a function',
   );
   const compute = () => execHandle;
   compute.toString = () => '() => ' + String(execHandle);
-  return outputData(name, {
+  const handlePort = outputData(name, {
     compute,
     inline: 'once',
     allowSideEffects: true,
+    type,
   });
+  Object.defineProperty(handlePort, 'isHandle', {
+    enumerable: true,
+    value: true,
+  });
+  return handlePort;
 }
 
 export function event(name, ports) {
@@ -101,7 +107,10 @@ export function event(name, ports) {
       ${ports.map(({ name }, i) => `${name}(args[${i}]);`).join('\n')}
       then();
     }`;
-    const handle = outputHandle('handle', handler);
+    const handleType = `(${ports
+      .map(({ type }) => type || 'any')
+      .join(', ')}) => void`;
+    const handle = outputHandle('handle', handler, handleType);
     const then = outputFlow('then');
     const outputs = ports.map(({ name, type }) => outputData(name, { type }));
   });
