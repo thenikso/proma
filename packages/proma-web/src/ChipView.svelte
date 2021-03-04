@@ -152,6 +152,9 @@
   function handleBoardContextmenu({
     detail: { boardX, boardY, fromChip, fromSide, fromPort, fromType, event },
   }) {
+    if (fromChip && fromSide && fromPort) {
+      fromType = edit.getPort(makePortPath(fromChip, fromSide, fromPort)).type;
+    }
     dispatchSubChipAddRequest({
       chip,
       clientX: event.clientX,
