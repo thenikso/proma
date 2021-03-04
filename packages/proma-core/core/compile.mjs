@@ -1,15 +1,7 @@
 import recast from '../vendor/recast.mjs';
 import { info, context, assert, assertInfo } from './utils.mjs';
 import ClassWrapper from './wrappers/ClassWrapper.mjs';
-import {
-  literalCompiler,
-  getFunctionBody,
-  pathFromNodePath,
-  getPath,
-  replaceAstPath,
-  makeAstBuilder,
-  cleanAst,
-} from './compile-utils.mjs';
+import { literalCompiler, makeAstBuilder } from './compile-utils.mjs';
 import { INPUT, OUTPUT } from './ports.mjs';
 
 const {
@@ -352,32 +344,14 @@ function executeCompiler(
               outputIdentifier = compile(conn, scope, codeWrapper);
             }
 
-            let decl;
-
-            // Assign to whatever the outlet is
-            if (isOutlet(conn, scope)) {
-              decl = builders.expressionStatement(
-                builders.assignmentExpression(
-                  '=',
-                  outputIdentifier,
-                  assignExpressionBlock,
-                ),
-              );
-            }
-            // Local variable assignment
-            else {
-              assert(
-                namedTypes.Identifier.check(outputIdentifier),
-                `Expected identifier or member expression got: ${outputIdentifier}`,
-              );
-
-              decl = builders.variableDeclaration('let', [
-                builders.variableDeclarator(
-                  outputIdentifier,
-                  assignExpressionBlock,
-                ),
-              ]);
-            }
+            // Assign to whatever the outlet/inlet is
+            const decl = builders.expressionStatement(
+              builders.assignmentExpression(
+                '=',
+                outputIdentifier,
+                assignExpressionBlock,
+              ),
+            );
 
             declarations.push(decl);
           }
@@ -697,15 +671,12 @@ function makeOutputDataSourceCompiler(portInfo) {
 
   if (!portInfo.compute && portInfo.computeOn.length === 0) {
     // TODO nothing to do? maybe check that it is used by an exec?
-    // throw new Error('unimplemented');
     return function assignOutputValueCompiler(
       portInstance,
       outterScope,
       codeWrapper,
     ) {
-      // TODO get unique name from codeWrapper instead
-      // (deterministic with portInstance.name and outterScope)
-      return builders.identifier(portInstance.name);
+      return codeWrapper.compileVariableInlet(portInstance);
     };
   }
 

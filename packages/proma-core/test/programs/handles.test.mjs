@@ -141,13 +141,14 @@ describe('[programs/handles] handles usage', async (assert) => {
             then: undefined
           });
 
+          let Evt__event;
           let Pass__output;
 
           const Evt__ref = e => {
-            let event = e;
+            Evt__event = e;
 
             {
-              Pass__output = event;
+              Pass__output = Evt__event;
               this.out.then();
             };
           };

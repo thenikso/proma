@@ -274,6 +274,8 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
             then: undefined
           });
 
+          let test_programs_outputs_PushLiterla_1__output;
+
           Object.defineProperties(this.out = {}, {
             output: {
               value: () => $out.output
@@ -294,11 +296,11 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
           Object.freeze(this.out);
 
           {
-            let output = "hello world";
+            test_programs_outputs_PushLiterla_1__output = "hello world";
             $out.output = "hello world";
 
             {
-              console.log(output);
+              console.log(test_programs_outputs_PushLiterla_1__output);
               this.out.then();
             };
           }
