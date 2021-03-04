@@ -50,6 +50,20 @@ describe('[core/types] type parsing and serializing', async (assert) => {
     actual: type('() => Void').signature,
     expected: '() => void',
   });
+
+  assert({
+    given: 'a simple type with labels',
+    should: 'produce signatureWithLabels',
+    actual: type('test:string').signatureWithLabels,
+    expected: 'test:String',
+  });
+
+  assert({
+    given: 'a complex type with labels',
+    should: 'produce signatureWithLabels',
+    actual: type('(a:number,B:String) => { c: Event}').signatureWithLabels,
+    expected: '(a:Number, B:String) => {c: Event}',
+  });
 });
 
 describe('[core/types] type checking', async (assert) => {

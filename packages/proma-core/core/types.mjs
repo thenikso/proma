@@ -19,9 +19,10 @@ export class Type {
   constructor(definitions) {
     const isSingle = definitions.length === 1;
     const signature = serializeTypeAll(definitions);
-    if (typeCache.has(signature)) {
+    const signatureWithLabels = serializeTypeAll(definitions, true);
+    if (typeCache.has(signatureWithLabels)) {
       // TODO may also need to check customTypes?
-      return typeCache.get(signature);
+      return typeCache.get(signatureWithLabels);
     }
     // TODO add cache
     const self = this;
@@ -35,6 +36,10 @@ export class Type {
       signature: {
         enumerable: true,
         value: signature,
+      },
+      signatureWithLabels: {
+        enumerable: true,
+        value: signatureWithLabels,
       },
       definitionKinds: {
         enumerable: true,
@@ -85,6 +90,10 @@ export class Type {
       const definition = definitions[0];
 
       Object.defineProperties(this, {
+        label: {
+          enumerable: true,
+          value: definition.label,
+        },
         definitionKind: {
           enumerable: true,
           value: this.definitionKinds[0],
@@ -112,7 +121,7 @@ export class Type {
       }
     }
 
-    typeCache.set(signature, this);
+    typeCache.set(signatureWithLabels, this);
   }
 }
 
@@ -150,15 +159,15 @@ function classDeclarationOf(data) {
 // Serialize
 //
 
-function serializeTypeAll(definitions) {
-  return definitions.map(serializeType).join('|');
+function serializeTypeAll(definitions, includeLabels) {
+  return definitions.map((d) => serializeType(d, includeLabels)).join('|');
 }
 
-function serializeType(definitionObject) {
+function serializeType(definitionObject, includeLabels) {
   const { type, container } = definitionObject;
   let res = '';
   if (type) {
-    res += serializeSingleType(definitionObject);
+    res += serializeSingleType(definitionObject, includeLabels);
   }
   if (container) {
     const containerOf = definitionObject.of;
@@ -174,12 +183,12 @@ function serializeType(definitionObject) {
         res += '{' + containerTypes.join(', ') + '}';
         break;
       case 'array':
-        res += '[' + serializeTypeAll(containerOf) + ']';
+        res += '[' + serializeTypeAll(containerOf, includeLabels) + ']';
         break;
       case 'tuple':
       case 'function':
         for (let i = 0, l = containerOf.length; i < l; i++) {
-          containerTypes.push(serializeTypeAll(containerOf[i]));
+          containerTypes.push(serializeTypeAll(containerOf[i], includeLabels));
         }
         res += '(' + containerTypes.join(', ') + ')';
         break;
@@ -227,16 +236,20 @@ function hasBaseType(definitionObject) {
   return false;
 }
 
-function serializeSingleType(definitionObject) {
+function serializeSingleType(definitionObject, includeLabels) {
+  let label = (includeLabels && definitionObject.label) || '';
+  if (label) {
+    label += ':';
+  }
   const type = definitionObject.type;
   if (typeof type === 'string') {
     const baseType = hasBaseType(definitionObject);
     if (baseType) {
-      return baseType;
+      return label + baseType;
     }
-    return type;
+    return label + type;
   }
-  return type.name;
+  return label + type.name;
 }
 
 function serializeKind(definitionObject) {
@@ -620,7 +633,7 @@ function makeCheckFunctionContainer(definitionObject, customTypes) {
 
 const identifierRegex = /[\$\w]+/;
 const tokenRegex = RegExp(
-  '\\.\\.\\.|\\?|=>|' + identifierRegex.source + '|\\S',
+  '\\.\\.\\.|\\?|:|=>|' + identifierRegex.source + '|\\S',
   'g',
 );
 
@@ -648,7 +661,7 @@ function consumeTypes(tokens) {
     if (!typesSoFar[type]) {
       types.push(typeObj);
     }
-    if (container === null) {
+    if (container == null) {
       typesSoFar[type] = true;
     }
     if (!maybeConsumeOp(tokens, '|')) {
@@ -660,15 +673,26 @@ function consumeTypes(tokens) {
 
 function consumeType(tokens) {
   const token = peek(tokens);
+  if (':' === token) {
+    throw new Error("No label before label separator ':' found.");
+  }
+  let label;
+  const lookahead = tokens[1];
+  if (lookahead != null && lookahead === ':') {
+    label = tokens.shift();
+    tokens.shift();
+  }
   const wildcard = token === '*';
   if (wildcard || identifierRegex.test(token)) {
     const type = wildcard ? consumeOp(tokens, '*') : consumeIdent(tokens);
     const container = maybeConsumeStructure(tokens);
     if (container) {
+      container.label = label;
       container.type = type;
       return container;
     } else {
       return {
+        label,
         type: type,
       };
     }
@@ -677,6 +701,7 @@ function consumeType(tokens) {
     if (!container) {
       throw new Error('Unexpected character: ' + token);
     }
+    container.label = label;
     return container;
   }
 }
