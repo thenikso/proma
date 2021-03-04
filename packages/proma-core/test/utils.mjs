@@ -6,6 +6,7 @@ import {
   outputData,
   wire,
   Chip,
+  edit,
 } from '../core/index.mjs';
 import { ExternalReference } from '../core/external.mjs';
 
@@ -86,7 +87,7 @@ export function compileAndRun(build, run, initData, externalContext) {
 
 export function editCompileAndRun(edit, run, initData) {
   const C = chip('EditChip');
-  const e = C.edit();
+  const e = edit(C);
   edit(e);
   return compileAndRun(C, run, initData);
 }

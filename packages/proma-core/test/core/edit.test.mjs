@@ -7,6 +7,7 @@ import {
   outputData,
   wire,
   registry,
+  edit,
 } from '../../core/index.mjs';
 
 const Pass = registry.add(
@@ -24,8 +25,7 @@ describe('[core/edit] edit connections', async (assert) => {
   assert({
     given: 'an added in/out flow with connection',
     should: 'edit',
-    actual: chip('EditChip')
-      .edit()
+    actual: edit(chip('EditChip'))
       .addInputFlowPort('exec')
       .addOutputFlowPort('then')
       .addConnection('exec', 'then')
@@ -100,8 +100,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
   assert({
     given: 'a chip instance',
     should: 'add the sub-chip',
-    actual: chip('EditChip')
-      .edit()
+    actual: edit(chip('EditChip'))
       .addInputFlowPort('exec')
       .addOutputFlowPort('then')
       .addOutputDataPort('value')
@@ -116,12 +115,13 @@ describe('[core/edit] edit sub-chips', async (assert) => {
   assert({
     given: 'a chip class',
     should: 'add the sub-chip',
-    actual: chip('EditChip', () => {
-      const exec = inputFlow('exec');
-      const then = outputFlow('then');
-      const value = outputData('value');
-    })
-      .edit()
+    actual: edit(
+      chip('EditChip', () => {
+        const exec = inputFlow('exec');
+        const then = outputFlow('then');
+        const value = outputData('value');
+      }),
+    )
       .addChip(Pass, ['pass'], 'Pass')
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
@@ -133,12 +133,13 @@ describe('[core/edit] edit sub-chips', async (assert) => {
   assert({
     given: 'a chip URI',
     should: 'add the sub-chip',
-    actual: chip('EditChip', () => {
-      const exec = inputFlow('exec');
-      const then = outputFlow('then');
-      const value = outputData('value');
-    })
-      .edit()
+    actual: edit(
+      chip('EditChip', () => {
+        const exec = inputFlow('exec');
+        const then = outputFlow('then');
+        const value = outputData('value');
+      }),
+    )
       .addChip('test/edit/Pass', ['pass'], 'Pass')
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
@@ -152,14 +153,15 @@ describe('[core/edit] edit ports', async (assert) => {
   assert({
     given: 'a port rename operation',
     should: 'rename the outlet port',
-    actual: chip('EditChip', () => {
-      const exec = inputFlow('exec');
-      const inValue = inputData('value');
-      const then = outputFlow('then');
-      const outValue = outputData('value');
-      wire(inValue, outValue);
-    })
-      .edit()
+    actual: edit(
+      chip('EditChip', () => {
+        const exec = inputFlow('exec');
+        const inValue = inputData('value');
+        const then = outputFlow('then');
+        const outValue = outputData('value');
+        wire(inValue, outValue);
+      }),
+    )
       .renamePort('in.value', 'input')
       .Chip.toJSON(),
     expected: {
@@ -198,14 +200,15 @@ describe('[core/edit] edit ports', async (assert) => {
     given: 'a port rename with invalid name',
     should: 'throw',
     actual: Try(() => {
-      chip('EditChip', () => {
-        const exec = inputFlow('exec');
-        const inValue = inputData('value');
-        const then = outputFlow('then');
-        const outValue = outputData('value');
-        wire(inValue, outValue);
-      })
-        .edit()
+      edit(
+        chip('EditChip', () => {
+          const exec = inputFlow('exec');
+          const inValue = inputData('value');
+          const then = outputFlow('then');
+          const outValue = outputData('value');
+          wire(inValue, outValue);
+        }),
+      )
         // NOTE the last `true` param is for "dry run". It can be used to check
         // if a rename operation would succeed
         .renamePort('in.value', 'exec', true);

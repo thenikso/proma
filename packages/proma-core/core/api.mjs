@@ -1,9 +1,7 @@
 import { context, assert, info } from './utils.mjs';
 import { Chip as ChipBase, ChipInfo } from './chip.mjs';
 import { runFlowPorts } from './run.mjs';
-import { EditableChipInfo } from './edit.mjs';
 import { Compilation } from './compile.mjs';
-import { deserializeChip } from './serialize.mjs';
 import { ExternalReference } from './external.mjs';
 
 // Creates a chip
@@ -92,10 +90,15 @@ export function outputHandle(name, execHandle, type) {
 export function event(name, ports) {
   ports = (ports || []).map((p) => {
     if (typeof p === 'string') {
-      return { name: p };
+      const [name, type] = p.split(':');
+      return { name, type: type || 'any' };
     }
     return p;
   });
+  const handleArgs = ports
+    .map(({ name, type }) => `${name}:${type || 'any'}`)
+    .join(', ');
+  const handleType = `(${handleArgs}) => void`;
   const EventChip = plainChip(name, () => {
     const handler = (...args) => {
       for (let i = 0, l = outputs.length; i < l; i++) {
@@ -107,9 +110,6 @@ export function event(name, ports) {
       ${ports.map(({ name }, i) => `${name}(args[${i}]);`).join('\n')}
       then();
     }`;
-    const handleType = `(${ports
-      .map(({ type }) => type || 'any')
-      .join(', ')}) => void`;
     const handle = outputHandle('handle', handler, handleType);
     const then = outputFlow('then');
     const outputs = ports.map(({ name, type }) => outputData(name, { type }));
@@ -117,6 +117,11 @@ export function event(name, ports) {
   Object.defineProperty(EventChip, 'isEvent', {
     enumerable: true,
     value: true,
+  });
+  Object.defineProperty(EventChip.prototype, 'chipURI', {
+    enumerable: true,
+    value:
+      ports.length === 0 ? `${name}:event` : `${name}:event<${handleArgs}>`,
   });
   return EventChip;
 }
@@ -276,14 +281,6 @@ function makeChipFactory($customChips, $hooks) {
         return config.editable;
       }
 
-      // TODO accept an optional new "build" function that can have deleteChip..?
-      static edit() {
-        if (!this.editable) {
-          throw new Error('Chip is not editable');
-        }
-        return new EditableChipInfo(this, chipInfo);
-      }
-
       static get isLoaded() {
         return chipInfo.isLoaded;
       }
@@ -328,6 +325,8 @@ function makeChipFactory($customChips, $hooks) {
       }
     }
 
+    info(Chip, chipInfo);
+
     return Chip;
   }
   chip.extend = function extendChip(customChips, hooks) {
@@ -341,16 +340,6 @@ function makeChipFactory($customChips, $hooks) {
         ),
       Object.assign({}, $hooks, hooks),
     );
-  };
-  chip.fromJSON = (data, withErrors) => {
-    const ChipClass = deserializeChip(
-      chip,
-      data,
-      data.editable !== false,
-      withErrors,
-    );
-    ChipClass.metadata = data.metadata;
-    return ChipClass;
   };
   return chip;
 }

@@ -3,6 +3,15 @@ import { Chip, isChipClass } from './chip.mjs';
 import { PortOutlet } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
 import { registry } from './registry.mjs';
+import { event } from './api.mjs';
+
+export function edit(ChipClass) {
+  // TODO accept an optional new "build" function that can have deleteChip..?
+  if (!ChipClass.editable) {
+    throw new Error('Chip is not editable');
+  }
+  return new EditableChipInfo(ChipClass);
+}
 
 const sharedEventsByChipInfo = new WeakMap();
 
@@ -42,8 +51,9 @@ function getSharedEvents(chipInfo, eventName) {
   return [...(sharedEvents.get(eventName) || [])];
 }
 
-export class EditableChipInfo {
-  constructor(chipClass, chipInfo) {
+class EditableChipInfo {
+  constructor(chipClass) {
+    const chipInfo = info(chipClass);
     info(this, chipInfo);
 
     const self = this;
@@ -126,9 +136,33 @@ export class EditableChipInfo {
 
   addChip(chipToAdd, canonicalValues, id) {
     if (typeof chipToAdd === 'string') {
+      let chipClass;
+      // Special case for event chips
+      // TODO this should be generalized?
+      const eventIndex = chipToAdd.indexOf(':event');
+      if (eventIndex > 0) {
+        const cleanURI = chipToAdd.substr(0, eventIndex);
+        // Check if the event is actually a custom chip
+        chipClass = this.Chip.customChipClasses[cleanURI];
+        if (!chipClass) {
+          let eventParamsStr = chipToAdd.substr(eventIndex + 6);
+          const eventPorts = eventParamsStr
+            .substr(1, eventParamsStr.length - 2)
+            .split(',')
+            .map((x) => x.split(':'))
+            .map(([name, type]) => ({
+              name: name.trim(),
+              type: type.trim(),
+            }));
+          chipClass = event(cleanURI, eventPorts);
+        }
+      }
       // Search in context chips or registry
-      const chipClass =
-        this.Chip.customChipClasses[chipToAdd] || registry.load(chipToAdd);
+      else {
+        chipClass =
+          this.Chip.customChipClasses[chipToAdd] || registry.load(chipToAdd);
+      }
+      // Chip to add will be instantiated from this class
       if (isChipClass(chipClass)) {
         chipToAdd = chipClass;
       }
@@ -164,7 +198,7 @@ export class EditableChipInfo {
     if (typeof chip === 'string') {
       chip = chipInfo.getChip(chip);
     }
-    if (!(chip instanceof Chip)) {
+    if (!(chip instanceof Chip) && !(chip instanceof PlaceholderChip)) {
       throw new Error('No chip to remove');
     }
     chipInfo.chips.splice(chipInfo.chips.indexOf(chip), 1);

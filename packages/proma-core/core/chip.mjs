@@ -50,10 +50,6 @@ export class Chip {
         enumerable: true,
         value: outputs,
       },
-      chipURI: {
-        enumerable: true,
-        value: chipInfo.URI,
-      },
     });
     // Assign default values
     if (Array.isArray(canonicalValues) && canonicalValues.length > 0) {
@@ -77,6 +73,11 @@ export class Chip {
         i++;
       }
     }
+  }
+
+  get chipURI() {
+    const chipInfo = info(this);
+    return chipInfo.URI;
   }
 
   toJSON() {
