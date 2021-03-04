@@ -141,11 +141,17 @@ function serializeType(definitionObject) {
         res += '[' + serializeTypeAll(containerOf) + ']';
         break;
       case 'tuple':
+      case 'function':
         for (let i = 0, l = containerOf.length; i < l; i++) {
           containerTypes.push(serializeTypeAll(containerOf[i]));
         }
         res += '(' + containerTypes.join(', ') + ')';
         break;
+    }
+
+    if (container === 'function') {
+      res += ' => ';
+      res += serializeTypeAll(definitionObject.to);
     }
   }
   return res;
@@ -198,8 +204,10 @@ function serializeKind(definitionObject) {
   if (definitionObject.container) return definitionObject.container;
   const type = serializeSingleType(definitionObject);
   switch (type) {
-    case 'null':
+    case 'Null':
       return 'null';
+    case 'Void':
+      return 'void';
     case 'String':
       return 'string';
     case 'Number':
@@ -252,6 +260,12 @@ function makeTypeMatch(definitionObject, customTypes) {
     matchFunc = function matchType(otherDefinitionObject) {
       if (!otherDefinitionObject.type) return false;
       const actualType = resolveType(otherDefinitionObject, customTypes);
+      if (
+        expectType === 'void' &&
+        (actualType === 'null' || actualType === 'undefined')
+      ) {
+        return true;
+      }
       if (expectType === actualType) return true;
       if (
         typeof expectType === 'function' &&
@@ -276,6 +290,12 @@ function makeTypeMatch(definitionObject, customTypes) {
         break;
       case 'tuple':
         matchContainer = makeMatchTupleContainer(definitionObject, customTypes);
+        break;
+      case 'function':
+        matchContainer = makeMatchFunctionContainer(
+          definitionObject,
+          customTypes,
+        );
         break;
     }
     if (matchFunc && matchContainer) {
@@ -337,7 +357,7 @@ function makeMatchTupleContainer(definitionObject, customTypes) {
   const tupleMatchers = definitionObject.of.map((t) =>
     makeMatchAll(t, customTypes),
   );
-  return function checkTupleContainer(otherDefinitionObject) {
+  return function matchTupleContainer(otherDefinitionObject) {
     if (otherDefinitionObject.container !== definitionObject.container) {
       return false;
     }
@@ -348,6 +368,27 @@ function makeMatchTupleContainer(definitionObject, customTypes) {
     for (let i = 0, l = tupleMatchers.length; i < l; i++) {
       if (!tupleMatchers[i](actualOf[i])) return false;
     }
+    return true;
+  };
+}
+
+function makeMatchFunctionContainer(definitionObject, customTypes) {
+  const argumentsMatchers = definitionObject.of.map((t) =>
+    makeMatchAll(t, customTypes),
+  );
+  const returnMatcher = makeMatchAll(definitionObject.to, customTypes);
+  return function matchFunctionContainer(otherDefinitionObject) {
+    if (otherDefinitionObject.container !== definitionObject.container) {
+      return false;
+    }
+    const actualOf = otherDefinitionObject.of;
+    if (actualOf.length !== argumentsMatchers.length) {
+      return false;
+    }
+    for (let i = 0, l = argumentsMatchers.length; i < l; i++) {
+      if (!argumentsMatchers[i](actualOf[i])) return false;
+    }
+    if (!returnMatcher(otherDefinitionObject.to)) return false;
     return true;
   };
 }
@@ -373,7 +414,9 @@ function makeCheck(definitionObject, customTypes) {
         return true;
       };
     } else {
-      checkFunc = makeCheckInstanceOf(resolveType(definitionObject, customTypes));
+      checkFunc = makeCheckInstanceOf(
+        resolveType(definitionObject, customTypes),
+      );
     }
   }
   if (container) {
@@ -390,6 +433,12 @@ function makeCheck(definitionObject, customTypes) {
         break;
       case 'tuple':
         checkContainer = makeCheckTupleContainer(definitionObject, customTypes);
+        break;
+      case 'function':
+        checkContainer = makeCheckFunctionContainer(
+          definitionObject,
+          customTypes,
+        );
         break;
     }
     if (checkFunc && checkContainer) {
@@ -409,6 +458,7 @@ function makeCheck(definitionObject, customTypes) {
 
 const checkUndefined = (data) => typeof data === 'undefined';
 const checkNull = (data) => data === null;
+const checkVoid = (data) => data === null || typeof data === 'undefined';
 const checkInstanceOfString = (data) => typeof data === 'string';
 const checkInstanceOfNumber = (data) => typeof data === 'number';
 const checkInstanceOfBigInt = (data) => typeof data === 'bigint';
@@ -425,6 +475,9 @@ function makeCheckInstanceOf(resolvedType) {
     case 'Null':
     case 'null':
       return checkNull;
+    case 'Void':
+    case 'void':
+      return checkVoid;
     case String:
     case 'String':
     case 'string':
@@ -510,6 +563,15 @@ function makeCheckTupleContainer(definitionObject, customTypes) {
   };
 }
 
+function makeCheckFunctionContainer(definitionObject, customTypes) {
+  const expectedArgumentsCount = definitionObject.of.length;
+  return function checkFunctionContainer(data) {
+    if (typeof data !== 'function') return false;
+    if (data.length !== expectedArgumentsCount) return false;
+    return true;
+  };
+}
+
 //
 // Parser
 //
@@ -518,9 +580,73 @@ function makeCheckTupleContainer(definitionObject, customTypes) {
 
 const identifierRegex = /[\$\w]+/;
 const tokenRegex = RegExp(
-  '\\.\\.\\.|::|->|' + identifierRegex.source + '|\\S',
+  '\\.\\.\\.|\\?|=>|' + identifierRegex.source + '|\\S',
   'g',
 );
+
+function consumeTypes(tokens) {
+  let types = [];
+  let typesSoFar = {};
+  if (peek(tokens) === '?') {
+    tokens.shift();
+    types = [
+      {
+        type: 'Undefined',
+      },
+      {
+        type: 'Null',
+      },
+    ];
+    typesSoFar = {
+      Undefined: true,
+      Null: true,
+    };
+  }
+  for (;;) {
+    const typeObj = consumeType(tokens);
+    let { type, container } = typeObj;
+    if (maybeConsumeOp(tokens, '=>')) {
+      if (container !== 'tuple') {
+        throw new Error('function types arguments must be in a tuple');
+      }
+      typeObj.container = container = 'function';
+      typeObj.to = consumeTypes(tokens);
+    }
+    if (!typesSoFar[type]) {
+      types.push(typeObj);
+    }
+    if (container === null) {
+      typesSoFar[type] = true;
+    }
+    if (!maybeConsumeOp(tokens, '|')) {
+      break;
+    }
+  }
+  return types;
+}
+
+function consumeType(tokens) {
+  const token = peek(tokens);
+  const wildcard = token === '*';
+  if (wildcard || identifierRegex.test(token)) {
+    const type = wildcard ? consumeOp(tokens, '*') : consumeIdent(tokens);
+    const container = maybeConsumeStructure(tokens);
+    if (container) {
+      container.type = type;
+      return container;
+    } else {
+      return {
+        type: type,
+      };
+    }
+  } else {
+    const container = maybeConsumeStructure(tokens);
+    if (!container) {
+      throw new Error('Unexpected character: ' + token);
+    }
+    return container;
+  }
+}
 
 function peek(tokens) {
   var token;
@@ -631,70 +757,6 @@ function maybeConsumeStructure(tokens) {
     case '{':
       return consumeObjectFields(tokens);
   }
-}
-
-function consumeType(tokens) {
-  const token = peek(tokens);
-  const wildcard = token === '*';
-  if (wildcard || identifierRegex.test(token)) {
-    const type = wildcard ? consumeOp(tokens, '*') : consumeIdent(tokens);
-    const container = maybeConsumeStructure(tokens);
-    if (container) {
-      return (container.type = type), container;
-    } else {
-      return {
-        type: type,
-      };
-    }
-  } else {
-    const container = maybeConsumeStructure(tokens);
-    if (!container) {
-      throw new Error('Unexpected character: ' + token);
-    }
-    return container;
-  }
-}
-
-function consumeTypes(tokens) {
-  if ('::' === peek(tokens)) {
-    throw new Error("No comment before comment separator '::' found.");
-  }
-  const lookahead = tokens[1];
-  if (lookahead != null && lookahead === '::') {
-    tokens.shift();
-    tokens.shift();
-  }
-  let types = [];
-  let typesSoFar = {};
-  if ('Maybe' === peek(tokens)) {
-    tokens.shift();
-    types = [
-      {
-        type: 'Undefined',
-      },
-      {
-        type: 'Null',
-      },
-    ];
-    typesSoFar = {
-      Undefined: true,
-      Null: true,
-    };
-  }
-  for (;;) {
-    const typeObj = consumeType(tokens);
-    const { type, container } = typeObj;
-    if (!typesSoFar[type]) {
-      types.push(typeObj);
-    }
-    if (container === null) {
-      typesSoFar[type] = true;
-    }
-    if (!maybeConsumeOp(tokens, '|')) {
-      break;
-    }
-  }
-  return types;
 }
 
 //

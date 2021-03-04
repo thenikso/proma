@@ -25,9 +25,23 @@ describe('[core/types] type parsing and serializing', async (assert) => {
 
   assert({
     given: 'an object type',
-    should: 'have an appropriate "definitionKinds"',
+    should: 'have an "object" definitionKinds',
     actual: type('Test { Key : string }').definitionKinds,
     expected: ['object'],
+  });
+
+  assert({
+    given: 'a function type',
+    should: 'have a "funciton" definitionKinds',
+    actual: type('(Event) => void').definitionKinds,
+    expected: ['function'],
+  });
+
+  assert({
+    given: 'a function type',
+    should: 'render the normalized signature',
+    actual: type('( Event , number ) => String').signature,
+    expected: '(Event, Number) => String',
   });
 });
 
@@ -160,6 +174,15 @@ describe('[core/types] type checking', async (assert) => {
     actual: ObjectSubsetType.check({ num: 4, str: 'ever', and: 'more' }),
     expected: true,
   });
+
+  const FunctionType = type('(String, Number) => void');
+
+  assert({
+    given: 'FunctionType a function with exact number of parameters',
+    should: 'return true',
+    actual: FunctionType.check((one, two) => 4),
+    expected: true,
+  });
 });
 
 describe('[core/types] type matching', async (assert) => {
@@ -219,21 +242,21 @@ describe('[core/types] type matching', async (assert) => {
 
   assert({
     given: 'AType the A class to match',
-    should: 'return true',
+    should: 'match',
     actual: AType.match(A),
     expected: true,
   });
 
   assert({
     given: 'AType the BType to match',
-    should: 'return false',
+    should: 'not match',
     actual: AType.match(BType, { A, B }),
     expected: false,
   });
 
   assert({
     given: 'BType the AType to match',
-    should: 'return true, because B is subclass of A so it matches and exceed',
+    should: 'match, because B is subclass of A so it matches and exceed',
     actual: BType.match(AType, { A, B }),
     expected: true,
   });
@@ -243,7 +266,7 @@ describe('[core/types] type matching', async (assert) => {
   assert({
     given: 'and object type with more properties than a second object type',
     should:
-      'return true, because the first object can work for someone using the second one',
+      'match, because the first object can work for someone using the second one',
     actual: type('{ b: number, a: string }').match(type('{ a: string }')),
     expected: true,
   });
@@ -252,7 +275,7 @@ describe('[core/types] type matching', async (assert) => {
 
   assert({
     given: 'an array of B matching array of A',
-    should: 'return true',
+    should: 'match',
     actual: type('[B]').match(type('[A]'), { A, B }),
     expected: true,
   });
@@ -261,8 +284,17 @@ describe('[core/types] type matching', async (assert) => {
 
   assert({
     given: 'a tuple of B matching tuple of A',
-    should: 'return true',
+    should: 'match',
     actual: type('(B, A, number)').match(type('(A, A, Number)'), { A, B }),
+    expected: true,
+  });
+
+  // functions
+
+  assert({
+    given: 'a pair of compatible function types',
+    should: 'match',
+    actual: type('(B, A) => void').match(type('(A, A) => null'), { A, B }),
     expected: true,
   });
 });
