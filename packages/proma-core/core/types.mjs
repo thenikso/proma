@@ -17,6 +17,7 @@ const typeCache = new Map();
 
 export class Type {
   constructor(definitions) {
+    const isSingle = definitions.length === 1;
     const signature = serializeTypeAll(definitions);
     if (typeCache.has(signature)) {
       // TODO may also need to check customTypes?
@@ -27,6 +28,10 @@ export class Type {
     let typeChecker;
     let typeMatcher;
     Object.defineProperties(this, {
+      isMulti: {
+        enumerable: true,
+        value: !isSingle,
+      },
       signature: {
         enumerable: true,
         value: signature,
@@ -76,21 +81,35 @@ export class Type {
       },
     });
 
-    if (definitions.container === 'function') {
+    if (isSingle) {
+      const definition = definitions[0];
+
       Object.defineProperties(this, {
-        argumentsTypes: {
+        definitionKind: {
           enumerable: true,
-          get() {
-            return definitions.of.map((d) => new Type(d));
-          },
+          value: this.definitionKinds[0],
         },
-        returnType: {
-          enumerable: true,
-          get() {
-            return new Type(definitions.to);
-          },
+        definition: {
+          value: definition,
         },
       });
+
+      if (definition.container === 'function') {
+        Object.defineProperties(this, {
+          argumentsTypes: {
+            enumerable: true,
+            get() {
+              return definition.of.map((d) => new Type(d));
+            },
+          },
+          returnType: {
+            enumerable: true,
+            get() {
+              return new Type(definition.to);
+            },
+          },
+        });
+      }
     }
 
     typeCache.set(signature, this);
@@ -587,7 +606,8 @@ function makeCheckFunctionContainer(definitionObject, customTypes) {
   const expectedArgumentsCount = definitionObject.of.length;
   return function checkFunctionContainer(data) {
     if (typeof data !== 'function') return false;
-    if (data.length !== expectedArgumentsCount) return false;
+    // TODO we could use recast or just ignore this
+    // if (data.length !== expectedArgumentsCount) return false;
     return true;
   };
 }
