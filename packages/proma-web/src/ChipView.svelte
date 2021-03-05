@@ -229,6 +229,10 @@
     }
     return 'any';
   }
+
+  function shouldHideName(port) {
+    return port.isFlow ? port.name === 'exec' || port.name === 'then' : port.name === 'handle';
+  }
 </script>
 
 <div {id} class="ChipView">
@@ -267,7 +271,11 @@
         {#if innerChip.in.length > 0}
           <Inputs>
             {#each innerChip.in as port}
-              <Port name={port.name} type={getPortType(port)}>
+              <Port
+                name={port.name}
+                type={getPortType(port)}
+                hideName={shouldHideName(port)}
+              >
                 {#if updatePortsKey && port.isData && port.type && !edit.hasConnections(port)}
                   <PortValueInput {edit} {port} />
                 {/if}
@@ -278,7 +286,12 @@
         {#if innerChip.out.length > 0}
           <Outputs>
             {#each innerChip.out as port}
-              <Port name={port.name} type={getPortType(port)} />
+              <Port
+                name={port.name}
+                type={getPortType(port)}
+                hideName={shouldHideName(port)}
+                showOnHeader={port.name === 'handle'}
+              />
             {/each}
           </Outputs>
         {/if}

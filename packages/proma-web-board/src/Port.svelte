@@ -7,6 +7,8 @@
   export let type = 'any';
   export let connected = false;
   export let outlet = PortOutlet;
+  export let hideName = false;
+  export let showOnHeader = false;
 
   let portEl;
   let connectionCount = 0;
@@ -47,7 +49,7 @@
   onMount(() => {
     portEl.$promaPort = port;
     portEl.remove();
-    chip.addPort(side, portEl);
+    chip.addPort(side, portEl, showOnHeader);
     return () => {
       chip.removePort(side, portEl);
       portEl.style.display = 'none';
@@ -66,7 +68,9 @@
       <svelte:component this={outlet} {type} connected={isConnected} />
     </div>
   {/if}
-  <div class="PortLabel">{name}</div>
+  {#if !hideName}
+    <div class="PortLabel">{name}</div>
+  {/if}
   {#if $$slots.default}
     <div class="PortInput">
       <slot />

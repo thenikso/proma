@@ -21,6 +21,7 @@
   let rawY;
   let inputContainerEl;
   let outputContainerEl;
+  let headerOutputContainerEl;
 
   const board = getBoard();
 
@@ -55,13 +56,17 @@
         y = rawY;
       }
     },
-    addPort(side, portEl) {
+    addPort(side, portEl, showOnHeader) {
       switch (side) {
         case INPUT:
           inputContainerEl.appendChild(portEl);
           break;
         case OUTPUT:
-          outputContainerEl.appendChild(portEl);
+          if (showOnHeader) {
+            headerOutputContainerEl.appendChild(portEl);
+          } else {
+            outputContainerEl.appendChild(portEl);
+          }
           break;
         default:
           throw new Error(`Invalid port side "${side}"`);
@@ -73,6 +78,7 @@
           inputContainerEl.removeChild(portEl);
           break;
         case OUTPUT:
+          headerOutputContainerEl.removeChild(portEl);
           outputContainerEl.removeChild(portEl);
           break;
         default:
@@ -80,16 +86,24 @@
       }
     },
     getPort(side, name) {
+      let portEl;
       switch (side) {
         case INPUT:
-          return inputContainerEl.getElementsByClassName('Port-' + name)[0]
-            .$promaPort;
+          portEl = inputContainerEl.getElementsByClassName('Port-' + name)[0];
+          break;
         case OUTPUT:
-          return outputContainerEl.getElementsByClassName('Port-' + name)[0]
-            .$promaPort;
+          portEl = outputContainerEl.getElementsByClassName('Port-' + name)[0];
+          if (!portEl) {
+            portEl = headerOutputContainerEl.getElementsByClassName(
+              'Port-' + name,
+            )[0];
+          }
+          break;
         default:
           throw new Error(`Invalid port side "${side}"`);
       }
+      if (!portEl) return null;
+      return portEl.$promaPort;
     },
   });
 
@@ -125,6 +139,10 @@
         <div class="title">{title}</div>
         <div class="subtitle" />
       </div>
+      <div
+        class="ChipHeaderPorts ChipOutputPorts"
+        bind:this={headerOutputContainerEl}
+      />
     </div>
     <div class="ChipPorts">
       <div class="ChipInputPorts" bind:this={inputContainerEl} />
@@ -190,7 +208,7 @@
 
   .ChipHeader {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
 
     color: white;
     font-size: 16px;

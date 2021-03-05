@@ -6,8 +6,8 @@
   import WirePath from './WirePath.svelte';
 
   export let zoom = 1;
-  export let minZoom = 0.7;
-  export let maxZoom = 2;
+  export let minZoom = 0.4;
+  export let maxZoom = 1;
   export let snap = 5;
   export let newWirePath = WirePath;
   // IDs of the selected chips. Double-bindable.
