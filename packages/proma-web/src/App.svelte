@@ -11,60 +11,15 @@
   import ChipView from './ChipView.svelte';
   import OutletsView from './OutletsView.svelte';
   import SubChipView from './SubChipView.svelte';
+  import DEFAULT_CHIP from './defaultChip';
 
   //
   // Chip loading
   //
 
   const initChipData = localStorage.getItem('Main');
-  const initChipJson = (initChipData && JSON.parse(initChipData)) || {
-    URI: 'Main',
-    in: [
-      {
-        name: 'target',
-        kind: 'data',
-        canonical: true,
-      },
-    ],
-    chips: [
-      {
-        id: 'OnCreate_1',
-        chipURI: 'OnCreate',
-      },
-      {
-        id: 'lib_debug_Log_1',
-        chipURI: 'lib/debug/Log',
-      },
-    ],
-    connections: [
-      {
-        source: 'lib_debug_Log_1.in.exec',
-        sink: 'OnCreate_1.out.then',
-      },
-      {
-        source: 'in.target',
-        sink: 'lib_debug_Log_1.in.message',
-      },
-    ],
-    metadata: {
-      $in: {
-        x: -400,
-        y: 0,
-      },
-      $out: {
-        x: -400,
-        y: 0,
-      },
-      OnCreate_1: {
-        x: -405,
-        y: -110,
-      },
-      lib_debug_Log_1: {
-        x: -35,
-        y: 90,
-      },
-    },
-  };
+  const initChipJson =
+    (initChipData && JSON.parse(initChipData)) || DEFAULT_CHIP;
 
   // const chipClass = proma.chip('Main', ({ OnCreate }) => {
   //   // const exec = proma.inputFlow('exec');
