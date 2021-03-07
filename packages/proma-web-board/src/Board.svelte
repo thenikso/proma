@@ -174,7 +174,11 @@
     },
     updateWires(limitChip) {
       cancelAnimationFrame(updateWiresTimer);
-      updateWiresLimit = limitChip;
+      if (limitChip) {
+        updateWiresLimit = [...(updateWiresLimit || []), limitChip];
+      } else {
+        updateWiresLimit = null;
+      }
       updateWiresTimer = requestAnimationFrame(updateWiresPoints);
     },
     //
@@ -270,8 +274,8 @@
     for (const wire of wires) {
       if (
         !updateWiresLimit ||
-        wire.inputChip === updateWiresLimit ||
-        wire.outputChip === updateWiresLimit
+        updateWiresLimit.includes(wire.inputChip) ||
+        updateWiresLimit.includes(wire.outputChip)
       ) {
         Object.assign(wire, wirePoints(wire));
       }
