@@ -319,15 +319,31 @@
         {#if innerChip.in.length > 0}
           <Inputs>
             {#each innerChip.in as port}
-              <Port
-                name={port.name}
-                type={getPortType(port)}
-                hideName={shouldHideName(port)}
-              >
-                {#if updatePortsKey && port.isData && !edit.hasConnections(port)}
-                  <PortValueInput {edit} {port} />
-                {/if}
-              </Port>
+              {#if !port.variadic}
+                <Port
+                  name={port.name}
+                  type={getPortType(port)}
+                  hideName={shouldHideName(port)}
+                >
+                  {#if updatePortsKey && port.isData && !edit.hasConnections(port)}
+                    <PortValueInput {edit} {port} />
+                  {/if}
+                </Port>
+              {:else if prepareVariadicPort(port)}
+                {#each variadicPorts[variadicRefName(port)] as variadicPort}
+                  <Port
+                    name={variadicPort.name}
+                    type={getPortType(variadicPort)}
+                  >
+                    {#if updatePortsKey && variadicPort.isData && !edit.hasConnections(variadicPort)}
+                      <PortValueInput {edit} port={variadicPort} />
+                    {/if}
+                  </Port>
+                {/each}
+                <button type="button" on:click={() => addVariadicPort(port)}>
+                  Add
+                </button>
+              {/if}
             {/each}
           </Inputs>
         {/if}

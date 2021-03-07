@@ -18,7 +18,7 @@ export class Port extends Function {
     const self = makePortRun(portInfo);
     Object.setPrototypeOf(self, Port.prototype);
 
-    self.explicitValue = portInfo.isVariadic ? [] : undefined;
+    self.explicitValue = undefined;
 
     info(self, portInfo);
 
@@ -125,11 +125,15 @@ export class Port extends Function {
     }
 
     if (portInfo.isVariadic && typeof variadicIndex === 'undefined') {
+      if (!Array.isArray(self.explicitValue)) {
+        self.explicitValue = [];
+      }
+
       Object.defineProperties(self, {
         variadic: {
           enumerable: true,
           value: makeVariadicAccessors(
-            portInfo,
+            self,
             (index) => new Port(chip, portInfo, index),
           ),
         },
@@ -297,7 +301,8 @@ export class PortOutlet extends Function {
   }
 }
 
-function makeVariadicAccessors(portInfo, makePortAtIndex) {
+function makeVariadicAccessors(ownerPort, makePortAtIndex) {
+  const portInfo = info(ownerPort);
   return new Proxy([], {
     get(target, key) {
       let index = -1;
@@ -319,7 +324,10 @@ function makeVariadicAccessors(portInfo, makePortAtIndex) {
             explicitValue: {
               enumerable: true,
               get: () => {
-                return self.explicitValue[index];
+                return ownerPort.explicitValue[index];
+              },
+              set: (value) => {
+                ownerPort.explicitValue[index] = value;
               },
             },
           });
