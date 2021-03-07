@@ -516,6 +516,13 @@ function makeOutputFlowSinkCompiler(portInfo) {
     // TODO optimize to only do this if neccessary (ie: if the variadic port
     // instance continuation is used in multiple places or in the variadic array)
     if (portInfo.isVariadic) {
+      if (!continuation) {
+        // We default to an empty continuation because we always want to return
+        // a valid function as it's probably used as one. An empty continuation
+        // may happen if there are 3 variadic ports but the middle one is not
+        // connected.
+        continuation = builders.blockStatement([]);
+      }
       return codeWrapper.compileFunctionInlet(portInstance, continuation);
     }
 

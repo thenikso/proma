@@ -224,12 +224,15 @@ describe('[programs/variadic] variadic output flow', async (assert) => {
             console.log("one");
           };
 
+          const test_programs_variadic_SequenceUnrolled_1__then1 = () => {};
+
           const test_programs_variadic_SequenceUnrolled_1__then2 = () => {
             console.log("two");
           };
 
           {
             test_programs_variadic_SequenceUnrolled_1__then0();
+            test_programs_variadic_SequenceUnrolled_1__then1();
             test_programs_variadic_SequenceUnrolled_1__then2();
           }
 
