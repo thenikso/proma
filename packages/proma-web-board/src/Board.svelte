@@ -5,6 +5,8 @@
   import { shortUID } from './lib/utils';
   import WirePath from './WirePath.svelte';
 
+  export let panX = 0;
+  export let panY = 0;
   export let zoom = 1;
   export let minZoom = 0.4;
   export let maxZoom = 1;
@@ -312,8 +314,6 @@
   let boardEl;
   let boardWidth;
   let boardHeight;
-  let panX = 0;
-  let panY = 0;
   let grab = false;
 
   $: style = `

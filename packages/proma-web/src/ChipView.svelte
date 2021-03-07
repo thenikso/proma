@@ -101,6 +101,26 @@
     outputOutlets = stableChip.outputOutlets;
     innerChips = stableChip.chips;
     connections = stableChip.connections;
+
+    if (!stableChip.metadata) {
+      stableChip.metadata = {};
+    }
+    stableChip.metadata = Object.assign(
+      {
+        $: {
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+        },
+        $in: { x: -400, y: 0 },
+        $out: { x: -400, y: 0 },
+        ...Object.fromEntries(
+          chip.chips.map((c, i) => [c.id, { x: 0, y: 100 * i }]),
+        ),
+      },
+      stableChip.metadata,
+    );
+
     if (edit) {
       edit.off();
     }
@@ -133,16 +153,6 @@
   //
   // Medatada
   //
-
-  $: if (!chip.metadata) {
-    chip.metadata = {
-      $in: { x: -400, y: 0 },
-      $out: { x: -400, y: 0 },
-      ...Object.fromEntries(
-        chip.chips.map((c, i) => [c.id, { x: 0, y: 100 * i }]),
-      ),
-    };
-  }
 
   function meta(port) {
     if (!chip.metadata[port.chip.id]) {
@@ -291,6 +301,9 @@
     on:wire:probe={handleWireProbe}
     on:wire:end={handleWireEnd}
     bind:selectedChips={selectedChipIds}
+    bind:panX={chip.metadata.$.panX}
+    bind:panY={chip.metadata.$.panY}
+    bind:zoom={chip.metadata.$.zoom}
   >
     {#if inputOutlets.length > 0}
       <Chip
