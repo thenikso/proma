@@ -154,7 +154,9 @@ export function makePortRun(portInfo, isOutlet) {
         if (port.variadic) {
           const res = [];
           for (const p of port.variadic) {
-            res.push(scope.wrapFunction(p));
+            // Variadic port may be not connected (returning `undefined`) we
+            // provide an empty function in that case
+            res.push(p ? scope.wrapFunction(p) : () => {});
           }
           return res;
         }

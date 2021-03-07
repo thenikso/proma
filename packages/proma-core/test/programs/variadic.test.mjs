@@ -122,7 +122,7 @@ describe('[programs/variadic] variadic input data', async (assert) => {
   // TODO test can not add non-variadic after variadic
 });
 
-describe.only('[programs/variadic] variadic output flow', async (assert) => {
+describe('[programs/variadic] variadic output flow', async (assert) => {
   const Sequence = chip('test/programs/variadic/Sequence', () => {
     const exec = inputFlow('exec', () => {
       for (const t of then()) {
@@ -163,6 +163,74 @@ describe.only('[programs/variadic] variadic output flow', async (assert) => {
             ]) {
               t();
             }
+          }
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
+      ['one', 'two'],
+    ),
+  });
+
+  const SequenceUnrolled = chip(
+    'test/programs/variadic/SequenceUnrolled',
+    () => {
+      const exec = inputFlow('exec', {
+        execute: () => {
+          for (const t of then()) {
+            t();
+          }
+        },
+        executeCompiler: (
+          portInstance,
+          outterScope,
+          codeWrapper,
+          { compile, recast },
+        ) => {
+          const calls = [];
+          for (const p of portInstance.chip.out.then.variadic) {
+            if (p) {
+              calls.push(compile(p, outterScope, codeWrapper));
+            }
+          }
+          return recast.types.builders.blockStatement(
+            calls.map((c) => recast.types.builders.expressionStatement(c)),
+          );
+        },
+      });
+      const then = outputFlow('then', { variadic: 'then{index}' });
+    },
+  );
+
+  assert({
+    given: 'a variadic output flow port with custom executeCompiler',
+    should: 'run all connected outputs in sequence',
+    actual: compileAndRun(({ OnCreate }) => {
+      const onCreate = new OnCreate();
+      const seq = new SequenceUnrolled();
+      const log1 = new Log('one');
+      const log2 = new Log('two');
+      wire(onCreate.out.then, seq.in.exec);
+      wire(seq.out.then2, log2.in.exec);
+      wire(seq.out.then0, log1.in.exec);
+    }),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          const test_programs_variadic_SequenceUnrolled_1__then0 = () => {
+            console.log("one");
+          };
+
+          const test_programs_variadic_SequenceUnrolled_1__then2 = () => {
+            console.log("two");
+          };
+
+          {
+            test_programs_variadic_SequenceUnrolled_1__then0();
+            test_programs_variadic_SequenceUnrolled_1__then2();
           }
 
           Object.defineProperty(this, "destroy", {

@@ -202,6 +202,12 @@ function makeChipInstanceMock(chipInfo) {
 // Compilers
 //
 
+// A series of tools that should be sent to custom compilers (ie: executeCompiler)
+const CUSTOM_COMPILER_TOOLS = {
+  compile,
+  recast,
+};
+
 function compile(port, scope, codeWrapper) {
   return compiler(info(port))(port, scope, codeWrapper);
 }
@@ -457,6 +463,7 @@ function makeOutputFlowSinkCompiler(portInfo) {
             computePortInstance,
             [computePortInstance.chip, ...scope],
             codeWrapper,
+            CUSTOM_COMPILER_TOOLS,
           );
         } else {
           // now we look for the connected input data of the output data port
@@ -539,6 +546,7 @@ function makeInputFlowSourceCompiler(portInfo) {
         portInstance,
         outterScope,
         codeWrapper,
+        CUSTOM_COMPILER_TOOLS,
       );
 
       // If this port is connected multiple times, we want this
@@ -796,6 +804,7 @@ function makeOutputDataSourceCompiler(portInfo) {
       portInstance,
       outterScope,
       codeWrapper,
+      CUSTOM_COMPILER_TOOLS,
     );
 
     // Like in the computedOn connection case above, we assign the value if
