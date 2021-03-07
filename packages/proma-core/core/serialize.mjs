@@ -14,7 +14,8 @@ export function serializeChipInstance(chip) {
   const chipInfo = info(chip);
   let canonicalData = [];
   const initData = {};
-  for (const portInfo of chipInfo.inputDataPorts) {
+  for (const portOutlet of chipInfo.inputDataPorts) {
+    const portInfo = info(portOutlet);
     const portValue = chip.in[portInfo.name].value;
     if (portInfo.canonical) {
       if (portInfo.isVariadic) {

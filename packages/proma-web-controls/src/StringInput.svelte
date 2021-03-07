@@ -75,6 +75,7 @@
     bind:value={internalValue}
     {placeholder}
     on:keydown|stopPropagation={handleKeydown}
+    on:keyup|stopPropagation
     on:blur={handleBlur}
   />
   {#if error}

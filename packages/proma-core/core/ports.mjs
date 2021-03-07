@@ -86,16 +86,18 @@ export class Port extends Function {
       Object.defineProperties(self, {
         defaultValue: {
           enumerable: true,
-          value: isVariadic
-            ? portInfo.defaultValue[variadicIndex]
-            : portInfo.defaultValue,
-        },
-        value: {
-          enumerable: true,
-          get: () => {
-            return self.explicitValue || self.defaultValue;
+          get() {
+            return isVariadic
+              ? portInfo.defaultValue[variadicIndex]
+              : portInfo.defaultValue;
           },
         },
+        // value: {
+        //   enumerable: true,
+        //   get: () => {
+        //     return self.explicitValue || self.defaultValue;
+        //   },
+        // },
         //
         isCanonical: {
           enumerable: true,
@@ -141,6 +143,10 @@ export class Port extends Function {
     }
 
     return self;
+  }
+
+  get value() {
+    return this.explicitValue || this.defaultValue;
   }
 
   toJSON() {

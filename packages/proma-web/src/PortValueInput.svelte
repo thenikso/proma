@@ -4,6 +4,10 @@
   export let edit;
   export let port;
 
+  $: if (port.name === 'A') {
+    console.log(port.fullName, port.explicitValue);
+  }
+
   // TODO switch input based on port type
 
   function handleInput({ detail }) {
