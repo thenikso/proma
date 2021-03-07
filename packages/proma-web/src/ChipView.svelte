@@ -276,7 +276,7 @@
                 type={getPortType(port)}
                 hideName={shouldHideName(port)}
               >
-                {#if updatePortsKey && port.isData && port.type && !edit.hasConnections(port)}
+                {#if updatePortsKey && port.isData && !edit.hasConnections(port)}
                   <PortValueInput {edit} {port} />
                 {/if}
               </Port>

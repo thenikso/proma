@@ -30,6 +30,7 @@ export function makePortRun(portInfo, isOutlet) {
           return chip.in[portInfo.name]();
         }
 
+        // Variadic
         if (port.variadic) {
           const res = port.value.slice();
           Array.from(port.variadic).forEach((p, i) => {
@@ -147,6 +148,15 @@ export function makePortRun(portInfo, isOutlet) {
           const chip = scope.chip;
           assertInfo(chip, portInfo.chipInfo);
           return chip.out[portInfo.name]();
+        }
+
+        // Variadic
+        if (port.variadic) {
+          const res = [];
+          for (const p of port.variadic) {
+            res.push(scope.wrapFunction(p));
+          }
+          return res;
         }
 
         // ComputeOn

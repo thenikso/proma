@@ -326,8 +326,8 @@ export class ChipInfo {
 
   // Sinks
 
-  addOutputFlowPort(name) {
-    const portInfo = new OutputFlowSinkPortInfo(this, name);
+  addOutputFlowPort(name, config) {
+    const portInfo = new OutputFlowSinkPortInfo(this, name, config);
     portInfo.assertValidName(name, OUTPUT);
     const portOutlet = new PortOutlet(portInfo);
     this.outputs.push(portOutlet);

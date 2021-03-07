@@ -401,6 +401,27 @@ function makeOutputFlowSinkCompiler(portInfo) {
     const parentChip = scope[0];
     assert(parentChip, `Port "${portInstance.fullName}" should be an outlet`);
 
+    // Special case for variadic output flow inlets.
+    // First we check if the public port has variadic instances. That is, we do
+    // not check if `portInfo.isVariadic` as that `portInfo` is going to be
+    // the same for variadic instances; those should not be considered variadic
+    // themeself though.
+    // We then compile all variadic instances
+    if (portInstance.variadic) {
+      const variadicFuncIdents = [];
+      for (const vPort of portInstance.variadic) {
+        // These will return function calls (see below where we check for
+        // `portInfo.isVariadic`). We assert for that and extract the function
+        // identifier.
+        let vFuncIdent = compile(vPort, [chip, ...scope], codeWrapper);
+        namedTypes.CallExpression.assert(vFuncIdent);
+        vFuncIdent = vFuncIdent.callee;
+        variadicFuncIdents.push(vFuncIdent);
+      }
+      // TODO store this into a `const`?
+      return builders.arrayExpression(variadicFuncIdents);
+    }
+
     const conns = info(parentChip).getConnectedPorts(portInstance, parentChip);
     assert(conns.length <= 1, 'An output flow can only have one connection');
     const conn = conns[0];
@@ -475,7 +496,20 @@ function makeOutputFlowSinkCompiler(portInfo) {
           continuationSequence.push(continuation);
         }
       }
-      return builders.blockStatement(continuationSequence);
+      continuation = builders.blockStatement(continuationSequence);
+    }
+
+    // We have our continuation code but there is one last thing. If the port is
+    // a variadic instance (but not the variadic port itself as that is handled
+    // above by checking for `portInstance.variadic`) we want to return the
+    // continuation as a function call.
+    // This is because a variadic port instance could be used directly or in
+    // an array of all other variadic instances. We then want to always return
+    // a function even if there is no continuation.
+    // TODO optimize to only do this if neccessary (ie: if the variadic port
+    // instance continuation is used in multiple places or in the variadic array)
+    if (portInfo.isVariadic) {
+      return codeWrapper.compileFunctionInlet(portInstance, continuation);
     }
 
     return continuation;

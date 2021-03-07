@@ -43,9 +43,9 @@ export function inputData(name, config) {
   return chipInfo.addInputDataPort(name, config);
 }
 
-export function outputFlow(name) {
+export function outputFlow(name, config) {
   const chipInfo = context(ChipInfo);
-  return chipInfo.addOutputFlowPort(name);
+  return chipInfo.addOutputFlowPort(name, config);
 }
 
 export function outputData(name, config) {

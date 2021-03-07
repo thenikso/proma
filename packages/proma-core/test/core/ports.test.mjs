@@ -132,3 +132,5 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
     ),
   });
 });
+
+// TODO variadic check that is the last port (also for outputs)

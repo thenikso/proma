@@ -406,6 +406,46 @@ export class PortInfo {
   }
 }
 
+export class VariadicPortInfo extends PortInfo {
+  constructor(chipInfo, name, variadic) {
+    super(chipInfo, name);
+
+    // Variadic port
+    if (typeof variadic === 'string') {
+      if (
+        typeof variadic !== 'string' ||
+        variadic.search(/{index|letter}/) === -1
+      ) {
+        throw new Error(
+          'Invalid variadic name. Must include {index} and/or {letter}',
+        );
+      }
+      this.variadic = variadicStringNameToFunc(variadic);
+    } else {
+      this.variadic = variadic || false;
+    }
+  }
+
+  get isVariadic() {
+    return !!this.variadic;
+  }
+
+  hasName(name) {
+    if (this.isVariadic && this.variadic(undefined, name) >= 0) {
+      return true;
+    }
+    return super.hasName(name);
+  }
+
+  variadicName(index) {
+    return this.variadic(index);
+  }
+
+  variadicIndex(name) {
+    return this.variadic(undefined, name);
+  }
+}
+
 //
 // Sources
 //
@@ -537,9 +577,9 @@ export class OutputDataSourcePortInfo extends PortInfo {
 // Sinks
 //
 
-export class InputDataSinkPortInfo extends PortInfo {
+export class InputDataSinkPortInfo extends VariadicPortInfo {
   constructor(chipInfo, name, config = {}) {
-    super(chipInfo, name);
+    super(chipInfo, name, config.variadic);
 
     if (config === true) {
       config = {
@@ -571,21 +611,8 @@ export class InputDataSinkPortInfo extends PortInfo {
     this.type = config.type;
 
     // Variadic port
-    if (typeof config.variadic === 'string') {
-      if (
-        typeof config.variadic !== 'string' ||
-        config.variadic.search(/{index|letter}/) === -1
-      ) {
-        throw new Error(
-          'Invalid variadic name. Must include {index} and/or {letter}',
-        );
-      }
-      this.variadic = variadicStringNameToFunc(config.variadic);
-      if (!Array.isArray(this.defaultValue)) {
-        this.defaultValue = [];
-      }
-    } else {
-      this.variadic = config.variadic || false;
+    if (this.isVariadic && !Array.isArray(this.defaultValue)) {
+      this.defaultValue = [];
     }
   }
 
@@ -597,31 +624,12 @@ export class InputDataSinkPortInfo extends PortInfo {
     return this.canonical === 'required';
   }
 
-  get isVariadic() {
-    return !!this.variadic;
-  }
-
   get isConceiled() {
     return !!this.conceiled;
   }
 
   get isHidden() {
     return this.conceiled === 'hidden';
-  }
-
-  hasName(name) {
-    if (this.isVariadic && this.variadic(undefined, name) >= 0) {
-      return true;
-    }
-    return super.hasName(name);
-  }
-
-  variadicName(index) {
-    return this.variadic(index);
-  }
-
-  variadicIndex(name) {
-    return this.variadic(undefined, name);
   }
 
   get isInput() {
@@ -641,9 +649,9 @@ export class InputDataSinkPortInfo extends PortInfo {
   }
 }
 
-export class OutputFlowSinkPortInfo extends PortInfo {
-  constructor(chipInfo, name) {
-    super(chipInfo, name);
+export class OutputFlowSinkPortInfo extends VariadicPortInfo {
+  constructor(chipInfo, name, config = {}) {
+    super(chipInfo, name, config.variadic);
 
     this.compiler = undefined;
     this.computeOutputs = new Set();
