@@ -53,9 +53,10 @@ export function createShortcutDispatcher(targetSelectors, localShortcuts) {
 
   let resolvedLocalShortcuts = [];
 
-  function dispatch(event) {
+  function dispatch(event, options) {
     return dispatchShortcuts(
       event,
+      options,
       targetPathResolvers,
       resolvedLocalShortcuts,
     );
@@ -82,7 +83,12 @@ export function createShortcutDispatcher(targetSelectors, localShortcuts) {
   return dispatch;
 }
 
-function dispatchShortcuts(event, targetPathResolvers, localShortcuts) {
+function dispatchShortcuts(
+  event,
+  options,
+  targetPathResolvers,
+  localShortcuts,
+) {
   // Match event
   let localMatches = [];
   if (localShortcuts) {
@@ -94,6 +100,16 @@ function dispatchShortcuts(event, targetPathResolvers, localShortcuts) {
       matchEvent(event),
     );
   }
+  // Check for capture shortcuts
+  if (options && typeof options.capture === 'boolean') {
+    localMatches = localMatches.filter(
+      ({ capture }) => capture === options.capture,
+    );
+    globalMatches = globalMatches.filter(
+      ({ capture }) => capture === options.capture,
+    );
+  }
+  // Early exit if there are no matches
   if (localMatches.length === 0 && globalMatches.length === 0) return;
   // Prepare event path (for firefox)
   if (!event.path) {
@@ -236,7 +252,7 @@ function makeTargetMatcher(targetsString) {
 // Shortcut resolution
 //
 
-const shortcutRegExp = /^(?:\[(.+)\])?\s*(.+)$/;
+const shortcutRegExp = /^(!)?(?:\[(.+)\])?\s*(.+)$/;
 
 // Translate an object like:
 //     { '[traget:subTarget] cmd+C': 'my.action' }
@@ -249,7 +265,8 @@ export function resolveShortcuts(shortcuts = {}) {
 }
 
 function resolveSingleShortcut(shortcut, action) {
-  const [, targetString, eventsString] = shortcutRegExp.exec(shortcut) || [];
+  const [, capturing, targetString, eventsString] =
+    shortcutRegExp.exec(shortcut) || [];
   if (!eventsString) {
     console.warn(`Invalid shortcut "${shortcut}"`);
     return null;
@@ -257,7 +274,7 @@ function resolveSingleShortcut(shortcut, action) {
   const targets = (targetString && targetString.trim()) || '*';
   const matchEvent = makeShortcutMatcher(eventsString);
   const matchTarget = makeTargetMatcher(targets);
-  return { shortcut, matchTarget, matchEvent, action };
+  return { shortcut, matchTarget, matchEvent, action, capture: !!capturing };
 }
 
 // Transform an event matcher string like "alt+click" (or series of events like

@@ -58,20 +58,33 @@
     '[MainBoard:port] alt+click',
     action('ChipView.removeConnection'),
   );
-  shortcuts.set('cmd+S', handleSave);
+  shortcuts.set('!cmd+S', handleSave);
 
   const dispatchShortcuts = createShortcutDispatcher();
 
   onMount(() => {
     const preventDefaultShortcuts = (e) => {
-      if (dispatchShortcuts(e)) {
+      if (dispatchShortcuts(e, { capture: false })) {
         e.preventDefault();
         e.stopPropagation();
       }
     };
+    const preventDefaultShortcutsCaptured = (e) => {
+      if (dispatchShortcuts(e, { capture: true })) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    document.addEventListener('keydown', preventDefaultShortcutsCaptured, true);
     document.addEventListener('keydown', preventDefaultShortcuts);
 
     return () => {
+      document.removeEventListener(
+        'keyup',
+        preventDefaultShortcutsCaptured,
+        true,
+      );
       document.removeEventListener('keyup', preventDefaultShortcuts);
     };
   });
