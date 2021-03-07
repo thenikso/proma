@@ -80,11 +80,16 @@
     removePort(side, portEl) {
       switch (side) {
         case INPUT:
-          inputContainerEl.removeChild(portEl);
+          if (portEl.parentElement === inputContainerEl) {
+            inputContainerEl.removeChild(portEl);
+          }
           break;
         case OUTPUT:
-          headerOutputContainerEl.removeChild(portEl);
-          outputContainerEl.removeChild(portEl);
+          if (portEl.parentElement === headerOutputContainerEl) {
+            headerOutputContainerEl.removeChild(portEl);
+          } else if (portEl.parentElement === outputContainerEl) {
+            outputContainerEl.removeChild(portEl);
+          }
           break;
         default:
           throw new Error(`Invalid port side "${side}"`);
