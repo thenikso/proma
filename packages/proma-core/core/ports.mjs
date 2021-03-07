@@ -125,10 +125,15 @@ export class Port extends Function {
     }
 
     if (portInfo.isVariadic && typeof variadicIndex === 'undefined') {
-      self.variadic = makeVariadicAccessors(
-        portInfo,
-        (index) => new Port(chip, portInfo, index),
-      );
+      Object.defineProperties(self, {
+        variadic: {
+          enumerable: true,
+          value: makeVariadicAccessors(
+            portInfo,
+            (index) => new Port(chip, portInfo, index),
+          ),
+        },
+      });
     }
 
     return self;
@@ -288,13 +293,6 @@ export class PortOutlet extends Function {
       }
     }
 
-    if (portInfo.isVariadic && typeof variadicIndex === 'undefined') {
-      outlet.variadic = makeVariadicAccessors(
-        portInfo,
-        (index) => new PortOutlet(portInfo, index),
-      );
-    }
-
     return outlet;
   }
 }
@@ -302,26 +300,30 @@ export class PortOutlet extends Function {
 function makeVariadicAccessors(portInfo, makePortAtIndex) {
   return new Proxy([], {
     get(target, key) {
+      let index = -1;
       if (typeof key === 'string') {
-        const index = portInfo.variadicIndex(key);
-        if (index >= 0) {
-          key = index;
-          if (typeof target[key] === 'undefined') {
-            const variadicPort = makePortAtIndex(index);
-            Object.defineProperties(variadicPort, {
-              variadicIndex: {
-                enumerable: true,
-                value: index,
+        index = parseInt(key);
+        if (isNaN(index)) {
+          index = portInfo.variadicIndex(key);
+        }
+      }
+      if (index >= 0) {
+        key = index;
+        if (typeof target[key] === 'undefined') {
+          const variadicPort = makePortAtIndex(index);
+          Object.defineProperties(variadicPort, {
+            variadicIndex: {
+              enumerable: true,
+              value: index,
+            },
+            explicitValue: {
+              enumerable: true,
+              get: () => {
+                return self.explicitValue[index];
               },
-              explicitValue: {
-                enumerable: true,
-                get: () => {
-                  return self.explicitValue[index];
-                },
-              },
-            });
-            target[key] = variadicPort;
-          }
+            },
+          });
+          target[key] = variadicPort;
         }
       }
       return Reflect.get(target, key);

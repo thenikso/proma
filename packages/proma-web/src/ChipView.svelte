@@ -144,7 +144,53 @@
     };
   }
 
-  // $: console.log(chip.toJSON());
+  function meta(port) {
+    if (!chip.metadata[port.chip.id]) {
+      chip.metadata[port.chip.id] = {};
+    }
+    return chip.metadata[port.chip.id];
+  }
+
+  //
+  // Variadic ports
+  //
+
+  const variadicPorts = {};
+
+  function variadicRefName(port) {
+    return `${port.chip.id}__${metaVariadicSizeName(port)}`;
+  }
+
+  function metaVariadicSizeName(port) {
+    return `${port.isInput ? 'in' : 'out'}_${port.name}_variadicSize`;
+  }
+
+  function getPortVariadicSize(port) {
+    const variadicSize = metaVariadicSizeName(port);
+    if (!meta(port)[variadicSize]) {
+      meta(port)[variadicSize] = 2;
+    }
+    return Math.max(port.variadic.length, meta(port)[variadicSize], 2);
+  }
+
+  function prepareVariadicPort(port) {
+    const variadicSize = getPortVariadicSize(port);
+    for (let i = 0, l = getPortVariadicSize(port); i < l; i++) {
+      // Accessing the variadic index will create the port, increasing the length
+      // of `variadic` array
+      port.variadic[i];
+    }
+    variadicPorts[variadicRefName(port)] = Array.from(port.variadic);
+    return port;
+  }
+
+  function addVariadicPort(port) {
+    const variadicSize = metaVariadicSizeName(port);
+    const size = meta(port)[variadicSize];
+    meta(port)[variadicSize] = size + 1;
+    port.variadic[size];
+    variadicPorts[variadicRefName(port)] = Array.from(port.variadic);
+  }
 
   //
   // Event handlers
@@ -231,7 +277,9 @@
   }
 
   function shouldHideName(port) {
-    return port.isFlow ? port.name === 'exec' || port.name === 'then' : port.name === 'handle';
+    return port.isFlow
+      ? port.name === 'exec' || port.name === 'then'
+      : port.name === 'handle';
   }
 </script>
 
@@ -286,12 +334,24 @@
         {#if innerChip.out.length > 0}
           <Outputs>
             {#each innerChip.out as port}
-              <Port
-                name={port.name}
-                type={getPortType(port)}
-                hideName={shouldHideName(port)}
-                showOnHeader={port.name === 'handle'}
-              />
+              {#if !port.variadic}
+                <Port
+                  name={port.name}
+                  type={getPortType(port)}
+                  hideName={shouldHideName(port)}
+                  showOnHeader={port.name === 'handle'}
+                />
+              {:else if prepareVariadicPort(port)}
+                {#each variadicPorts[variadicRefName(port)] as variadicPort}
+                  <Port
+                    name={variadicPort.name}
+                    type={getPortType(variadicPort)}
+                  />
+                {/each}
+                <button type="button" on:click={() => addVariadicPort(port)}>
+                  Add
+                </button>
+              {/if}
             {/each}
           </Outputs>
         {/if}

@@ -23,6 +23,11 @@
   let outputContainerEl;
   let headerOutputContainerEl;
 
+  let inputExtrasContainerEl;
+  let outputExtrasContainerEl;
+  let inputExtrasEls = [];
+  let outputExtrasEls = [];
+
   const board = getBoard();
 
   const chip = setChip({
@@ -105,6 +110,45 @@
       if (!portEl) return null;
       return portEl.$promaPort;
     },
+
+    // Port extras
+    addPortExtras(side, el) {
+      switch (side) {
+        case INPUT:
+          inputExtrasEls = [...inputExtrasEls, el];
+          break;
+        case OUTPUT:
+          outputExtrasEls = [...outputExtrasEls, el];
+          break;
+        default:
+          throw new Error(`Invalid side "${side}"`);
+      }
+    },
+    removePortExtras(side, el) {
+      let index;
+      switch (side) {
+        case INPUT:
+          index = inputExtrasEls.indexOf(el);
+          if (index >= 0) {
+            inputExtrasEls = [
+              ...inputExtrasEls.slice(0, index),
+              ...inputExtrasEls.slice(index + 1),
+            ];
+          }
+          break;
+        case OUTPUT:
+          index = outputExtrasEls.indexOf(el);
+          if (index >= 0) {
+            outputExtrasEls = [
+              ...outputExtrasEls.slice(0, index),
+              ...outputExtrasEls.slice(index + 1),
+            ];
+          }
+          break;
+        default:
+          throw new Error(`Invalid side "${side}"`);
+      }
+    },
   });
 
   onMount(() => {
@@ -121,6 +165,24 @@
     board.deselectChip(chip);
     rawX = 0;
     rawY = 0;
+  }
+
+  $: hasPortExtras = inputExtrasEls.length > 0 || outputExtrasEls.length > 0;
+  $: syncChildrens(inputExtrasContainerEl, inputExtrasEls);
+  $: syncChildrens(outputExtrasContainerEl, outputExtrasEls);
+
+  function syncChildrens(container, els) {
+    if (!container) return;
+    const children = Array.from(container.children);
+    for (const el of children) {
+      if (!els.includes(el)) el.remove();
+    }
+    let ref = null;
+    for (const el of els) {
+      if (children.includes(el)) continue;
+      container.insertBefore(el, ref);
+      ref = el;
+    }
   }
 </script>
 
@@ -148,6 +210,12 @@
       <div class="ChipInputPorts" bind:this={inputContainerEl} />
       <div class="ChipOutputPorts" bind:this={outputContainerEl} />
     </div>
+    {#if hasPortExtras}
+      <div class="ChipPorts ChpPortsExtras">
+        <div class="ChipInputPorts" bind:this={inputExtrasContainerEl} />
+        <div class="ChipOutputPorts" bind:this={outputExtrasContainerEl} />
+      </div>
+    {/if}
     <div class="ChipExtra">
       <slot />
     </div>
