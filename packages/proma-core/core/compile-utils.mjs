@@ -79,9 +79,9 @@ export function replaceAstPath(obj, path, value) {
 export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   const chipInfo = portInfo.chipInfo;
 
-  const replaceInputData = {};
-  const replaceOutputFlows = {};
-  const replaceOutputData = {};
+  const replaceInputData = [];
+  const replaceOutputFlows = [];
+  const replaceOutputData = [];
 
   const getAst = () =>
     getFunctionBody(parse(String(portInfo[sourceProp])).program.body[0]);
@@ -98,9 +98,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
           if (info(sourcePortOutlet).isFlow) {
             throw new Error('Can not execute input flows!');
           }
-          replaceInputData[portName] = {
+          replaceInputData.push({
+            portName,
             path: pathFromNodePath(path),
-          };
+          });
           return false;
         }
         // Collect output flows and data
@@ -111,18 +112,20 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
           // Output flows
           if (info(sourcePortOutlet).isFlow) {
             // TODO check that it is used as a continuation, not an expression
-            replaceOutputFlows[portName] = {
+            replaceOutputFlows.push({
+              portName,
               path: pathFromNodePath(path),
-            };
+            });
             return false;
           }
           // Output data, this is a case like `output(input() + 1)`
           // if there is no argument, the output data port is being used badly
           const pathArray = pathFromNodePath(path);
-          replaceOutputData[portName] = {
+          replaceOutputData.push({
+            portName,
             path: pathArray,
             argPath: [...pathArray, 'arguments', 0],
-          };
+          });
           return false;
         }
       }
@@ -137,20 +140,17 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   }) {
     let ast = getAst();
 
-    for (const portName in replaceInputData) {
-      const { path } = replaceInputData[portName];
+    for (const { portName, path } of replaceInputData) {
       const res = compileInputData(portName) || builders.noop();
       ast = replaceAstPath(ast, path, res);
     }
 
-    for (const portName in replaceOutputFlows) {
-      const { path } = replaceOutputFlows[portName];
+    for (const { portName, path } of replaceOutputFlows) {
       const res = compileOutputFlow(portName) || builders.noop();
       ast = replaceAstPath(ast, path, res);
     }
 
-    for (const portName in replaceOutputData) {
-      let { path, argPath } = replaceOutputData[portName];
+    for (let { portName, path, argPath } of replaceOutputData) {
       const block = getPath(ast, argPath);
       let res = compileOutputData(portName, block) || builders.noop();
       if (namedTypes.BlockStatement.check(res)) {
