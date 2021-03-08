@@ -1,5 +1,6 @@
 import { context, info, assertInfo, assert } from './utils.mjs';
 import { ExternalReference } from './external.mjs';
+import recast from '../vendor/recast.mjs';
 
 export function runFlowPorts(ownerChip, selectPortsToRun) {
   const scope = Scope.current;
@@ -72,7 +73,10 @@ export function makePortRun(portInfo, isOutlet) {
 
         // Execute this input flow
         if (portInfo.execute) {
-          scope.with(port.chip, portInfo.execute);
+          if (!port.$runExecute) {
+            port.$runExecute = prepareFunctionToRun(port, portInfo.execute);
+          }
+          scope.with(port.chip, port.$runExecute);
           return;
         }
 
@@ -97,34 +101,34 @@ export function makePortRun(portInfo, isOutlet) {
         // Assign value to this output port
         if (typeof assignValue !== 'undefined') {
           checkValueType(port, assignValue);
-          port.runValue = assignValue;
+          port.$runValue = assignValue;
           return;
         }
 
         // A trick to only compute this port when computeOn is active if the
-        // `runValue` is set to one of the PortInfo computing this port
+        // `$runValue` is set to one of the PortInfo computing this port
         // That is set in `outputFlowPort`.
         if (
           portInfo.computeOn &&
           portInfo.computeOn.length > 0 &&
-          !portInfo.computeOn.includes(port.runValue)
+          !portInfo.computeOn.includes(port.$runValue)
         ) {
-          return port.runValue;
+          return port.$runValue;
         }
 
         // Computed output
         if (portInfo.compute) {
           if (
             portInfo.inline === 'once' &&
-            typeof port.runValue !== 'undefined'
+            typeof port.$runValue !== 'undefined'
           ) {
-            return port.runValue;
+            return port.$runValue;
           }
           const computed = scope.with(port.chip, portInfo.compute);
           // Cache "once" inlined outputs
           if (portInfo.inline === 'once') {
             checkValueType(port, computed);
-            port.runValue = computed;
+            port.$runValue = computed;
           }
           return computed;
         }
@@ -138,7 +142,7 @@ export function makePortRun(portInfo, isOutlet) {
         }
 
         // Value
-        return port.runValue;
+        return port.$runValue;
       };
     } else {
       port = function outputFlowPort(assignCont) {
@@ -167,8 +171,8 @@ export function makePortRun(portInfo, isOutlet) {
             (p) => p.name,
           )) {
             const outPort = port.chip.out[name];
-            outPort.runValue = portInfo;
-            outPort.runValue = outPort();
+            outPort.$runValue = portInfo;
+            outPort.$runValue = outPort();
           }
         }
 
@@ -183,13 +187,13 @@ export function makePortRun(portInfo, isOutlet) {
 
         // If assigning a continuation, save it in the port explicit value
         if (typeof assignCont !== 'undefined') {
-          port.runValue = assignCont;
+          port.$runValue = assignCont;
           return;
         }
 
         // If there is a custom continuation, execute it
-        if (typeof port.runValue === 'function') {
-          return port.runValue();
+        if (typeof port.$runValue === 'function') {
+          return port.$runValue();
         }
       };
     }
@@ -281,9 +285,6 @@ class Scope {
     const scope = this.clone();
     return function scopeWrapped(...args) {
       context.push(scope);
-      // TODO if there are callbacks, this is not enought. probably we want
-      // to re-compile the function that should not get stuff from outside
-      // anyway
       const res = func(...args);
       context.pop();
       return res;
@@ -297,4 +298,66 @@ function checkValueType(port, value) {
       `Invalid value type for port ${port.fullName}, expected type: ${port.type.signature}, got value: ${value}`,
     );
   }
+}
+
+const {
+  parse,
+  visit,
+  print,
+  types: { namedTypes },
+} = recast;
+
+// Similar to what we do in `compile-utils` we need to visit all the calls
+// to gather which ports are used (in order to reconstruct the function passing
+// port references). Transform all inner function declarations to their wrapped
+// version using `scope.wrapFunction(f);`.
+// This enables using ports in callbacks or async functions.
+function prepareFunctionToRun(port, func) {
+  let funcAst = parse(String(func)).program.body[0];
+  if (
+    namedTypes.ExpressionStatement.check(funcAst) &&
+    namedTypes.ArrowFunctionExpression.check(funcAst.expression)
+  ) {
+    funcAst = funcAst.expression;
+  }
+
+  const chip = port.chip;
+  const scope = Scope.current;
+  const usedInPorts = {};
+  const usedOutPorts = {};
+
+  visit(funcAst.body, {
+    visitCallExpression(path) {
+      const callee = path.value.callee;
+      if (namedTypes.Identifier.check(callee)) {
+        const portName = callee.name;
+        const inPort = chip.in[portName];
+        if (inPort && !usedInPorts[portName]) {
+          usedInPorts[portName] = scope.wrapFunction(inPort);
+        }
+
+        const outPort = chip.out[portName];
+        if (outPort && !usedOutPorts[portName]) {
+          usedOutPorts[portName] = scope.wrapFunction(outPort);
+        }
+
+        // TODO throw? actually it may be a locally defined func
+      }
+      this.traverse(path);
+    },
+  });
+
+  const usedPorts = [
+    ...Object.entries(usedInPorts),
+    ...Object.entries(usedOutPorts),
+  ];
+  const usedPortsNames = usedPorts.map(([name]) => name);
+  const usedPortsFuncs = usedPorts.map(([, f]) => f);
+
+  const makeFunc = new Function(
+    ...usedPortsNames,
+    `return (${print(funcAst).code})`,
+  );
+
+  return makeFunc(...usedPortsFuncs);
 }
