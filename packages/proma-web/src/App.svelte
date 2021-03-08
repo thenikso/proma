@@ -133,7 +133,7 @@
     const { chips, outlets } = e.detail;
     selectedSubChipId =
       chips.length === 1 && outlets.length === 0 ? chips[0] : null;
-    selectedOutlets = chips.length === 0;
+    selectedOutlets = chips.length === 0 && outlets.length > 0;
   }
 
   function handleSave() {

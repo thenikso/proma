@@ -435,7 +435,10 @@
       },
       '[board] mouseleave': boardMouseLeaveAction,
       '[board] mousewheel': ({ sourceEvent }) => {
-        if (sourceEvent.ctrlKey) {
+        const isTouchPad = sourceEvent.wheelDeltaY
+          ? sourceEvent.wheelDeltaY === -3 * sourceEvent.deltaY
+          : sourceEvent.deltaMode === 0;
+        if (!isTouchPad || sourceEvent.ctrlKey) {
           const prevZoom = zoomRaw;
           const delta = sourceEvent.deltaY * 2;
           zoomRaw -= delta / 100;
