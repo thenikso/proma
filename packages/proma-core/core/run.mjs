@@ -281,6 +281,9 @@ class Scope {
     const scope = this.clone();
     return function scopeWrapped(...args) {
       context.push(scope);
+      // TODO if there are callbacks, this is not enought. probably we want
+      // to re-compile the function that should not get stuff from outside
+      // anyway
       const res = func(...args);
       context.pop();
       return res;

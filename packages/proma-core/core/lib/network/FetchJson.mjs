@@ -8,19 +8,17 @@ export default function install({
 }) {
   return registry.add(
     chip('lib/network/FetchJson', () => {
-      const exec = inputFlow('exec', () => {
-        fetch(url())
-          .then((res) => res.json())
-          .then((res) => {
-            json(res);
-            error(null);
-            then();
-          })
-          .catch((e) => {
-            json(null);
-            error(e);
-            then();
-          });
+      const exec = inputFlow('exec', async () => {
+        try {
+          const res = await fetch(url());
+          const data = await res.json();
+          json(data);
+          error(null);
+        } catch (e) {
+          json(null);
+          error(e);
+        }
+        then();
       });
       const url = inputData('url', { canonical: true, type: 'String' });
 

@@ -134,11 +134,11 @@ export default class ClassWrapper {
       );
       inletUse = callExpression(inletIdenfitier, []);
       if (funcBlock) {
+        if (!namedTypes.ArrowFunctionExpression.check(funcBlock)) {
+          funcBlock = arrowFunctionExpression([], funcBlock);
+        }
         const declaration = variableDeclaration('const', [
-          variableDeclarator(
-            inletIdenfitier,
-            arrowFunctionExpression([], funcBlock),
-          ),
+          variableDeclarator(inletIdenfitier, funcBlock),
         ]);
         this.inletsByPort.set(port, {
           use: inletUse,

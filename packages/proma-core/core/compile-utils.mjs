@@ -29,14 +29,14 @@ export function literalCompiler(value) {
   }
 }
 
-export function getFunctionBody(funcAst) {
+export function getFunction(funcAst) {
   if (namedTypes.FunctionDeclaration.check(funcAst)) {
-    return funcAst.body;
+    return funcAst;
   } else if (
     namedTypes.ExpressionStatement.check(funcAst) &&
     namedTypes.ArrowFunctionExpression.check(funcAst.expression)
   ) {
-    return funcAst.expression.body;
+    return funcAst.expression;
   }
   return null;
 }
@@ -83,10 +83,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   const replaceOutputFlows = [];
   const replaceOutputData = [];
 
-  const getAst = () =>
-    getFunctionBody(parse(String(portInfo[sourceProp])).program.body[0]);
+  const func = getFunction(parse(String(portInfo[sourceProp])).program.body[0]);
+  const async = func.async;
 
-  visit(getAst(), {
+  visit(func.body, {
     visitCallExpression(path) {
       const callee = path.value.callee;
       if (namedTypes.Identifier.check(callee)) {
@@ -133,6 +133,9 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
     },
   });
 
+  const getAst = () =>
+    getFunction(parse(String(portInfo[sourceProp])).program.body[0]).body;
+
   return function astBuilder({
     compileInputData,
     compileOutputFlow,
@@ -168,7 +171,12 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
       ast = replaceAstPath(ast, path, res);
     }
 
-    return cleanAst(ast);
+    ast = cleanAst(ast);
+    if (async) {
+      ast = builders.arrowFunctionExpression([], ast);
+      ast.async = true;
+    }
+    return ast;
   };
 }
 
