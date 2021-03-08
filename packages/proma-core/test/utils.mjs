@@ -69,11 +69,41 @@ export function compileAndRun(build, run, initData, externalContext) {
   if (typeof run === 'function') {
     console.log = (msg) => liveLogs.push(msg);
     live = run(c, liveLogs);
-    console.log = (msg) => compLogs.push(msg);
-    comp = cComp ? run(cComp, compLogs) : undefined;
+    const runComp = () => {
+      console.log = (msg) => compLogs.push(msg);
+      comp = cComp ? run(cComp, compLogs) : undefined;
+    };
+    if (live instanceof Promise) {
+      live = live
+        .catch((e) => e)
+        .then((l) => {
+          runComp();
+          return l;
+        });
+    } else {
+      runComp();
+    }
   } else {
     live = liveLogs;
     comp = cComp ? compLogs : undefined;
+  }
+  // Return async results
+  if (live instanceof Promise || comp instanceof Promise) {
+    return Promise.race([
+      timeout(5000),
+      Promise.resolve(live).then((l) =>
+        Promise.resolve(comp).then((c) => [l, c]),
+      ),
+    ])
+      .then(([l, c]) => ({
+        code: error || code,
+        live: l,
+        comp: c,
+      }))
+      .finally((d) => {
+        console.log = originalLog;
+        return d;
+      });
   }
   // Cleanup
   console.log = originalLog;
@@ -107,6 +137,12 @@ export function js(strings, ...data) {
     res += String(data[i]) + strings[i + 1];
   }
   return dedent(res);
+}
+
+function timeout(time) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => reject(new Error(`timed out (${time / 1000}s)`)), time);
+  });
 }
 
 // https://github.com/dmnd/dedent

@@ -304,7 +304,7 @@ const {
   parse,
   visit,
   print,
-  types: { namedTypes },
+  types: { namedTypes, builders },
 } = recast;
 
 // Similar to what we do in `compile-utils` we need to visit all the calls
@@ -322,23 +322,23 @@ function prepareFunctionToRun(port, func) {
   }
 
   const chip = port.chip;
-  const scope = Scope.current;
   const usedInPorts = {};
   const usedOutPorts = {};
 
   visit(funcAst.body, {
-    visitCallExpression(path) {
-      const callee = path.value.callee;
-      if (namedTypes.Identifier.check(callee)) {
-        const portName = callee.name;
+    visitIdentifier(path) {
+      if (namedTypes.CallExpression.check(path.parentPath.value)) {
+        const portName = path.value.name;
         const inPort = chip.in[portName];
-        if (inPort && !usedInPorts[portName]) {
-          usedInPorts[portName] = scope.wrapFunction(inPort);
+        if (inPort) {
+          usedInPorts[portName] = inPort;
+          return false;
         }
 
         const outPort = chip.out[portName];
         if (outPort && !usedOutPorts[portName]) {
-          usedOutPorts[portName] = scope.wrapFunction(outPort);
+          usedOutPorts[portName] = outPort;
+          return false;
         }
 
         // TODO throw? actually it may be a locally defined func
@@ -351,6 +351,7 @@ function prepareFunctionToRun(port, func) {
     ...Object.entries(usedInPorts),
     ...Object.entries(usedOutPorts),
   ];
+
   const usedPortsNames = usedPorts.map(([name]) => name);
   const usedPortsFuncs = usedPorts.map(([, f]) => f);
 
@@ -359,5 +360,15 @@ function prepareFunctionToRun(port, func) {
     `return (${print(funcAst).code})`,
   );
 
-  return makeFunc(...usedPortsFuncs);
+  // NOTE the way this is done is to be used with `scope.with(port.chip, <this return>);`
+  // so that this result can be cached for a port but used with different scopes.
+  // If scope is baked in earlier, we would leak the scope to other uses of the
+  // same port in different chips.
+  return () => {
+    const scope = Scope.current;
+    const scopedFunc = makeFunc(
+      ...usedPortsFuncs.map((p) => scope.wrapFunction(p)),
+    );
+    return scopedFunc();
+  };
 }

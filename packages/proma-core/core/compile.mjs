@@ -80,7 +80,12 @@ export class Compilation {
         for (const { port, scope } of hookPorts) {
           let block = compile(port, scope, codeWrapper);
           if (!block) continue;
-          if (!namedTypes.BlockStatement.check(block)) {
+          if (namedTypes.ArrowFunctionExpression.check(block)) {
+            // This is (probably?) an `async () => { ... }` that we want to call
+            block = builders.expressionStatement(
+              builders.callExpression(block, []),
+            );
+          } else if (!namedTypes.BlockStatement.check(block)) {
             if (!namedTypes.ExpressionStatement.check(block)) {
               block = builders.expressionStatement(block);
             }

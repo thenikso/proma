@@ -313,21 +313,20 @@ export default class ClassWrapper {
             // TODO connected flow?
             return noop();
           }
-          if (!namedTypes.BlockStatement.check(flowBlock)) {
-            if (!namedTypes.ExpressionStatement.check(flowBlock)) {
-              flowBlock = expressionStatement(flowBlock);
+          if (!namedTypes.ArrowFunctionExpression.check(flowBlock)) {
+            if (!namedTypes.BlockStatement.check(flowBlock)) {
+              if (!namedTypes.ExpressionStatement.check(flowBlock)) {
+                flowBlock = expressionStatement(flowBlock);
+              }
+              flowBlock = blockStatement([flowBlock]);
             }
-            flowBlock = blockStatement([flowBlock]);
+            flowBlock = arrowFunctionExpression([], flowBlock);
           }
           return property(
             'init',
             identifier(portOutlet.name),
             objectExpression([
-              property(
-                'init',
-                identifier('value'),
-                arrowFunctionExpression([], flowBlock),
-              ),
+              property('init', identifier('value'), flowBlock),
             ]),
           );
         }),

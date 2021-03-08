@@ -14,3 +14,4 @@ import './programs/connections.test.mjs';
 import './programs/variadic.test.mjs';
 import './programs/handles.test.mjs';
 import './programs/events.test.mjs';
+import './programs/async.test.mjs';
