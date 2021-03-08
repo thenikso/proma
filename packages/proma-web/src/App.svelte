@@ -53,12 +53,13 @@
   // Shortcuts
   //
 
+  shortcuts.set('!cmd+S', handleSave);
+  shortcuts.set('[MainBoard:board] cmd+A', action('ChipView.selectAll'));
   shortcuts.set('[MainBoard:chip] backspace', action('ChipView.removeChip'));
   shortcuts.set(
     '[MainBoard:port] alt+click',
     action('ChipView.removeConnection'),
   );
-  shortcuts.set('!cmd+S', handleSave);
 
   const dispatchShortcuts = createShortcutDispatcher();
 
@@ -81,11 +82,11 @@
 
     return () => {
       document.removeEventListener(
-        'keyup',
+        'keydown',
         preventDefaultShortcutsCaptured,
         true,
       );
-      document.removeEventListener('keyup', preventDefaultShortcuts);
+      document.removeEventListener('keydown', preventDefaultShortcuts);
     };
   });
 

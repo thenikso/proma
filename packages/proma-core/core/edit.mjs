@@ -134,6 +134,11 @@ class EditableChipInfo {
   // Chips
   //
 
+  allChips() {
+    const chipInfo = info(this);
+    return chipInfo.chips.slice();
+  }
+
   getChip(id) {
     const chipInfo = info(this);
     return chipInfo.getChip(id);

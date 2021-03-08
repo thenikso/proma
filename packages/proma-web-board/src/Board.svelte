@@ -87,6 +87,7 @@
     for (const el of boardContentEl.children) {
       if (el.$promaChip && selectedChips.includes(el.$promaChip.id)) {
         selectedChipsSet.add(el.$promaChip);
+        el.$promaChip.select();
       }
     }
     updateSelectedChips();

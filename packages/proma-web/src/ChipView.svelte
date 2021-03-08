@@ -10,6 +10,13 @@
   action.provide('ChipView.removeConnection', ({ path: [chipView, port] }) => {
     chipView.removeConnection(port);
   });
+
+  action.provide('ChipView.selectAll', ({ path: [chipView], sourceEvent }) => {
+    chipView.selectAllChips();
+    // TODO these should got in the action as `action('name', true)` to prevent?
+    sourceEvent.stopPropagation();
+    sourceEvent.preventDefault();
+  });
 </script>
 
 <script>
@@ -53,6 +60,9 @@
     },
     removeConnection(port) {
       edit.removeConnection(makePortPath(port.chip, port.side, port.name));
+    },
+    selectAllChips() {
+      selectedChipIds = ['$in', '$out', ...edit.allChips().map((c) => c.id)];
     },
   };
 
