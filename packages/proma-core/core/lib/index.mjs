@@ -8,6 +8,8 @@ import installSequence from './flow/Sequence.mjs';
 // html
 import installQuerySelector from './html/QuerySelector.mjs';
 import installBindEvent from './html/BindEvent.mjs';
+// network
+import installFetchJson from './network/FetchJson.mjs';
 // debug
 import installLog from './debug/Log.mjs';
 
@@ -25,6 +27,9 @@ export default function installLib(proma) {
     html: {
       QuerySelector: installQuerySelector(proma),
       BindEvent: installBindEvent(proma),
+    },
+    network: {
+      FetchJson: installFetchJson(proma),
     },
     debug: {
       Log: installLog(proma),
