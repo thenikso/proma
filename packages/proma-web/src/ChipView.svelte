@@ -128,6 +128,7 @@
     edit.on('chip', () => {
       innerChips = stableChip.chips;
       connections = stableChip.connections;
+      updatePortsKey++;
     });
     edit.on('connection', () => {
       connections = stableChip.connections;
