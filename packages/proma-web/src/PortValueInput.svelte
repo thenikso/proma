@@ -11,8 +11,14 @@
   }
 </script>
 
-<StringInput
-  placeholder="value"
-  value={port.explicitValue}
-  on:input={handleInput}
-/>
+<div
+  on:mousedown|stopPropagation
+  on:keydown|stopPropagation
+  on:keyup|stopPropagation
+>
+  <StringInput
+    placeholder="value"
+    value={port.explicitValue}
+    on:input={handleInput}
+  />
+</div>

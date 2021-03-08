@@ -134,6 +134,11 @@ class EditableChipInfo {
   // Chips
   //
 
+  getChip(id) {
+    const chipInfo = info(this);
+    return chipInfo.getChip(id);
+  }
+
   addChip(chipToAdd, canonicalValues, id) {
     if (typeof chipToAdd === 'string') {
       let chipClass;
@@ -184,6 +189,9 @@ class EditableChipInfo {
       chipToAdd.id = id;
     }
     const chipInfo = info(this);
+    while (chipInfo.getChip(chipToAdd.id)) {
+      chipToAdd.id = info(chipToAdd).makeChipId();
+    }
     chipInfo.addChip(chipToAdd);
     this.dispatch('chip:add', {
       subject: 'chip',

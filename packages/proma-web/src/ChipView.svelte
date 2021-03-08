@@ -209,8 +209,11 @@
   function handleBoardContextmenu({
     detail: { boardX, boardY, fromChip, fromSide, fromPort, fromType, event },
   }) {
+    let portToConnect;
+    const fromTypeKind = fromType;
     if (fromChip && fromSide && fromPort) {
-      fromType = edit.getPort(makePortPath(fromChip, fromSide, fromPort)).type;
+      portToConnect = edit.getPort(makePortPath(fromChip, fromSide, fromPort));
+      fromType = portToConnect.type;
     }
     dispatchSubChipAddRequest({
       chip,
@@ -222,14 +225,37 @@
       fromSide,
       fromPort,
       fromType,
-      // TODO also accept connection hint
+      fromTypeKind,
       provideChipInstance(chipInstance) {
+        // edit.addChip may change the `chipInstance.id` if already existing
+        edit.addChip(chipInstance);
+        // Add metadata entry
         chip.metadata[chipInstance.id] = {
           x: boardX,
           y: boardY,
         };
-        edit.addChip(chipInstance);
-        // TODO pick best port to connect "from" also using types
+        // pick best port to connect "from" also using types
+        let otherPort;
+        if (portToConnect) {
+          for (const p of chipInstance[fromSide === 'input' ? 'out' : 'in']) {
+            if (fromTypeKind === 'exec') {
+              if (p.isFlow) {
+                otherPort = p;
+                break;
+              }
+            } else {
+              if (!p.type || p.type.definitionKind === 'any') {
+                otherPort = p;
+              } else if (p.type.match(fromType)) {
+                otherPort = p;
+                break;
+              }
+            }
+          }
+          if (otherPort) {
+            edit.addConnection(portToConnect, otherPort);
+          }
+        }
       },
     });
   }
