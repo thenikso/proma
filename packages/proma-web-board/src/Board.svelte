@@ -343,6 +343,7 @@
   let dragging;
   let zoomRaw = zoom;
   let newWireWhenDraggingFromPort;
+  let wasTouchPad = 0;
 
   const dispatchShortcuts = createShortcutDispatcher(
     [
@@ -438,7 +439,11 @@
         const isTouchPad = sourceEvent.wheelDeltaY
           ? sourceEvent.wheelDeltaY === -3 * sourceEvent.deltaY
           : sourceEvent.deltaMode === 0;
-        if (!isTouchPad || sourceEvent.ctrlKey) {
+        wasTouchPad = Math.max(
+          0,
+          Math.max(5, wasTouchPad + (isTouchPad ? 1 : -1)),
+        );
+        if (!wasTouchPad || sourceEvent.ctrlKey) {
           const prevZoom = zoomRaw;
           const delta = sourceEvent.deltaY * 2;
           zoomRaw -= delta / 100;
