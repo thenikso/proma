@@ -81,6 +81,7 @@
   };
 
   $: if (selectedChipIds) {
+    // Dispathch selection change event
     const outlets = selectedChipIds
       .filter((id) => id === '$in' || id === '$out')
       .map((id) => outletNameMap[id]);
@@ -90,6 +91,8 @@
       chips,
       hasSelection: outlets.length > 0 || chips.length > 0,
     });
+
+    // Save selection in metadata
     stableChip.metadata.$.selected = selectedChipIds;
   }
 
@@ -132,6 +135,7 @@
       stableChip.metadata,
     );
 
+    // Restore selection from metadata
     selectedChipIds = stableChip.metadata.$.selected;
 
     if (edit) {

@@ -158,13 +158,15 @@ export class PortList {
   constructor(chip, ports) {
     return new Proxy(ports, {
       get(target, key) {
-        for (const port of ports) {
-          const portInfo = info(port);
-          if (portInfo.hasName(key)) {
-            if (portInfo.isVariadic && portInfo.variadicIndex(key) >= 0) {
-              return port.variadic[key];
+        if (typeof key === 'string') {
+          for (const port of ports) {
+            const portInfo = info(port);
+            if (portInfo.hasName(key)) {
+              if (portInfo.isVariadic && portInfo.variadicIndex(key) >= 0) {
+                return port.variadic[key];
+              }
+              return port;
             }
-            return port;
           }
         }
         return Reflect.get(target, key);
