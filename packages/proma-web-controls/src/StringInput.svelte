@@ -19,8 +19,16 @@
   // Implementation
   //
 
-  let internalValue = value;
-  let error = null;
+  let internalValue;
+  let error;
+  let updatingValue = false;
+
+  $: if (!updatingValue) {
+    internalValue = value;
+    error = null;
+  } else {
+    updatingValue = false;
+  }
 
   $: internalValue &&
     validate &&
@@ -37,10 +45,12 @@
     try {
       const newValue = validate ? validate(internalValue) : internalValue;
       if (newValue !== value) {
+        updatingValue = true;
         value = newValue;
         dispatchInput({ value });
       }
     } catch (e) {
+      updatingValue = true;
       error = e;
       internalValue = value;
     }
@@ -69,7 +79,7 @@
   }
 </script>
 
-<div class="NameInput">
+<div class="NameInput" {...$$restProps}>
   <input
     type="text"
     bind:value={internalValue}

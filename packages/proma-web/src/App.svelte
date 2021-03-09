@@ -46,7 +46,7 @@
   let targetEl;
   let newSubChipRequest;
 
-  let selectedOutlets;
+  let haveOutletSelected;
   let selectedSubChipId;
 
   //
@@ -131,9 +131,9 @@
 
   function handleSelectionChange(e) {
     const { chips, outlets } = e.detail;
+    haveOutletSelected = chips.length === 0 && outlets.length > 0;
     selectedSubChipId =
       chips.length === 1 && outlets.length === 0 ? chips[0] : null;
-    selectedOutlets = chips.length === 0 && outlets.length > 0;
   }
 
   function handleSave() {
@@ -168,10 +168,10 @@
   />
   <div style="display: flex; flex-direction: column;">
     <div style="flex-grow: 2">
-      {#if selectedOutlets}
+      {#if haveOutletSelected}
         <OutletsView chip={chipClass} />
       {:else if selectedSubChipId}
-        <SubChipView />
+        <SubChipView chip={chipClass} subChipId={selectedSubChipId} />
       {/if}
     </div>
     <footer style="padding: 5px;">

@@ -28,7 +28,7 @@
 
   export let id = 'ChipView';
   export let chip;
-  export let instance = null;
+  // export let instance = null;
 
   //
   // Dispatchers
@@ -90,6 +90,7 @@
       chips,
       hasSelection: outlets.length > 0 || chips.length > 0,
     });
+    stableChip.metadata.$.selected = selectedChipIds;
   }
 
   //
@@ -131,15 +132,26 @@
       stableChip.metadata,
     );
 
+    selectedChipIds = stableChip.metadata.$.selected;
+
     if (edit) {
       edit.off();
     }
     edit = editChip(stableChip);
-    edit.on('chip', () => {
-      innerChips = stableChip.chips;
-      connections = stableChip.connections;
-      updatePortsKey++;
-    });
+    edit.on(
+      'chip',
+      (e) => {
+        if (e.detail.operation === 'id') {
+          stableChip.metadata[e.detail.id] =
+            stableChip.metadata[e.detail.oldId];
+          delete stableChip.metadata[e.detail.oldId];
+        }
+        innerChips = stableChip.chips;
+        connections = stableChip.connections;
+        updatePortsKey++;
+      },
+      true,
+    );
     edit.on('connection', () => {
       connections = stableChip.connections;
       updatePortsKey++;
@@ -358,7 +370,7 @@
       </Chip>
     {/if}
 
-    {#each innerChips as innerChip (innerChip.id)}
+    {#each innerChips as innerChip}
       <Chip
         id={innerChip.id}
         title={innerChip.id}

@@ -35,7 +35,10 @@
       <StringInput
         value={outlet.name}
         placeholder="Port name"
-        validate={(name) => edit.renamePort(outlet, name, true)}
+        validate={(name) => {
+          edit.renamePort(outlet, name, true);
+          return name;
+        }}
         on:input={(event) => edit.renamePort(outlet, event.detail.value)}
       />
     </div>

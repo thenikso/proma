@@ -247,6 +247,35 @@ class EditableChipInfo {
     return this;
   }
 
+  setChipId(chip, id, dryRun) {
+    const chipInfo = info(this);
+    if (typeof chip === 'string') {
+      chip = chipInfo.getChip(id);
+    }
+    if (!chipInfo.chips.includes(chip)) {
+      throw new Error('Provided sub-chip is not in the Chip body');
+    }
+    if (chip.id === id) {
+      return this;
+    }
+    const withNewId = chipInfo.chips.filter((c) => c.id === id);
+    if (withNewId.length > 0) {
+      throw new Error(`Sub-chip with id "${id}" is already present`);
+    }
+    if (!dryRun) {
+      const oldId = chip.id;
+      chip.id = id;
+      this.dispatch('chip:id', {
+        subject: 'chip',
+        operation: 'id',
+        chip,
+        id,
+        oldId,
+      });
+    }
+    return this;
+  }
+
   //
   // Ports
   //
@@ -321,18 +350,17 @@ class EditableChipInfo {
       throw new Error('Port outlet is not owned by chip');
     }
     newName = portInfo.assertValidName(newName);
-    if (dryRun) {
-      return newName;
+    if (!dryRun) {
+      const oldName = port.name;
+      portInfo.name = newName;
+      this.dispatch('port:rename', {
+        subject: 'port',
+        operation: 'rename',
+        port,
+        name: newName,
+        oldName,
+      });
     }
-    const oldName = port.name;
-    portInfo.name = newName;
-    this.dispatch('port:rename', {
-      subject: 'port',
-      operation: 'rename',
-      port,
-      name: newName,
-      oldName,
-    });
     return this;
   }
 
