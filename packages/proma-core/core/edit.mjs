@@ -287,76 +287,76 @@ class EditableChipInfo {
 
   addInputFlowOutlet(name, config) {
     const chipInfo = info(this);
-    const port = chipInfo.addInputFlowPort(name, config);
-    this.dispatch('port:add:input:flow', {
-      subject: 'port',
+    const outlet = chipInfo.addInputFlowPort(name, config);
+    this.dispatch('outlet:add:input:flow', {
+      subject: 'outlet',
       operation: 'add',
       side: 'input',
       kind: 'flow',
-      port,
+      outlet,
     });
     return this;
   }
 
   addInputDataOutlet(name, config) {
     const chipInfo = info(this);
-    const port = chipInfo.addInputDataPort(name, config);
-    this.dispatch('port:add:input:data', {
-      subject: 'port',
+    const outlet = chipInfo.addInputDataPort(name, config);
+    this.dispatch('outlet:add:input:data', {
+      subject: 'outlet',
       operation: 'add',
       side: 'input',
       kind: 'data',
-      port,
+      outlet,
     });
     return this;
   }
 
   addOutputFlowOutlet(name) {
     const chipInfo = info(this);
-    const port = chipInfo.addOutputFlowPort(name);
-    this.dispatch('port:add:output:flow', {
-      subject: 'port',
+    const outlet = chipInfo.addOutputFlowPort(name);
+    this.dispatch('outlet:add:output:flow', {
+      subject: 'outlet',
       operation: 'add',
       side: 'output',
       kind: 'flow',
-      port,
+      outlet,
     });
     return this;
   }
 
   addOutputDataOutlet(name, config) {
     const chipInfo = info(this);
-    const port = chipInfo.addOutputDataPort(name, config);
-    this.dispatch('port:add:output:data', {
-      subject: 'port',
+    const outlet = chipInfo.addOutputDataPort(name, config);
+    this.dispatch('outlet:add:output:data', {
+      subject: 'outlet',
       operation: 'add',
       side: 'output',
       kind: 'data',
-      port,
+      outlet,
     });
     return this;
   }
 
-  renameOutlet(port, newName, dryRun) {
+  renameOutlet(outlet, newName, dryRun) {
     const chipInfo = info(this);
-    if (!(port instanceof PortOutlet)) {
-      port = chipInfo.getPort(port);
+    if (!(outlet instanceof PortOutlet)) {
+      outlet = chipInfo.getPort(outlet);
     }
-    if (!port.isOutlet) {
-      throw new Error(`Can only rename chip outlets, got "${port}"`);
+    if (!outlet.isOutlet) {
+      throw new Error(`Can only rename chip outlets, got "${outlet}"`);
     }
-    const portInfo = info(port);
+    const portInfo = info(outlet);
     if (portInfo.chipInfo !== chipInfo) {
       throw new Error('Port outlet is not owned by chip');
     }
     newName = portInfo.assertValidName(newName);
     if (!dryRun) {
-      const oldName = port.name;
+      const oldName = outlet.name;
       portInfo.name = newName;
-      this.dispatch('port:rename', {
-        subject: 'port',
+      this.dispatch('outlet:rename', {
+        subject: 'outlet',
         operation: 'rename',
-        port,
+        outlet,
         name: newName,
         oldName,
       });

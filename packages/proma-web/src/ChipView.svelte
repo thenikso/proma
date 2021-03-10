@@ -161,7 +161,7 @@
       updatePortsKey++;
     });
     edit.on(
-      'port',
+      'outlet',
       () => {
         inputOutlets = stableChip.inputOutlets;
         outputOutlets = stableChip.outputOutlets;

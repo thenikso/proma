@@ -21,7 +21,7 @@
       edit.off();
     }
     edit = editChip(stableChip);
-    edit.on('port', () => {
+    edit.on('outlet', () => {
       inputOutlets = stableChip.inputOutlets;
       outputOutlets = stableChip.outputOutlets;
     });
