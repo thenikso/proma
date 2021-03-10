@@ -17,6 +17,13 @@
     }
     edit = editChip(stableChip);
     edit.on(
+      'connection',
+      () => {
+        subChipId = subChipId;
+      },
+      true,
+    );
+    edit.on(
       'port:variadicCount',
       ({ detail }) => {
         if (detail.port.chip.id === subChipId) {
@@ -29,6 +36,7 @@
 
   $: subChip = edit.getChip(subChipId);
   $: subChipInputPorts = Array.from(subChip.in)
+    .filter((port) => port.isData)
     .map((port) => port.variadic || port)
     .flat()
     .map((port) => ({
