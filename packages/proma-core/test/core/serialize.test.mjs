@@ -198,10 +198,11 @@ describe('[core/serialize] to JSON', async (assert) => {
     expected: chipJSON,
   });
 
-  const TestEvent = event('TestEvent', [
+  const TestEvent = event(
+    'TestEvent',
     { name: 'event', type: 'Event' },
     'num:Number',
-  ]);
+  );
 
   assert({
     given: 'an event sub-chip',

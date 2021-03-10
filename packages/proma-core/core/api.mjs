@@ -87,7 +87,7 @@ export function outputHandle(name, execHandle, type) {
   return handlePort;
 }
 
-export function event(name, ports) {
+export function event(name, ...ports) {
   ports = (ports || []).map((p) => {
     if (typeof p === 'string') {
       const [name, type] = p.split(':');

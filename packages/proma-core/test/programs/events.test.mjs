@@ -28,7 +28,7 @@ describe('[programs/events] events binding', async (assert) => {
     const then = outputFlow('then');
   });
 
-  const Listener = event('TestEvent', ['event']);
+  const Listener = event('TestEvent', 'event');
 
   assert({
     given: 'a bound event',

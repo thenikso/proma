@@ -5,6 +5,12 @@ import { PlaceholderChip } from './placeholder.mjs';
 import { registry } from './registry.mjs';
 import { event } from './api.mjs';
 
+const VALID_CUSTOM_CHIPS = { event };
+const CUSTOM_CHIP_REGEXP = new RegExp(
+  `^(.+):(${Object.keys(VALID_CUSTOM_CHIPS).join('|')})(?:<(.+)>)?$`,
+  'i',
+);
+
 export function edit(ChipClass) {
   // TODO accept an optional new "build" function that can have deleteChip..?
   if (!ChipClass.editable) {
@@ -147,24 +153,23 @@ class EditableChipInfo {
   addChip(chipToAdd, canonicalValues, id) {
     if (typeof chipToAdd === 'string') {
       let chipClass;
-      // Special case for event chips
-      // TODO this should be generalized?
-      const eventIndex = chipToAdd.indexOf(':event');
-      if (eventIndex > 0) {
-        const cleanURI = chipToAdd.substr(0, eventIndex);
-        // Check if the event is actually a custom chip
+      // Special case for custom chips in the form of
+      // `my/chip/Uri:event<portA:number, portB:String>`
+      const [, cleanURI, customChip, customParams] =
+        CUSTOM_CHIP_REGEXP.exec(chipToAdd) || [];
+      if (cleanURI) {
+        // Try again with a custom chip class (ignoring the custom params).
+        // TODO is this useful?
         chipClass = this.Chip.customChipClasses[cleanURI];
         if (!chipClass) {
-          let eventParamsStr = chipToAdd.substr(eventIndex + 6);
-          const eventPorts = eventParamsStr
-            .substr(1, eventParamsStr.length - 2)
+          const chipCreator = VALID_CUSTOM_CHIPS[customChip];
+          if (!chipCreator) {
+            throw new Error(`Could not create custom chip "${chipToAdd}"`);
+          }
+          const resolvedCustomParams = (customParams || '')
             .split(',')
-            .map((x) => x.split(':'))
-            .map(([name, type]) => ({
-              name: name.trim(),
-              type: type.trim(),
-            }));
-          chipClass = event(cleanURI, eventPorts);
+            .map((x) => x.trim());
+          chipClass = chipCreator(cleanURI, ...resolvedCustomParams);
         }
       }
       // Search in context chips or registry
