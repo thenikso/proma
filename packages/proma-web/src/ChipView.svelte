@@ -345,6 +345,16 @@
       ? port.name === 'exec' || port.name === 'then'
       : port.name === 'handle';
   }
+
+  function getChipColor(innerChip) {
+    if (innerChip.isEvent) {
+      return '#b63434';
+    }
+    if (innerChip.isDataless) {
+      return '#8D8D8D';
+    }
+    return '#3a764f';
+  }
 </script>
 
 <div {id} class="ChipView">
@@ -379,7 +389,7 @@
       <Chip
         id={innerChip.id}
         title={innerChip.id}
-        color={innerChip.constructor.isEvent ? '#b63434' : '#3a764f'}
+        color={getChipColor(innerChip)}
         bind:x={chip.metadata[innerChip.id].x}
         bind:y={chip.metadata[innerChip.id].y}
       >

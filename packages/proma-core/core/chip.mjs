@@ -50,6 +50,16 @@ export class Chip {
         enumerable: true,
         value: outputs,
       },
+      isFlowless: {
+        get() {
+          return chipInfo.isFlowless;
+        },
+      },
+      isDataless: {
+        get() {
+          return chipInfo.isDataless;
+        },
+      },
     });
     // Assign default values
     if (Array.isArray(canonicalValues) && canonicalValues.length > 0) {
@@ -128,6 +138,13 @@ export class ChipInfo {
       return false;
     }
     if (this.chips.some((c) => !info(c).isFlowless)) {
+      return false;
+    }
+    return true;
+  }
+
+  get isDataless() {
+    if (this.inputDataPorts.length > 0 || this.outputDataPorts.length > 0) {
       return false;
     }
     return true;

@@ -114,14 +114,16 @@ export function event(name, ...ports) {
     const then = outputFlow('then');
     const outputs = ports.map(({ name, type }) => outputData(name, { type }));
   });
-  Object.defineProperty(EventChip, 'isEvent', {
-    enumerable: true,
-    value: true,
-  });
-  Object.defineProperty(EventChip.prototype, 'chipURI', {
-    enumerable: true,
-    value:
-      ports.length === 0 ? `${name}:event` : `${name}:event<${handleArgs}>`,
+  Object.defineProperties(EventChip.prototype, {
+    isEvent: {
+      enumerable: true,
+      value: true,
+    },
+    chipURI: {
+      enumerable: true,
+      value:
+        ports.length === 0 ? `${name}:event` : `${name}:event<${handleArgs}>`,
+    },
   });
   return EventChip;
 }
