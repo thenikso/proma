@@ -397,6 +397,50 @@ class EditableChipInfo {
     return this;
   }
 
+  setPortVariadicCount(port, variadicCount) {
+    const chipInfo = info(this);
+    port = chipInfo.getPort(port);
+    // Only operate on variadic ports
+    if (!port.variadic) {
+      throw new Error('port is not variadic');
+    }
+    const oldVariadicCount = Array.from(port.variadic).length;
+    // Allow for `setPortVariadicCount(port, "+1")`
+    if (typeof variadicCount === 'string') {
+      const countDelta = parseInt(variadicCount);
+      if (isNaN(countDelta)) {
+        throw new Error(`invalid variadicCount "${variadicCount}"`);
+      }
+      variadicCount = oldVariadicCount + countDelta;
+    }
+    // Ignore if count doesnt change
+    if (variadicCount === oldVariadicCount) return this;
+    // Increment variadic ports
+    if (variadicCount > oldVariadicCount) {
+      for (let i = oldVariadicCount; i < variadicCount; i++) {
+        // Accessing the port will create a new variadic port instance via
+        // the `variadic` access Proxy
+        port.variadic[i];
+      }
+    }
+    // Disconnect and delete variadic ports
+    else {
+      for (let i = variadicCount; i < oldVariadicCount; i++) {
+        const portToRemove = port.variadic[i];
+        this.removeConnection(portToRemove);
+        delete port.variadic[i];
+      }
+    }
+    this.dispatch('port:variadicCount', {
+      subject: 'port',
+      operation: 'variadicCount',
+      port,
+      variadicCount,
+      oldVariadicCount,
+    });
+    return this;
+  }
+
   //
   // Single port
   //

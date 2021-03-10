@@ -107,7 +107,10 @@
   let outputOutlets;
   let innerChips;
   let connections;
+  // TODO With this we update all ports if anything chagnes, we can do better
   let updatePortsKey = 1;
+  // We store port.variadic as arrays to allow for reactivity
+  const variadicPorts = {};
 
   $: if (stableChip !== chip) {
     stableChip = chip;
@@ -169,13 +172,21 @@
       },
       true,
     );
+    edit.on(
+      'port:variadicCount',
+      ({ detail }) => {
+        variadicPorts[variadicRefName(detail.port)] = Array.from(
+          detail.port.variadic,
+        );
+        connections = stableChip.connections;
+      },
+      true,
+    );
   }
 
   function connectionId({ source, sink }) {
     return source.port.fullName + '->' + sink.port.fullName;
   }
-
-  // $: console.log(connections.map(connectionId));
 
   //
   // Medatada
@@ -191,8 +202,6 @@
   //
   // Variadic ports
   //
-
-  const variadicPorts = {};
 
   function variadicRefName(port) {
     return `${port.chip.id}__${metaVariadicSizeName(port)}`;
@@ -212,21 +221,13 @@
 
   function prepareVariadicPort(port) {
     const variadicSize = getPortVariadicSize(port);
-    for (let i = 0, l = getPortVariadicSize(port); i < l; i++) {
-      // Accessing the variadic index will create the port, increasing the length
-      // of `variadic` array
-      port.variadic[i];
-    }
+    edit.setPortVariadicCount(port, variadicSize);
     variadicPorts[variadicRefName(port)] = Array.from(port.variadic);
     return port;
   }
 
   function addVariadicPort(port) {
-    const variadicSize = metaVariadicSizeName(port);
-    const size = meta(port)[variadicSize];
-    meta(port)[variadicSize] = size + 1;
-    port.variadic[size];
-    variadicPorts[variadicRefName(port)] = Array.from(port.variadic);
+    edit.setPortVariadicCount(port, '+1');
   }
 
   //

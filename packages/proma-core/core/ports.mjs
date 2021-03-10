@@ -311,15 +311,19 @@ export class PortOutlet extends Function {
 
 function makeVariadicAccessors(ownerPort, makePortAtIndex) {
   const portInfo = info(ownerPort);
+  const getIndex = (key) => {
+    let index = -1;
+    if (typeof key === 'string') {
+      index = parseInt(key);
+      if (isNaN(index)) {
+        index = portInfo.variadicIndex(key);
+      }
+    }
+    return index;
+  };
   return new Proxy([], {
     get(target, key) {
-      let index = -1;
-      if (typeof key === 'string') {
-        index = parseInt(key);
-        if (isNaN(index)) {
-          index = portInfo.variadicIndex(key);
-        }
-      }
+      const index = getIndex(key);
       if (index >= 0) {
         key = index;
         if (typeof target[key] === 'undefined') {
@@ -343,6 +347,13 @@ function makeVariadicAccessors(ownerPort, makePortAtIndex) {
         }
       }
       return Reflect.get(target, key);
+    },
+    deleteProperty(target, key) {
+      const index = getIndex(key);
+      if (index < 0) return false;
+      target.splice(index, 1);
+      ownerPort.explicitValue.splice(index, 1);
+      return true;
     },
   });
 }

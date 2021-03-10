@@ -12,7 +12,19 @@
 
   $: if (chip !== stableChip) {
     stableChip = chip;
+    if (edit) {
+      edit.off();
+    }
     edit = editChip(stableChip);
+    edit.on(
+      'port:variadicCount',
+      ({ detail }) => {
+        if (detail.port.chip.id === subChipId) {
+          subChipId = subChipId;
+        }
+      },
+      true,
+    );
   }
 
   $: subChip = edit.getChip(subChipId);
@@ -23,6 +35,7 @@
       port,
       isConnected: edit.hasConnections(port),
     }));
+  $: variadicPort = Array.from(subChip.in).find((port) => port.variadic);
 </script>
 
 <div class="Chip-Id">
@@ -52,5 +65,19 @@
         {/if}
       </div>
     {/each}
+    {#if variadicPort}
+      <button
+        type="button"
+        on:click={() => edit.setPortVariadicCount(variadicPort, '+1')}
+      >
+        Add
+      </button>
+      <button
+        type="button"
+        on:click={() => edit.setPortVariadicCount(variadicPort, '-1')}
+      >
+        Remove
+      </button>
+    {/if}
   </div>
 {/if}
