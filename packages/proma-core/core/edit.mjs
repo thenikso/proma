@@ -277,7 +277,7 @@ class EditableChipInfo {
   }
 
   //
-  // Ports
+  // Outlets
   //
 
   getPort(path, side) {
@@ -285,7 +285,7 @@ class EditableChipInfo {
     return chipInfo.getPort(path, side);
   }
 
-  addInputFlowPort(name, config) {
+  addInputFlowOutlet(name, config) {
     const chipInfo = info(this);
     const port = chipInfo.addInputFlowPort(name, config);
     this.dispatch('port:add:input:flow', {
@@ -298,7 +298,7 @@ class EditableChipInfo {
     return this;
   }
 
-  addInputDataPort(name, config) {
+  addInputDataOutlet(name, config) {
     const chipInfo = info(this);
     const port = chipInfo.addInputDataPort(name, config);
     this.dispatch('port:add:input:data', {
@@ -311,7 +311,7 @@ class EditableChipInfo {
     return this;
   }
 
-  addOutputFlowPort(name) {
+  addOutputFlowOutlet(name) {
     const chipInfo = info(this);
     const port = chipInfo.addOutputFlowPort(name);
     this.dispatch('port:add:output:flow', {
@@ -324,7 +324,7 @@ class EditableChipInfo {
     return this;
   }
 
-  addOutputDataPort(name, config) {
+  addOutputDataOutlet(name, config) {
     const chipInfo = info(this);
     const port = chipInfo.addOutputDataPort(name, config);
     this.dispatch('port:add:output:data', {
@@ -337,7 +337,7 @@ class EditableChipInfo {
     return this;
   }
 
-  renamePort(port, newName, dryRun) {
+  renameOutlet(port, newName, dryRun) {
     const chipInfo = info(this);
     if (!(port instanceof PortOutlet)) {
       port = chipInfo.getPort(port);
@@ -364,6 +364,16 @@ class EditableChipInfo {
     return this;
   }
 
+  moveOutlet(port, beforePort) {}
+
+  removeOutlet(port) {}
+  removeInputOutlet(name) {}
+  removeOutputOutlet(name) {}
+
+  //
+  // Ports (of sub-chips)
+  //
+
   setPortValue(port, value) {
     const chipInfo = info(this);
     port = chipInfo.getPort(port);
@@ -386,12 +396,6 @@ class EditableChipInfo {
     });
     return this;
   }
-
-  movePort(port, beforePort) {}
-
-  removePort(port) {}
-  removeInputPort(name) {}
-  removeOutputPort(name) {}
 
   //
   // Single port

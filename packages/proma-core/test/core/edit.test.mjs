@@ -26,8 +26,8 @@ describe('[core/edit] edit connections', async (assert) => {
     given: 'an added in/out flow with connection',
     should: 'edit',
     actual: edit(chip('EditChip'))
-      .addInputFlowPort('exec')
-      .addOutputFlowPort('then')
+      .addInputFlowOutlet('exec')
+      .addOutputFlowOutlet('then')
       .addConnection('exec', 'then')
       .Chip.toJSON(),
     expected: {
@@ -101,9 +101,9 @@ describe('[core/edit] edit sub-chips', async (assert) => {
     given: 'a chip instance',
     should: 'add the sub-chip',
     actual: edit(chip('EditChip'))
-      .addInputFlowPort('exec')
-      .addOutputFlowPort('then')
-      .addOutputDataPort('value')
+      .addInputFlowOutlet('exec')
+      .addOutputFlowOutlet('then')
+      .addOutputDataOutlet('value')
       .addChip(new Pass('pass'), 'Pass')
       .addConnection('exec', '$0.in.exec')
       .addConnection('$0.out.output', 'value')
@@ -162,7 +162,7 @@ describe('[core/edit] edit ports', async (assert) => {
         wire(inValue, outValue);
       }),
     )
-      .renamePort('in.value', 'input')
+      .renameOutlet('in.value', 'input')
       .Chip.toJSON(),
     expected: {
       URI: 'EditChip',
@@ -211,7 +211,7 @@ describe('[core/edit] edit ports', async (assert) => {
       )
         // NOTE the last `true` param is for "dry run". It can be used to check
         // if a rename operation would succeed
-        .renamePort('in.value', 'exec', true);
+        .renameOutlet('in.value', 'exec', true);
     }),
     expected: new Error('Port with name "in.exec" already exist'),
   });

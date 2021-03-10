@@ -20,12 +20,12 @@ function deserializeChip(chip, data, withErrors) {
   for (const port of data[INPUT] || []) {
     try {
       if (port.kind === 'flow') {
-        build.addInputFlowPort(port.name);
+        build.addInputFlowOutlet(port.name);
         if (port.execute) {
           portsToCompile.push(port);
         }
       } else {
-        build.addInputDataPort(port.name, {
+        build.addInputDataOutlet(port.name, {
           canonical: port.canonical,
           conceiled: port.conceiled,
           defaultValue: port.defaultValue,
@@ -38,9 +38,9 @@ function deserializeChip(chip, data, withErrors) {
   for (const port of data[OUTPUT] || []) {
     try {
       if (port.kind === 'flow') {
-        build.addOutputFlowPort(port.name);
+        build.addOutputFlowOutlet(port.name);
       } else {
-        build.addOutputDataPort(port.name, {
+        build.addOutputDataOutlet(port.name, {
           computeOn: (port.computeOn || []).map((portPath) =>
             build.getPort(portPath, 'out'),
           ),
