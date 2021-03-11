@@ -142,7 +142,10 @@ export function makePortRun(portInfo, isOutlet) {
         }
 
         // Value
-        return port.$runValue || port.defaultValue;
+        if (typeof port.$runValue !== 'undefined') {
+          return port.$runValue;
+        }
+        return port.defaultValue;
       };
     } else {
       port = function outputFlowPort(assignCont) {

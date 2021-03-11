@@ -97,9 +97,12 @@ export default class ClassWrapper {
       inletUse = identifier(
         `${(port.chip && port.chip.id) || '$'}__${port.name}`,
       );
-      if (kind === 'let') {
+      if (kind === 'let' || kind === 'init') {
         const declaration = variableDeclaration('let', [
-          variableDeclarator(inletUse, null),
+          variableDeclarator(
+            inletUse,
+            kind === 'init' ? assignExpressionBlock : null,
+          ),
         ]);
         this.inletsByPort.set(port, {
           use: inletUse,

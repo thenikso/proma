@@ -307,18 +307,36 @@ function executeCompiler(
       /**
        * Output data in executes are used like so:
        *     portName(assignExpressionBlock);
+       * But it can also be used to read the output port value:
+       *     portName(portName() + 1);
        * The provided `assignExpressionBlock` is the expression to assign to the
-       * output port.
+       * output port if present.
+       * This function should always return a `blockStatement` and the last
+       * expression of the block should always be something to read the value
+       * of the output.
        */
       compileOutputData(portName, assignExpressionBlock) {
         const port = chip.out[portName];
         const portInfo = info(port);
 
         if (isOutlet(port, outterScope)) {
-          return codeWrapper.compileOutputDataOutlet(
-            port,
-            assignExpressionBlock,
+          const body = [];
+          if (typeof assignExpressionBlock !== 'undefined') {
+            body.push(
+              builders.expressionStatement(
+                codeWrapper.compileOutputDataOutlet(
+                  port,
+                  assignExpressionBlock,
+                ),
+              ),
+            );
+          }
+          body.push(
+            builders.expressionStatement(
+              codeWrapper.compileOutputDataOutlet(port),
+            ),
           );
+          return builders.blockStatement(body);
         }
 
         assert(
@@ -330,7 +348,45 @@ function executeCompiler(
             .join(', ')}]`,
         );
 
+        // An exectute is pushing data to this output port. This is used in
+        // `computeOnCompiler` to ignore `computeOn` stuff as the port value
+        // will be manually assigned here
         portInfo.$isPushing = true;
+
+        // Collect declarations needed to satisfy this output
+        const declarations = [];
+
+        // If the output port is not used for assigning a value ornot inlining,
+        // we create an inlet for the variable to be returned as the last
+        // declaration. The ast compiler will know how to extract it.
+        //
+        //   if(myOutput()) { ... }
+        //
+        let appendDeclarationInletForRead =
+          typeof assignExpressionBlock === 'undefined' ||
+          portInfo.inline === false ||
+          portInfo.inline === 'once';
+
+        if (appendDeclarationInletForRead) {
+          if (typeof assignExpressionBlock === 'undefined') {
+            assignExpressionBlock = codeWrapper.compileVariableInlet(
+              port,
+              literalCompiler(port.defaultValue),
+              portInfo.inline === 'once' ? 'const' : 'init',
+            );
+          } else {
+            declarations.push(
+              builders.expressionStatement(
+                codeWrapper.compileVariableInlet(port, assignExpressionBlock),
+              ),
+            );
+            assignExpressionBlock = codeWrapper.compileVariableInlet(port);
+          }
+
+          // Transform `appendDeclarationInletForRead` to the actual identifier
+          // to use as reference for the inlet
+          appendDeclarationInletForRead = assignExpressionBlock;
+        }
 
         // Generate assignment of local variable
         //    let portName = <assignExpressionBlock>;
@@ -341,7 +397,6 @@ function executeCompiler(
 
         const conns = info(parentChip).getConnectedPorts(port, parentChip);
 
-        const declarations = [];
         for (const conn of conns) {
           if (conn) {
             let outputIdentifier;
@@ -367,8 +422,16 @@ function executeCompiler(
             declarations.push(decl);
           }
         }
-        if (declarations.length === 0) return;
-        if (declarations.length === 1) return declarations[0];
+
+        // We always want to return a block where the last expression is
+        // a way to ready the output (if neccessary)
+        if (appendDeclarationInletForRead) {
+          declarations.push(
+            builders.expressionStatement(appendDeclarationInletForRead),
+          );
+        } else {
+          declarations.push(builders.noop());
+        }
         return builders.blockStatement(declarations);
       },
     });

@@ -614,7 +614,7 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
 
 // TODO test compute with multiple lines
 
-describe.only('[programs/outputs] state outputs', async (assert) => {
+describe('[programs/outputs] state outputs', async (assert) => {
   assert({
     given: 'an output in read and write',
     should: 'compile as expected',
@@ -693,6 +693,131 @@ describe.only('[programs/outputs] state outputs', async (assert) => {
             value: () => {}
           });
         }
-      }`, [1, 2, 1]),
+      }`,
+      [1, 2, 1],
+    ),
+  });
+
+  const Gate = chip('test/programs/outputs/Gate', () => {
+    const enter = inputFlow('enter', () => {
+      if (gate()) {
+        exit();
+      }
+    });
+    const open = inputFlow('open', () => {
+      gate(true);
+    });
+    const close = inputFlow('close', () => {
+      gate(false);
+    });
+
+    const exit = outputFlow('exit');
+    const gate = outputData('gate', {
+      inline: false,
+      defaultValue: true,
+      // conceiled: 'hidden',
+    });
+  });
+
+  assert({
+    given: 'an hidden output',
+    should: 'compile as expected',
+    actual: compileAndRun(
+      () => {
+        const exec = inputFlow('exec');
+        const close = inputFlow('close');
+
+        const gate = new Gate();
+
+        const then = outputFlow('then');
+        const isOpen = outputData('isOpen');
+        const isReallyOpen = outputData('isReallyOpen');
+
+        wire(exec, gate.in.enter);
+        wire(close, gate.in.close);
+        wire(gate.out.exit, then);
+        wire(gate.out.gate, isOpen);
+        wire(gate.out.gate, isReallyOpen);
+      },
+      (chip) => {
+        const pings = [];
+        chip.out.then(() =>
+          pings.push([chip.out.isOpen(), chip.out.isReallyOpen()]),
+        );
+        chip.in.exec();
+        chip.in.exec();
+        chip.in.close();
+        chip.in.exec();
+        return pings;
+      },
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          const $out = Object.seal({
+            isOpen: undefined,
+            isReallyOpen: undefined,
+            then: undefined
+          });
+
+          let test_programs_outputs_Gate_1__gate = true;
+
+          Object.defineProperties(this.in = {}, {
+            exec: {
+              value: () => {
+                $out.isOpen = test_programs_outputs_Gate_1__gate;
+                $out.isReallyOpen = test_programs_outputs_Gate_1__gate;
+
+                if (test_programs_outputs_Gate_1__gate) {
+                  this.out.then();
+                }
+              }
+            },
+
+            close: {
+              value: () => {
+                test_programs_outputs_Gate_1__gate = false;
+                $out.isOpen = test_programs_outputs_Gate_1__gate;
+                $out.isReallyOpen = test_programs_outputs_Gate_1__gate;
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            isOpen: {
+              value: () => $out.isOpen
+            },
+
+            isReallyOpen: {
+              value: () => $out.isReallyOpen
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.then = value;
+                  return;
+                }
+
+                ($out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
+      [
+        [true, true],
+        [true, true],
+      ],
+    ),
   });
 });

@@ -121,12 +121,18 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
             return false;
           }
           // Output data, this is a case like `output(input() + 1)`
-          // if there is no argument, the output data port is being used badly
           const pathArray = pathFromNodePath(path);
+          // Find the block body this output is used in. That might be used for
+          // injecting output declarations later
+          let scopeBobyPath = path.parentPath;
+          while (!namedTypes.BlockStatement.check(scopeBobyPath.value)) {
+            scopeBobyPath = scopeBobyPath.parentPath;
+          }
           replaceOutputData.push({
             portName,
             path: pathArray,
             argPath: [...pathArray, 'arguments', 0],
+            scopePath: pathFromNodePath(scopeBobyPath),
           });
           return false;
         }
@@ -155,22 +161,69 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
       ast = replaceAstPath(ast, path, res);
     }
 
-    for (let { portName, path, argPath } of replaceOutputData) {
-      const block = getPath(ast, argPath);
-      let res = compileOutputData(portName, block) || builders.noop();
-      if (namedTypes.BlockStatement.check(res)) {
-        // NOTE This is a trick to resovle the situation where a block is returned
-        // but we do not want it! Basically if we explore it right away, paths
-        // for other `replaceOutputData` would be wrong. So we store an array
-        // as a block body idem and we clean it up in `cleanAst`
-        res.$explodeMe = true;
-        // Replace the hole expression
-        path = path.slice(0, path.length - 1);
-      } else if (namedTypes.ExpressionStatement.check(res)) {
-        // Replace the hole expression
-        path = path.slice(0, path.length - 1);
+    // Blocks compiled by `compileOutputData` must always `blockStatement`s
+    // with declarations and the last expression being a way to read the output
+    // port. Declarations are saved in this `injectInScope` array to be injected
+    // later
+    const injectInScope = [];
+
+    for (let { portName, path, argPath, scopePath } of replaceOutputData) {
+      const argBlock = getPath(ast, argPath);
+      const resultBlock =
+        compileOutputData(portName, argBlock) ||
+        builders.blockStatement([builders.noop()]);
+      // Make sure that we are receiving a block statement that should be in the
+      // form of:
+      //     {
+      //       delaration1...;
+      //       declaration2...;
+      //       readOutput;
+      //     }
+      namedTypes.BlockStatement.assert(resultBlock);
+      // Extracting the last block statement as a way to ready the output port
+      let readOutputStatement = resultBlock.body.pop();
+      if (namedTypes.ExpressionStatement.check(readOutputStatement)) {
+        readOutputStatement = readOutputStatement.expression;
       }
-      ast = replaceAstPath(ast, path, res);
+      // Add declarations to be injected in the block scope
+      if (resultBlock.body.length > 0) {
+        injectInScope.push({
+          scopePath,
+          injectBlock: resultBlock,
+        });
+      }
+      // If the destination is an expression, we do not need to actually read
+      // the output, so we discard it and only use the declarations
+      const astDestination = getPath(ast, path.slice(0, path.length - 1));
+      if (
+        namedTypes.ExpressionStatement.check(astDestination) &&
+        resultBlock.body.length > 0
+      ) {
+        readOutputStatement = builders.noop();
+      }
+
+      ast = replaceAstPath(ast, path, readOutputStatement);
+    }
+
+    // Inject output declarations in the proper scope (that is, the scope of
+    // the statement that used the output port)
+    if (injectInScope.length > 0) {
+      // Prepare injection cursors
+      const cursors = new Map();
+      for (const { scopePath } of injectInScope) {
+        const scopeBlock = getPath(ast, scopePath);
+        cursors.set(scopeBlock, 0);
+      }
+      // Inject
+      for (const { scopePath, injectBlock } of injectInScope) {
+        const scopeBlock = getPath(ast, scopePath);
+        let cursor = cursors.get(scopeBlock);
+
+        scopeBlock.body.unshift(...injectBlock.body);
+
+        cursor += injectBlock.body.length;
+        cursors.set(scopeBlock, cursor);
+      }
     }
 
     ast = cleanAst(ast);
@@ -186,6 +239,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   };
 }
 
+// TODO  FIX be careful with cleaning, you might remove code that the user
+// intendet to have there like just `myObj.something;` could actually trigger
+// a getter but we might be tempted to remove it here. Aim to produce clean
+// code when compiling instead.
 export function cleanAst(ast) {
   visit(ast, {
     visitNoop(path) {
@@ -210,19 +267,6 @@ export function cleanAst(ast) {
       this.traverse(path);
     },
     visitBlockStatement(path) {
-      // Special block marked to be exploded
-      if (
-        path.value.$explodeMe === true &&
-        Array.isArray(path.parentPath.value)
-      ) {
-        const body = path.parentPath.value;
-        const exploreAtIndex = body.indexOf(path.value);
-        path.parentPath.replace([
-          ...body.slice(0, exploreAtIndex),
-          ...path.value.body,
-          ...body.slice(exploreAtIndex + 1),
-        ]);
-      }
       // replace expression > block > expression to just expression
       if (
         path.value.body.length === 1 &&
