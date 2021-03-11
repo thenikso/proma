@@ -51,14 +51,6 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
     outputData('value', () => value());
   });
 
-  const LiteralHidden = chip('test/core/ports/LiteralHidden', () => {
-    const value = inputData('value', {
-      canonical: 'required',
-      conceiled: 'hidden',
-    });
-    outputData('value', () => value());
-  });
-
   assert({
     given: 'a conceiled port',
     should: 'can not be connected but only assigned to',
@@ -72,6 +64,14 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
       wire(input, val.in.value);
     }),
     expected: new Error('Can not connect to conceiled port "val.in.value"'),
+  });
+
+  const LiteralHidden = chip('test/core/ports/LiteralHidden', () => {
+    const value = inputData('value', {
+      canonical: 'required',
+      conceiled: 'hidden',
+    });
+    outputData('value', () => value());
   });
 
   assert({
@@ -134,3 +134,42 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
 });
 
 // TODO variadic check that is the last port (also for outputs)
+
+describe('[core/ports] (output data) conceiled ports', async (assert) => {
+  const OutputConceiled = chip('test/core/ports/OutputConceiled', () => {
+    const value = inputData('value', { canonical: true });
+    outputData('value', { compute: () => value(), conceiled: true });
+  });
+
+  assert({
+    given: 'a conceiled output port',
+    should: 'can not be connected',
+    actual: Try(chip, () => {
+      const val = new OutputConceiled('one');
+      val.id = 'val';
+
+      const output = outputData('output');
+
+      wire(val.out.value, output);
+    }),
+    expected: new Error('Can not connect to conceiled port "val.out.value"'),
+  });
+
+  // TODO how to hide this?
+  // const OutputHidden = chip('test/core/ports/OutputHidden', () => {
+  //   const value = inputData('value', {
+  //     canonical: 'required',
+  //   });
+  //   outputData('value', { compute: () => value(), conceiled: 'hidden' });
+  // });
+
+  // assert({
+  //   given: 'a hidden port while building',
+  //   should: 'can not be accessed',
+  //   actual: compileAndRun(OutputHidden, (chip) => chip.out.value(), ['test']),
+  //   expected: compileAndRunResult(
+  //     js``,
+  //     undefined,
+  //   ),
+  // });
+});

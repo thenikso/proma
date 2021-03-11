@@ -89,6 +89,13 @@ export default class ClassWrapper {
   //
   //     InnerChip_1__outputPort
   //
+  // The last parameter indicates how the inlet should be declared:
+  // - `let` should create a variable and re-assign it's value to the inlet if
+  //   `assignExpressionBlock` is defined
+  // - `const` should use the `assignExpressionBlock` only once (and it is
+  //   required in this case)
+  // - `init` is a variation of `let` where the (required) `assignExpressionBlock`
+  //   is used in the variable declaration
   compileVariableInlet(port, assignExpressionBlock, kind = 'let') {
     let inletUse;
     if (this.inletsByPort.has(port)) {

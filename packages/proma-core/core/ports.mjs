@@ -87,6 +87,12 @@ export class Port extends Function {
               : portInfo.defaultValue;
           },
         },
+        isConceiled: {
+          enumerable: true,
+          get() {
+            return portInfo.isConceiled;
+          },
+        },
       });
 
       if (portInfo.isInput) {
@@ -108,12 +114,6 @@ export class Port extends Function {
             enumerable: true,
             get() {
               return portInfo.isRequired;
-            },
-          },
-          isConceiled: {
-            enumerable: true,
-            get() {
-              return portInfo.isConceiled;
             },
           },
           isHidden: {
@@ -278,6 +278,12 @@ export class PortOutlet extends Function {
             return portInfo.defaultValue;
           },
         },
+        isConceiled: {
+          enumerable: true,
+          get() {
+            return portInfo.isConceiled;
+          },
+        },
       });
 
       if (portInfo.isInput) {
@@ -292,12 +298,6 @@ export class PortOutlet extends Function {
             enumerable: true,
             get() {
               return portInfo.isRequired;
-            },
-          },
-          isConceiled: {
-            enumerable: true,
-            get() {
-              return portInfo.isConceiled;
             },
           },
           isHidden: {
@@ -576,7 +576,16 @@ export class OutputDataSourcePortInfo extends PortInfo {
     this.inline = config.inline;
     this.allowSideEffects = config.allowSideEffects || false;
     this.type = config.type;
+    // Output ports can be used as internal state (ie: being wrote to and red).
+    // When reading a output port, if no value has been assigned to it yet, it
+    // will default to its `defaultValue`
     this.defaultValue = config.defaultValue;
+    // Conceiled indicates how the port is hidden:
+    // - `true` the port can not be connected from the outside
+    // - `'hidden'` the port is not accessible from the outside.
+    //    Use this to create internal chip states.
+    // TODO 'hidden' output data ports are not enforced in any way
+    this.conceiled = config.conceiled || false;
 
     // Used by compiler to indicate a port that is being
     // set by an execution (rather than be computed)
@@ -607,6 +616,14 @@ export class OutputDataSourcePortInfo extends PortInfo {
     });
 
     this.computeOn = config.computeOn || [];
+  }
+
+  get isConceiled() {
+    return !!this.conceiled;
+  }
+
+  get isHidden() {
+    return this.conceiled === 'hidden';
   }
 
   get isInput() {

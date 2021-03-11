@@ -22,6 +22,7 @@ export function makePortRun(portInfo, isOutlet) {
   let port;
   if (portInfo.isInput) {
     if (portInfo.isData) {
+      // input data
       port = function inputDataPort() {
         const scope = Scope.current;
 
@@ -61,6 +62,7 @@ export function makePortRun(portInfo, isOutlet) {
         return portValue;
       };
     } else {
+      // input flow
       port = function inputFlowPort() {
         const scope = Scope.current;
 
@@ -89,6 +91,7 @@ export function makePortRun(portInfo, isOutlet) {
     }
   } else {
     if (portInfo.isData) {
+      // output data
       port = function outputDataPort(assignValue) {
         const scope = Scope.current;
 
@@ -148,6 +151,7 @@ export function makePortRun(portInfo, isOutlet) {
         return port.defaultValue;
       };
     } else {
+      // output flow
       port = function outputFlowPort(assignCont) {
         const scope = Scope.current;
 
