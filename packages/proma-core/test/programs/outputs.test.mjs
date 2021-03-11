@@ -613,3 +613,86 @@ describe('[programs/outputs] connected outputs (and inlets)', async (assert) => 
 // TODO test non connected output (ie: no computeOn and not used by execs) should throw
 
 // TODO test compute with multiple lines
+
+describe.only('[programs/outputs] state outputs', async (assert) => {
+  assert({
+    given: 'an output in read and write',
+    should: 'compile as expected',
+    actual: compileAndRun(
+      () => {
+        const exec = inputFlow('exec', () => {
+          count(count() + 1);
+          then();
+        });
+        const reset = inputFlow('reset', () => {
+          count(0);
+        });
+
+        const then = outputFlow('then');
+        const count = outputData('count', {
+          defaultValue: 0,
+          // conceiled: 'hidden',
+        });
+      },
+      (chip) => {
+        const counts = [];
+        chip.out.then(() => counts.push(chip.out.count()));
+        chip.in.exec();
+        chip.in.exec();
+        chip.in.reset();
+        chip.in.exec();
+        return counts;
+      },
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          const $out = Object.seal({
+            count: 0,
+            then: undefined
+          });
+
+          Object.defineProperties(this.in = {}, {
+            exec: {
+              value: () => {
+                $out.count = $out.count + 1;
+                this.out.then();
+              }
+            },
+
+            reset: {
+              value: () => {
+                $out.count = 0;
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            count: {
+              value: () => $out.count
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.then = value;
+                  return;
+                }
+
+                ($out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`, [1, 2, 1]),
+  });
+});

@@ -79,11 +79,6 @@ export class Port extends Function {
             return portInfo.type;
           },
         },
-      });
-    }
-
-    if (portInfo.isInput && portInfo.isData) {
-      Object.defineProperties(self, {
         defaultValue: {
           enumerable: true,
           get() {
@@ -92,38 +87,43 @@ export class Port extends Function {
               : portInfo.defaultValue;
           },
         },
-        // value: {
-        //   enumerable: true,
-        //   get: () => {
-        //     return self.explicitValue || self.defaultValue;
-        //   },
-        // },
-        //
-        isCanonical: {
-          enumerable: true,
-          get() {
-            return portInfo.isCanonical;
-          },
-        },
-        isRequired: {
-          enumerable: true,
-          get() {
-            return portInfo.isRequired;
-          },
-        },
-        isConceiled: {
-          enumerable: true,
-          get() {
-            return portInfo.isConceiled;
-          },
-        },
-        isHidden: {
-          enumerable: true,
-          get() {
-            return portInfo.isHidden;
-          },
-        },
       });
+
+      if (portInfo.isInput) {
+        Object.defineProperties(self, {
+          // value: {
+          //   enumerable: true,
+          //   get: () => {
+          //     return self.explicitValue || self.defaultValue;
+          //   },
+          // },
+          //
+          isCanonical: {
+            enumerable: true,
+            get() {
+              return portInfo.isCanonical;
+            },
+          },
+          isRequired: {
+            enumerable: true,
+            get() {
+              return portInfo.isRequired;
+            },
+          },
+          isConceiled: {
+            enumerable: true,
+            get() {
+              return portInfo.isConceiled;
+            },
+          },
+          isHidden: {
+            enumerable: true,
+            get() {
+              return portInfo.isHidden;
+            },
+          },
+        });
+      }
     }
 
     if (portInfo.isVariadic && typeof variadicIndex === 'undefined') {
@@ -269,8 +269,13 @@ export class PortOutlet extends Function {
         type: {
           enumerable: true,
           get() {
-            // TODO account for variadic
             return portInfo.type;
+          },
+        },
+        defaultValue: {
+          enumerable: true,
+          get() {
+            return portInfo.defaultValue;
           },
         },
       });
@@ -571,6 +576,7 @@ export class OutputDataSourcePortInfo extends PortInfo {
     this.inline = config.inline;
     this.allowSideEffects = config.allowSideEffects || false;
     this.type = config.type;
+    this.defaultValue = config.defaultValue;
 
     // Used by compiler to indicate a port that is being
     // set by an execution (rather than be computed)

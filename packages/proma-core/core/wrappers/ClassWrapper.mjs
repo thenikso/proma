@@ -373,7 +373,7 @@ export default class ClassWrapper {
           return property(
             'init',
             identifier(portOutlet.name),
-            identifier('undefined'),
+            literalCompiler(portOutlet.defaultValue),
           );
         }),
       );

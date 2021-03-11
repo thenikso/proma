@@ -12,6 +12,8 @@ export function literalCompiler(value) {
     return builders.identifier(value.reference);
   }
   switch (typeof value) {
+    case 'undefined':
+      return builders.identifier('undefined');
     case 'string':
       return builders.stringLiteral(value);
     case 'number':
