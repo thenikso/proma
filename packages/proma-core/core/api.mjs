@@ -194,7 +194,7 @@ function makeChipFactory($customChips, $hooks) {
       },
       configuration,
     );
-    const chipInfo = new ChipInfo(uri);
+    const chipInfo = new ChipInfo(uri, config.label);
     context.push(chipInfo);
     let customChips;
     try {

@@ -1,4 +1,4 @@
-import { info } from './utils.mjs';
+import { info, assert } from './utils.mjs';
 import { Chip, isChipClass } from './chip.mjs';
 import { PortOutlet } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
@@ -254,12 +254,8 @@ class EditableChipInfo {
 
   setChipId(chip, id, dryRun) {
     const chipInfo = info(this);
-    if (typeof chip === 'string') {
-      chip = chipInfo.getChip(id);
-    }
-    if (!chipInfo.chips.includes(chip)) {
-      throw new Error('Provided sub-chip is not in the Chip body');
-    }
+    chip = chipInfo.getChip(id);
+    assert(chip, 'Provided sub-chip is not in the Chip body');
     if (chip.id === id) {
       return this;
     }
@@ -278,6 +274,14 @@ class EditableChipInfo {
         oldId,
       });
     }
+    return this;
+  }
+
+  setChipLabel(chip, label) {
+    const chipInfo = info(this);
+    chip = chipInfo.getChip(chip);
+    assert(chip, 'Provided sub-chip is not in the Chip body');
+    chip.label = label;
     return this;
   }
 

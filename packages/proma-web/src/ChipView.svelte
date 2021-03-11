@@ -388,7 +388,7 @@
     {#each innerChips as innerChip}
       <Chip
         id={innerChip.id}
-        title={innerChip.id}
+        title={innerChip.label}
         color={getChipColor(innerChip)}
         bind:x={chip.metadata[innerChip.id].x}
         bind:y={chip.metadata[innerChip.id].y}

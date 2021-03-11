@@ -42,6 +42,10 @@ export function serializeChipInstance(chip) {
   if (Object.keys(initData).length > 0) {
     res.init = initData;
   }
+  // Store label
+  if (chip.hasCustomLabel) {
+    res.label = chip.label;
+  }
 
   return res;
 }

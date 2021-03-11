@@ -21,6 +21,7 @@ import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
 export class Chip {
   constructor(chipInfo, canonicalValues) {
     let id = chipInfo.makeChipId();
+    let customLabel;
 
     info(this, chipInfo);
 
@@ -58,6 +59,22 @@ export class Chip {
       isDataless: {
         get() {
           return chipInfo.isDataless;
+        },
+      },
+      label: {
+        enumerable: true,
+        get: () => {
+          if (customLabel) return customLabel;
+          return chipInfo.makeChipLabel(this);
+        },
+        set(value) {
+          customLabel = value;
+        },
+      },
+      hasCustomLabel: {
+        enumerable: true,
+        get() {
+          return !!customLabel;
         },
       },
     });
@@ -104,7 +121,7 @@ export function isChipClass(obj) {
 //
 
 export class ChipInfo {
-  constructor(URI) {
+  constructor(URI, makeLabel) {
     // TODO validate name, qualifiedName instead?
     this.URI = URI || 'local/' + shortUID();
     this.chips = [];
@@ -127,6 +144,24 @@ export class ChipInfo {
     this.makeChipId = () => {
       return `${this.name}_${++idCount}`;
     };
+
+    if (typeof makeLabel === 'function') {
+      this.makeChipLabel = makeLabel;
+    } else if (typeof makeLabel === 'string') {
+      this.makeChipLabel = () => makeLabel;
+    } else {
+      this.makeChipLabel = (chipInstance) => {
+        const parts = this.URI.split('/');
+        const lastPart = parts[parts.length - 1];
+        const wordsRegExp = /[A-Z][^A-Z\d]+|\d+|[A-Z]+(?![a-z])/g;
+        const words = [];
+        let wordMatch;
+        while ((wordMatch = wordsRegExp.exec(lastPart))) {
+          words.push(wordMatch[0].replace(/_/g, '').trim());
+        }
+        return words.filter((x) => !!x).join(' ');
+      };
+    }
   }
 
   get name() {
@@ -155,11 +190,16 @@ export class ChipInfo {
   //
 
   getChip(id) {
-    if (typeof id === 'number') {
+    if (id instanceof Chip) {
+      if (this.chips.includes(id)) {
+        return id;
+      }
+    } else if (typeof id === 'number') {
       return this.chips[id] || null;
-    }
-    for (const chip of this.chips) {
-      if (chip.id === id) return chip;
+    } else if (typeof id === 'string') {
+      for (const chip of this.chips) {
+        if (chip.id === id) return chip;
+      }
     }
     return null;
   }

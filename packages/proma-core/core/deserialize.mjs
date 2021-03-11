@@ -57,6 +57,9 @@ function deserializeChip(chip, data, withErrors) {
   }
   for (const chipData of data.chips || []) {
     build.addChip(chipData.chipURI, chipData.args, chipData.id);
+    if (chipData.label) {
+      build.setChipLabel(chipData.id, chipData.label);
+    }
   }
   for (const conn of data.connections || []) {
     try {
