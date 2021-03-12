@@ -64,13 +64,12 @@ export class Type {
       match: {
         value: function match(otherType, customTypes) {
           if (self === AnyType) return true;
-          if (otherType === AnyType || typeof otherType === 'undefined') {
+          if (isAnyType(otherType)) {
             return true;
           }
           if (!(otherType instanceof Type)) {
             otherType = type(otherType);
           }
-          if (otherType === AnyType) return true;
           if (otherType === self) return true;
           if (!typeMatcher || customTypes) {
             typeMatcher = makeMatchAll(definitions, customTypes);
@@ -296,7 +295,6 @@ function makeMatchAll(definitions, customTypes) {
     .sort(byType)
     .map((d) => makeTypeMatch(d, customTypes));
   return function typeMatchAll(otherDefinitions) {
-    if (definitions.length < otherDefinitions.length) return false;
     otherDefinitions = otherDefinitions.slice().sort(byType);
     for (let i = 0, l = otherDefinitions.length; i < l; i++) {
       if (!declarationMatchers.some((m) => m(otherDefinitions[i]))) {
@@ -312,24 +310,31 @@ function makeTypeMatch(definitionObject, customTypes) {
   let matchFunc;
   if (type) {
     const expectType = resolveType(definitionObject, customTypes);
-    matchFunc = function matchType(otherDefinitionObject) {
-      if (!otherDefinitionObject.type) return false;
-      const actualType = resolveType(otherDefinitionObject, customTypes);
-      if (
-        expectType === 'void' &&
-        (actualType === 'null' || actualType === 'undefined')
-      ) {
+    if (isAnyType(expectType)) {
+      matchFunc = function matchAnyType() {
         return true;
-      }
-      if (expectType === actualType) return true;
-      if (
-        typeof expectType === 'function' &&
-        typeof actualType === 'function'
-      ) {
-        return expectType.prototype instanceof actualType;
-      }
-      return false;
-    };
+      };
+    } else {
+      matchFunc = function matchType(otherDefinitionObject) {
+        if (!otherDefinitionObject.type) return false;
+        if (otherDefinitionObject.type === 'any') return true;
+        const actualType = resolveType(otherDefinitionObject, customTypes);
+        if (
+          expectType === 'void' &&
+          (actualType === 'null' || actualType === 'undefined')
+        ) {
+          return true;
+        }
+        if (expectType === actualType) return true;
+        if (
+          typeof expectType === 'function' &&
+          typeof actualType === 'function'
+        ) {
+          return expectType.prototype instanceof actualType;
+        }
+        return false;
+      };
+    }
   }
   if (container) {
     let matchContainer;
@@ -873,5 +878,9 @@ function consumeFunction(tokens) {
 //
 
 export const AnyType = type('any');
+
+function isAnyType(t) {
+  return t === AnyType || t === 'any' || !t;
+}
 
 // TODO add the "unknown" type that can be matched by everything but matches nothing?

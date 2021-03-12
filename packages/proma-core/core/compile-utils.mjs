@@ -231,7 +231,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
       // TODO we are returning an arrow function expression where we might
       // actually want to return an execution of it? if using this as a hook
       // of onCreate we would not execute anything.. perhaps the hook itself
-      // should be aware of this possibility
+      // should be aware of this possibility.
+      // TODO in fact we should always return the execution of a function so
+      // that we are consistent and the user of this value would know how to
+      // unpack it if neccessary
       ast = builders.arrowFunctionExpression([], ast);
       ast.async = true;
     }
@@ -239,7 +242,7 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   };
 }
 
-// TODO  FIX be careful with cleaning, you might remove code that the user
+// Be careful with cleaning, you might remove code that the user
 // intendet to have there like just `myObj.something;` could actually trigger
 // a getter but we might be tempted to remove it here. Aim to produce clean
 // code when compiling instead.

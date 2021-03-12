@@ -23,8 +23,8 @@ export default function install({
       const url = inputData('url', { canonical: true, type: 'String' });
 
       const then = outputFlow('then');
-      const json = outputData('json', 'Object');
-      const error = outputData('error', 'Error');
+      const json = outputData('json', 'Object | null');
+      const error = outputData('error', 'Error | null');
     }),
   );
 }
