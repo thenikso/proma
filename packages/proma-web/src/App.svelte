@@ -37,7 +37,6 @@
       console.log(e.message);
     }
   });
-  window.ChipClass = chipClass;
 
   //
   // Data
@@ -131,7 +130,7 @@
 
   function handleSelectionChange(e) {
     const { chips, outlets } = e.detail;
-    haveOutletSelected = chips.length === 0 && outlets.length > 0;
+    haveOutletSelected = chips.length === 0;
     selectedSubChipId =
       chips.length === 1 && outlets.length === 0 ? chips[0] : null;
   }

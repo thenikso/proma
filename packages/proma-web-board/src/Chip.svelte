@@ -13,8 +13,9 @@
   export let x = 0;
   export let y = 0;
   export let color = '#3a764f';
-  export let title = 'Chip';
   export let icon = null;
+  export let title = 'Chip';
+  export let subtitle = '';
 
   let chipEl;
   let rawX;
@@ -204,7 +205,9 @@
       {/if}
       <div class="ChipHeaderTitle">
         <div class="title">{title}</div>
-        <div class="subtitle" />
+        {#if subtitle}
+          <div class="subtitle">{subtitle}</div>
+        {/if}
       </div>
       <div
         class="ChipHeaderPorts ChipOutputPorts"
