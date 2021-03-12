@@ -254,7 +254,7 @@ class EditableChipInfo {
 
   setChipId(chip, id, dryRun) {
     const chipInfo = info(this);
-    chip = chipInfo.getChip(id);
+    chip = chipInfo.getChip(chip);
     assert(chip, 'Provided sub-chip is not in the Chip body');
     if (chip.id === id) {
       return this;

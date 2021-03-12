@@ -164,6 +164,7 @@ export class ChipInfo {
     }
   }
 
+  // Name given to the javascript entity representing this chip
   get name() {
     return this.URI.replace(/[^_$a-z0-9]/gi, '_');
   }
