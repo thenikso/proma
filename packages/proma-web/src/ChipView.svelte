@@ -281,7 +281,11 @@
             }
           }
           if (otherPort) {
-            edit.addConnection(portToConnect, otherPort);
+            if (otherPort.variadic) {
+              edit.addConnection(portToConnect, otherPort.variadic[0]);
+            } else {
+              edit.addConnection(portToConnect, otherPort);
+            }
           }
         }
       },

@@ -64,6 +64,9 @@ export class Type {
       match: {
         value: function match(otherType, customTypes) {
           if (self === AnyType) return true;
+          if (otherType === AnyType || typeof otherType === 'undefined') {
+            return true;
+          }
           if (!(otherType instanceof Type)) {
             otherType = type(otherType);
           }
