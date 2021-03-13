@@ -10,6 +10,12 @@
     "validate": "svelte-check --ignore src/node_modules/@sapper"
   },
   "dependencies": {
+    "@aws-cdk/aws-apigateway": "1.93.0",
+    "@aws-cdk/aws-iam": "1.93.0",
+    "@aws-cdk/aws-lambda": "1.93.0",
+    "@aws-cdk/core": "1.93.0",
+    "aws-cdk": "1.93.0",
+    "aws-sdk": "2.863.0",
     "compression": "^1.7.1",
     "polka": "next",
     "sirv": "^1.0.0"
