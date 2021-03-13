@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import * as proma from '@proma/core';
 
+const cache = new Map();
+
 export async function get(req: Request, res: Response): Promise<void> {
   const { project, func } = req.params;
   const codePath = path.resolve(
@@ -12,10 +14,24 @@ export async function get(req: Request, res: Response): Promise<void> {
     func,
     'GET.json',
   );
-  let code = await fs.promises.readFile(codePath, { encoding: 'utf-8' });
-  code = JSON.parse(code);
-  const Handler = proma.fromJSON(proma.chip, code);
-  const handler = new Handler();
+  const codeStats = await fs.promises.stat(codePath);
+
+  const codeCacheKey = `${project}/${func}`;
+  const codeCachedAtTime = codeStats.mtimeMs;
+
+  let hit = cache.get(codeCacheKey);
+  if (!hit || hit.time !== codeCachedAtTime) {
+    let code = await fs.promises.readFile(codePath, { encoding: 'utf-8' });
+    code = JSON.parse(code);
+    const Handler = proma.fromJSON(proma.chip, code);
+    const makeCompiledHandler = new Function(
+      'return (' + Handler.compile() + ')',
+    );
+    const handler = new (makeCompiledHandler())();
+    hit = { handler, time: codeCachedAtTime };
+    cache.set(codeCacheKey, hit);
+  }
+  const handler = hit.handler;
 
   const result = defer();
   handler.in.query = req.query;
