@@ -11,13 +11,16 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     .promise();
   const item = data.Items![0].name;
 
+  //
+  const { project, func } = event.pathParameters!;
+
   // Load chip data
   let chipData: any;
   try {
     const s3obj = await aws.s3
       .getObject({
         Bucket: 'proma-projects',
-        Key: 'example/greet.json',
+        Key: `${project}/${func}.json`,
       })
       .promise();
     chipData = JSON.parse(s3obj.Body!.toString('utf8'));

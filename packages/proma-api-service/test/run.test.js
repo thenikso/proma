@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk';
-import { handler as hello } from '../src/hello';
+import { handler as run } from '../src/run';
 
 describe('who tests the tests?', () => {
   afterEach(() => AWS.clearAllMocks());
@@ -9,7 +9,7 @@ describe('who tests the tests?', () => {
       Items: [{ name: 'Test' }],
     });
 
-    expect(await hello({ event: true })).toEqual({
+    expect(await run({ event: true })).toEqual({
       statusCode: 200,
       body: JSON.stringify(
         {

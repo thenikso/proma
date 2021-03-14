@@ -15,15 +15,24 @@ provider:
     shouldStartNameWithService: true
 
 functions:
-  hello:
-    handler: src/hello.handler
+  run:
+    handler: src/run.handler
     events:
       - http:
           method: get
-          path: /hello
+          path: /run/{project}/{func}
+          request:
+            parameters:
+              paths:
+                project: true
+                func: true
 
 resources:
   Resources:
+    projectsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: proma-projects
     usersTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -37,10 +46,6 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-    projectsBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: proma-projects
 
 package:
   individually: true
