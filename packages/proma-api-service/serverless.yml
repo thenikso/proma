@@ -1,0 +1,71 @@
+org: nikso
+app: proma
+service: proma-api
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  profile: nikso-serverless
+  region: eu-west-1
+  lambdaHashingVersion: 20201221
+  stage: ${opt:stage, 'dev'}
+  apiGateway:
+    shouldStartNameWithService: true
+
+functions:
+  hello:
+    handler: src/hello.handler
+    events:
+      - http:
+          method: get
+          path: /hello
+
+resources:
+  Resources:
+    users:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: users
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+package:
+  individually: true
+
+plugins:
+  - serverless-webpack
+  - serverless-jest-plugin
+  - serverless-dynamodb-local
+  - serverless-offline # serverless-offline needs to be last in the list (after serverless-dynamodb-local)
+
+custom:
+  webpack:
+    packager: 'yarn'
+    includeModules:
+      forceExclude:
+        - aws-sdk
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+    seed:
+      users:
+        sources:
+          - table: users
+            sources: [./seeds/users.json]
