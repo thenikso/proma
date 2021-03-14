@@ -1,14 +1,30 @@
 import AWS from 'aws-sdk';
 
-const localOptions = {
-  region: 'localhost',
-  endpoint: 'http://localhost:8000',
-};
+const isOffline = process.env.IS_OFFLINE;
 
 class AWSResources {
   get db() {
     return new AWS.DynamoDB.DocumentClient(
-      process.env.IS_OFFLINE ? localOptions : {},
+      isOffline
+        ? {
+            accessKeyId: 'DEFAULT_ACCESS_KEY',
+            secretAccessKey: 'DEFAULT_SECRET',
+            region: 'localhost',
+            endpoint: 'http://localhost:8000',
+          }
+        : {},
+    );
+  }
+  get s3() {
+    return new AWS.S3(
+      isOffline
+        ? {
+            accessKeyId: 'S3RVER', // This specific key is required when working offline
+            secretAccessKey: 'S3RVER',
+            s3ForcePathStyle: true,
+            endpoint: 'http://localhost:4569',
+          }
+        : {},
     );
   }
 }

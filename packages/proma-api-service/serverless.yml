@@ -24,7 +24,7 @@ functions:
 
 resources:
   Resources:
-    users:
+    usersTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: users
@@ -37,6 +37,10 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+    projectsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: proma-projects
 
 package:
   individually: true
@@ -45,7 +49,8 @@ plugins:
   - serverless-webpack
   - serverless-jest-plugin
   - serverless-dynamodb-local
-  - serverless-offline # serverless-offline needs to be last in the list (after serverless-dynamodb-local)
+  - serverless-s3-local
+  - serverless-offline # serverless-offline needs to be last in the list
 
 custom:
   webpack:
@@ -69,3 +74,7 @@ custom:
         sources:
           - table: users
             sources: [./seeds/users.json]
+  s3:
+    host: localhost
+    directory: ./buckets
+    port: 4569
