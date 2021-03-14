@@ -1,9 +1,8 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import dynamodb from './lib/dynamodb';
+import aws from './lib/aws';
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
-  const db = dynamodb();
-  const data = await db
+  const data = await aws.db
     .scan({
       TableName: 'users',
       Limit: 10,
