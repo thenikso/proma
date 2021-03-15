@@ -15,12 +15,15 @@ provider:
     shouldStartNameWithService: true
 
 functions:
+  auth:
+    handler: src/lib/authorizer.handler
   run:
     handler: src/run.handler
     events:
       - http:
           method: get
           path: /run/{project}/{func}
+          # authorizer: ${self:custom.authorizer}
           request:
             parameters:
               paths:
@@ -58,6 +61,12 @@ plugins:
   - serverless-offline # serverless-offline needs to be last in the list
 
 custom:
+  authorizer:
+    name: auth
+    type: token
+    resultTtlInSeconds: 0
+    identitySource: method.request.header.Authorization
+    identityValidationExpression: Bearer (.*)
   webpack:
     packager: 'yarn'
     includeModules:

@@ -1,8 +1,13 @@
-import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
+import type { APIGatewayProxyWithLambdaAuthorizerHandler } from 'aws-lambda';
 import aws from './lib/aws';
 import * as proma from '@proma/core';
 
-export const handler: APIGatewayProxyHandlerV2 = async (event) => {
+export const handler: APIGatewayProxyWithLambdaAuthorizerHandler<{}> = async (
+  event,
+) => {
+  // TODO the user id should be here or in some other authorizer prop
+  // console.log(event.requestContext.authorizer.principalId);
+
   const data = await aws.db
     .scan({
       TableName: 'users',
