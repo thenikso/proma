@@ -94,7 +94,10 @@
 
 <style>
   input {
-    min-width: 100px;
+    display: block;
+    box-sizing: border-box;
+    min-width: 80px;
     width: 100%;
+    font-family: inherit;
   }
 </style>

@@ -91,7 +91,7 @@
   }
 
   .Port:hover {
-    border-color: #444444;
+    border-color: var(--proma-board--port-hover--border-color, #444444);
   }
 
   .Port.input {

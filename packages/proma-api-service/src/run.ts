@@ -49,6 +49,9 @@ export const handler: APIGatewayProxyWithLambdaAuthorizerHandler<{}> = async (
     // hit = { handler, time: codeCachedAtTime, environment };
   }
 
+  // TODO the lambda execution will be billed based on the time it takes for
+  // this chip to execute. We should eventually measure the performance and stop
+  // chips that takes too long (on the free plan)
   let result: Promise<string> | undefined;
   if (handler) {
     // Setup handler execution as a promise and execute

@@ -350,14 +350,14 @@
       : port.name === 'handle';
   }
 
-  function getChipColor(innerChip) {
+  function getChipKind(innerChip) {
     if (innerChip.isEvent) {
-      return '#b63434';
+      return 'delegate';
     }
     if (innerChip.isDataless) {
-      return '#8D8D8D';
+      return 'control';
     }
-    return '#3a764f';
+    return 'default';
   }
 </script>
 
@@ -377,7 +377,7 @@
       <Chip
         id="$in"
         title="Input"
-        color="#446C8F"
+        kind="outlet"
         bind:x={chip.metadata.$in.x}
         bind:y={chip.metadata.$in.y}
       >
@@ -394,7 +394,7 @@
         id={innerChip.id}
         title={innerChip.label}
         subtitle={innerChip.id}
-        color={getChipColor(innerChip)}
+        kind={getChipKind(innerChip)}
         bind:x={chip.metadata[innerChip.id].x}
         bind:y={chip.metadata[innerChip.id].y}
       >
@@ -460,7 +460,7 @@
       <Chip
         id="$out"
         title="Output"
-        color="#446C8F"
+        kind="outlet"
         bind:x={chip.metadata.$out.x}
         bind:y={chip.metadata.$out.y}
       >

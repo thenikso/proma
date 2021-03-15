@@ -12,7 +12,7 @@
   export let selected = false;
   export let x = 0;
   export let y = 0;
-  export let color = '#3a764f';
+  export let kind = 'default';
   export let icon = null;
   export let title = 'Chip';
   export let subtitle = '';
@@ -194,12 +194,12 @@
 
 <div
   bind:this={chipEl}
-  class="Chip Chip-{id}"
+  class="Chip Chip-{id} ChipKind-{kind}"
   class:selected
   style="transform: translate3d({x}px, {y}px, 0)"
 >
   <div class="ChipBody">
-    <div class="ChipHeader" style="background-color: {color}">
+    <div class="ChipHeader">
       {#if icon}
         <svelte:component this={icon} />
       {/if}
@@ -236,13 +236,20 @@
     box-sizing: border-box;
 
     font-size: 14px;
-    color: white;
+    color: var(--proma-board--chip--color, white);
+    background-color: var(
+      --proma-board--chip--background-color,
+      rgba(62, 62, 62, 0.7)
+    );
+    box-shadow: var(
+      --proma-board--chip--shadow,
+      0 2px 1px rgba(29, 29, 29, 0.8)
+    );
 
-    background: rgba(62, 62, 62, 0.7);
-    box-shadow: 0 2px 1px rgba(29, 29, 29, 0.8);
-
-    border-radius: 5px;
-    border: 1px solid rgba(29, 29, 29, 0.7);
+    border-radius: var(--proma-board--chip--border-radius, 5px);
+    border-style: solid;
+    border-width: var(--proma-board--chip--border-width, 1px);
+    border-color: var(--proma-board--chip--border-color, rgba(29, 29, 29, 0.7));
 
     user-select: none;
     cursor: move;
@@ -272,7 +279,11 @@
 
     border: 5px solid transparent;
     border-radius: 10px;
-    background: linear-gradient(to right, #3e3e3e, #3e3e3e),
+    background: linear-gradient(
+        to right,
+        var(--proma-board--chip-selected--background-color, #3e3e3e),
+        var(--proma-board--chip-selected--background-color, #3e3e3e)
+      ),
       linear-gradient(15deg, #f17814, #e9b03d);
     background-clip: padding-box, border-box;
     background-origin: padding-box, border-box;
@@ -286,13 +297,36 @@
     display: flex;
     align-items: baseline;
 
-    color: white;
+    color: var(--proma-board--chip-header--color, white);
     font-size: 16px;
     padding: 3px 2px;
 
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    border-bottom: 1px solid #343434;
+    border-top-left-radius: calc(
+      var(--proma-board--chip--border-radius, 5px) - 1px
+    );
+    border-top-right-radius: calc(
+      var(--proma-board--chip--border-radius, 5px) - 1px
+    );
+    border-bottom: var(
+      --proma-board--chip-header--border-bottom,
+      1px solid #343434
+    );
+  }
+
+  .ChipKind-default .ChipHeader {
+    background-color: var(--proma-board--chip--kind-default, #3a764f);
+  }
+
+  .ChipKind-outlet .ChipHeader {
+    background-color: var(--proma-board--chip--kind-outlet, #446c8f);
+  }
+
+  .ChipKind-delegate .ChipHeader {
+    background-color: var(--proma-board--chip--kind-delegate, #446c8f);
+  }
+
+  .ChipKind-control .ChipHeader {
+    background-color: var(--proma-board--chip--kind-control, #446c8f);
   }
 
   .ChipHeader > div {
