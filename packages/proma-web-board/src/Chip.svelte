@@ -253,6 +253,14 @@
 
     user-select: none;
     cursor: move;
+
+    transition-property: color, background-color, box-shadow, border-radius,
+      border-width, border-color;
+    transition-duration: var(--proma-board-transition-duration, 0.25s);
+    transition-timing-function: var(
+      --proma-board-transition-timing-function,
+      ease
+    );
   }
 
   .Chip * {
@@ -295,11 +303,11 @@
 
   .ChipHeader {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
 
     color: var(--proma-board--chip-header--color, white);
-    font-size: 16px;
-    padding: 3px 2px;
+    font-size: 1em;
+    padding: var(--proma-board--chip-header--padding, 3px 2px);
 
     border-top-left-radius: calc(
       var(--proma-board--chip--border-radius, 5px) - 1px
@@ -310,6 +318,14 @@
     border-bottom: var(
       --proma-board--chip-header--border-bottom,
       1px solid #343434
+    );
+
+    transition-property: color, background-color, border-top-left-radius,
+      border-top-right-radius, border-bottom;
+    transition-duration: var(--proma-board-transition-duration, 0.25s);
+    transition-timing-function: var(
+      --proma-board-transition-timing-function,
+      ease
     );
   }
 
@@ -322,11 +338,11 @@
   }
 
   .ChipKind-delegate .ChipHeader {
-    background-color: var(--proma-board--chip--kind-delegate, #446c8f);
+    background-color: var(--proma-board--chip--kind-delegate, #b63434);
   }
 
   .ChipKind-control .ChipHeader {
-    background-color: var(--proma-board--chip--kind-control, #446c8f);
+    background-color: var(--proma-board--chip--kind-control, #8D8D8D);
   }
 
   .ChipHeader > div {
@@ -343,6 +359,7 @@
 
   .ChipHeaderTitle .title {
     font-weight: 400;
+    font-size: var(--proma-board--chip-header-title--font-size, 1.2em);
   }
 
   .ChipHeaderTitle .subtitle {

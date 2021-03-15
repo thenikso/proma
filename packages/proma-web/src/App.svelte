@@ -153,7 +153,7 @@
   }
 </script>
 
-<main>
+<main class="theme-light">
   <div bind:this={targetEl}>
     <h1>Hello!</h1>
     <input type="text" placeholder="What's your name?" />
