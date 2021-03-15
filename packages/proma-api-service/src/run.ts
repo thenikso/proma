@@ -16,8 +16,10 @@ export const handler: APIGatewayProxyWithLambdaAuthorizerHandler<{}> = async (
     .promise();
   const item = data.Items![0].name;
 
-  //
-  const { project, func } = event.pathParameters!;
+  let { user, project, func } = event.pathParameters!;
+
+  // TODO if mapping from a URL like `<user>.proma.app/project/func` we would
+  // need to extract the user from the domain
 
   // Load chip data
   let chipData: any;
@@ -51,7 +53,7 @@ export const handler: APIGatewayProxyWithLambdaAuthorizerHandler<{}> = async (
   if (handler) {
     // Setup handler execution as a promise and execute
     const deferred = defer<string>();
-    handler.in.query = event.queryStringParameters;
+    handler.in.query = { name: user };
     handler.out.then(() => {
       deferred.resolve(handler.out.result());
     });

@@ -22,11 +22,12 @@ functions:
     events:
       - http:
           method: get
-          path: /run/{project}/{func}
+          path: /run/{user}/{project}/{func}
           # authorizer: ${self:custom.authorizer}
           request:
             parameters:
               paths:
+                user: true
                 project: true
                 func: true
 

@@ -9,14 +9,18 @@ export const handler: APIGatewayTokenAuthorizerHandler = async (event) => {
 
   const token = event.authorizationToken.substr('Bearer '.length);
 
-  return buildAllowAllPolicy(event.methodArn, token);
+  return buildAllowPolicy(event.methodArn, token);
 };
 
-function buildAllowAllPolicy(methodArn: string, principalId: string) {
+function buildAllowPolicy(
+  methodArn: string,
+  principalId: string,
+  permissions?: [string],
+) {
   const [, , , awsRegion, awsAccountId, apiGatewayPath] = methodArn.split(':');
   const [restApiId, stage] = apiGatewayPath.split('/');
   const apiArn = `arn:aws:execute-api:${awsRegion}:${awsAccountId}:${restApiId}/${stage}/*/*`;
-  const policy = {
+  const policy: any = {
     principalId,
     policyDocument: {
       Version: '2012-10-17',
@@ -29,6 +33,12 @@ function buildAllowAllPolicy(methodArn: string, principalId: string) {
       ],
     },
   };
+
+  if (permissions && permissions.length > 0) {
+    policy.context = {
+      permissions: permissions.join(','),
+    };
+  }
 
   return policy;
 }
