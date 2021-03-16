@@ -172,14 +172,17 @@
       </div>
       <div class="Spacer" />
       <div class="Tools">
+        <button type="button" class="BigButton" on:click={runChipInstance}
+          >Run</button
+        >
+
+        <input type="checkbox" bind:checked={useCompiled} />
+
+        <button type="button" class="ImageButton" on:click={handleSave}>
+          <img src="/images/save.svg" alt="save" />
+        </button>
+
         <div class="old-tools">
-          <div style="margin-bottom: 10px;">
-            <button type="button" on:click={runChipInstance}>Run</button>
-            <label>
-              <input type="checkbox" bind:checked={useCompiled} />
-              compiled
-            </label>
-          </div>
           <div>
             <button
               type="button"
@@ -193,7 +196,6 @@
             >
               Print code
             </button>
-            <button type="button" on:click={handleSave}>Save</button>
           </div>
         </div>
       </div>
@@ -280,6 +282,29 @@
     flex-direction: row;
   }
 
+  .BigButton {
+    border: none;
+    border-radius: 5px;
+    padding: 15px 45px;
+    font-size: 20px;
+    cursor: pointer;
+
+    background: #FE9D28;
+    color: white;
+    font-weight: 500;
+  }
+
+  .ImageButton {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    height: 30px;
+  }
+
+  .ImageButton > img {
+    height: 100%;
+  }
+
   /* Main bar */
   .MainBar {
     box-sizing: border-box;
@@ -348,6 +373,7 @@
 
     display: flex;
     flex-direction: row-reverse;
+    align-items: center;
   }
 
   /* Details */
