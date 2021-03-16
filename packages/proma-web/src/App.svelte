@@ -130,7 +130,7 @@
 
   function handleSelectionChange(e) {
     const { chips, outlets } = e.detail;
-    haveOutletSelected = chips.length === 0;
+    haveOutletSelected = chips.length === 0 && outlets.length > 0;
     selectedSubChipId =
       chips.length === 1 && outlets.length === 0 ? chips[0] : null;
   }
@@ -159,95 +159,114 @@
     <input type="text" placeholder="What's your name?" />
     <button type="button">Greet me</button>
   </div>
-  <ChipView
-    id="MainBoard"
-    chip={chipClass}
-    on:subChip:request={handleChipRequest}
-    on:selection:change={handleSelectionChange}
-  />
-  <div style="display: flex; flex-direction: column;">
-    <div style="flex-grow: 2">
-      {#if haveOutletSelected}
-        <OutletsDetails chip={chipClass} />
-      {:else if selectedSubChipId}
-        <SubChipDetails chip={chipClass} subChipId={selectedSubChipId} />
-      {/if}
+
+  <div class="Viewer">
+    <ChipView
+      id="MainBoard"
+      chip={chipClass}
+      on:subChip:request={handleChipRequest}
+      on:selection:change={handleSelectionChange}
+    />
+
+    <div class="Header">
+      <div class="Breadcrumbs">
+        <div class="current">{chipClass.URI}</div>
+      </div>
+      <div class="Spacer" />
+      <div class="Tools">
+        <div style="margin-bottom: 10px;">
+          <button type="button" on:click={runChipInstance}>Run</button>
+          <label>
+            <input type="checkbox" bind:checked={useCompiled} />
+            compiled
+          </label>
+        </div>
+        <div>
+          <button
+            type="button"
+            on:click={() => console.log(chipClass.toJSON())}
+          >
+            Print JSON
+          </button>
+          <button
+            type="button"
+            on:click={() => console.log(chipClass.compile())}
+          >
+            Print code
+          </button>
+          <button type="button" on:click={handleSave}>Save</button>
+        </div>
+      </div>
     </div>
-    <footer style="padding: 5px;">
-      <div style="margin-bottom: 10px;">
-        <button type="button" on:click={runChipInstance}>Run</button>
-        <label>
-          <input type="checkbox" bind:checked={useCompiled} />
-          compiled
-        </label>
+
+    {#if haveOutletSelected || selectedSubChipId}
+      <div class="Details">
+        <div style="flex-grow: 2">
+          {#if haveOutletSelected}
+            <OutletsDetails chip={chipClass} />
+          {:else if selectedSubChipId}
+            <SubChipDetails chip={chipClass} subChipId={selectedSubChipId} />
+          {/if}
+        </div>
       </div>
-      <div>
-        <button type="button" on:click={() => console.log(chipClass.toJSON())}>
-          Print JSON
-        </button>
-        <button type="button" on:click={() => console.log(chipClass.compile())}>
-          Print code
-        </button>
-        <button type="button" on:click={handleSave}>Save</button>
-      </div>
-    </footer>
+    {/if}
+
+    {#if newSubChipRequest}
+      <Overlay
+        anchor={{
+          x: newSubChipRequest.clientX - 5,
+          y: newSubChipRequest.clientY - 5,
+        }}
+        on:dismiss={() => (newSubChipRequest = null)}
+      >
+        <div>
+          {#if newSubChipRequest.fromType && newSubChipRequest.fromType.definitionKind === 'function'}
+            <button
+              type="button"
+              on:click={() => {
+                newSubChipRequest.provideChipInstance(
+                  newEventChipFromType(newSubChipRequest.fromType),
+                  // TODO also send connection hint
+                );
+                newSubChipRequest = null;
+              }}
+            >
+              Create custom event
+            </button>
+          {/if}
+          <div><b>Context chips</b></div>
+          {#each Object.values(newSubChipRequest.chip.customChipClasses) as chipClass (chipClass.URI)}
+            <div>
+              <button
+                type="button"
+                on:click={() => {
+                  newSubChipRequest.provideChipInstance(new chipClass());
+                  newSubChipRequest = null;
+                }}
+              >
+                {chipClass.URI}
+              </button>
+            </div>
+          {/each}
+          <div><b>All chips</b></div>
+          {#each registryListExcluding(newSubChipRequest.chip) as chipClass (chipClass.URI)}
+            <div>
+              <button
+                type="button"
+                on:click={() => {
+                  newSubChipRequest.provideChipInstance(new chipClass());
+                  newSubChipRequest = null;
+                }}
+              >
+                {chipClass.URI}
+              </button>
+            </div>
+          {/each}
+        </div>
+      </Overlay>
+    {/if}
   </div>
 </main>
-
-{#if newSubChipRequest}
-  <Overlay
-    anchor={{
-      x: newSubChipRequest.clientX - 5,
-      y: newSubChipRequest.clientY - 5,
-    }}
-    on:dismiss={() => (newSubChipRequest = null)}
-  >
-    <div>
-      {#if newSubChipRequest.fromType && newSubChipRequest.fromType.definitionKind === 'function'}
-        <button
-          type="button"
-          on:click={() => {
-            newSubChipRequest.provideChipInstance(
-              newEventChipFromType(newSubChipRequest.fromType),
-              // TODO also send connection hint
-            );
-            newSubChipRequest = null;
-          }}
-        >
-          Create custom event
-        </button>
-      {/if}
-      <div><b>Context chips</b></div>
-      {#each Object.values(newSubChipRequest.chip.customChipClasses) as chipClass (chipClass.URI)}
-        <div>
-          <button
-            type="button"
-            on:click={() => {
-              newSubChipRequest.provideChipInstance(new chipClass());
-              newSubChipRequest = null;
-            }}
-          >
-            {chipClass.URI}
-          </button>
-        </div>
-      {/each}
-      <div><b>All chips</b></div>
-      {#each registryListExcluding(newSubChipRequest.chip) as chipClass (chipClass.URI)}
-        <div>
-          <button
-            type="button"
-            on:click={() => {
-              newSubChipRequest.provideChipInstance(new chipClass());
-              newSubChipRequest = null;
-            }}
-          >
-            {chipClass.URI}
-          </button>
-        </div>
-      {/each}
-    </div>
-  </Overlay>
-{/if}
 
 <style>
   main {
@@ -258,7 +277,84 @@
     height: 100vh;
 
     display: grid;
-    grid-template-columns: 1fr 2fr 300px;
+    grid-template-columns: 250px 1fr;
     grid-template-rows: 1fr;
+  }
+
+  .Viewer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Header */
+
+  .Header {
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    padding: 30px;
+
+    display: flex;
+    align-items: center;
+
+    transition: background-color 0.25s ease;
+
+    pointer-events: none;
+  }
+
+  .Header:hover {
+    transition: background-color 1s ease;
+    transition-delay: 0.5s;
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .Header .Breadcrumbs {
+    pointer-events: all;
+  }
+
+  .Header .Breadcrumbs .current {
+    font-size: 1.5em;
+    font-weight: 500;
+    color: #2e3741;
+  }
+
+  .Header .Spacer {
+    flex-grow: 1;
+  }
+
+  .Header .Tools {
+    pointer-events: all;
+  }
+
+  /* Details */
+
+  .Details {
+    box-sizing: border-box;
+    position: absolute;
+    right: 30px;
+    top: 130px;
+    padding: 20px;
+    width: 250px;
+    max-height: calc(100% - 160px);
+
+    background-color: var(
+      --proma-board--chip-selected--background-color,
+      #3e3e3e
+    );
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--proma-board--chip--border-color, #1d1d1d);
+    border-radius: 5px;
+    box-shadow: var(
+      --proma-board--chip--shadow,
+      0 2px 1px rgba(29, 29, 29, 0.8)
+    );
+
+    display: flex;
+    flex-direction: column;
   }
 </style>

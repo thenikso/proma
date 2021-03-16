@@ -28,7 +28,7 @@
 
   --proma-board--chip--color: #262f38;
   --proma-board--chip--background-color: rgba(255, 255, 255, 0.7);
-  --proma-board--chip--shadow: 0 2px 5px rgba(221, 226, 231, 0.4);
+  --proma-board--chip--shadow: 0 2px 4px rgba(221, 226, 231, 0.3);
   --proma-board--chip--border-color: rgba(229, 233, 236, 1);
   --proma-board--chip--border-width: 2px;
   --proma-board--chip--border-radius: 5px;
