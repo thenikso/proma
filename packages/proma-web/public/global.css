@@ -41,7 +41,7 @@
     var(--proma-board--chip--border-color);
   --proma-board--chip-header-title--font-size: 1.2em;
 
-  --proma-board--port-hover--background-color: #f6f8fa;
+  --proma-board--port-hover--background-color: transparent;
   --proma-board--port-hover--border-color: transparent;
 
   --proma-controls--input--color: #3f3f3f;

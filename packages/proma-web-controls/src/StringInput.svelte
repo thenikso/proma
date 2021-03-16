@@ -98,7 +98,7 @@
     background-color: var(--proma-controls--input--background, #57575773);
     border: 1px solid var(--proma-controls--input--border-color, #383839);
     border-radius: 5px;
-    padding: 6px 8px;
+    padding: 4px 6px;
 
     transition-property: background-color, border-color, color;
     transition-duration: var(--proma-board-transition-duration, 0.25s);
