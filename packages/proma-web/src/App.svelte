@@ -9,8 +9,8 @@
   } from '@proma/web-controls';
   import Overlay from './components/Overlay.svelte';
   import ChipView from './ChipView.svelte';
-  import OutletsView from './OutletsView.svelte';
-  import SubChipView from './SubChipView.svelte';
+  import OutletsDetails from './OutletsDetails.svelte';
+  import SubChipDetails from './SubChipDetails.svelte';
   import DEFAULT_CHIP from './defaultChip';
 
   //
@@ -168,9 +168,9 @@
   <div style="display: flex; flex-direction: column;">
     <div style="flex-grow: 2">
       {#if haveOutletSelected}
-        <OutletsView chip={chipClass} />
+        <OutletsDetails chip={chipClass} />
       {:else if selectedSubChipId}
-        <SubChipView chip={chipClass} subChipId={selectedSubChipId} />
+        <SubChipDetails chip={chipClass} subChipId={selectedSubChipId} />
       {/if}
     </div>
     <footer style="padding: 5px;">
