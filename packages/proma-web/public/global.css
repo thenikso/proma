@@ -34,6 +34,8 @@
   --proma-board--chip--border-radius: 5px;
 
   --proma-board--chip-selected--background-color: rgba(255, 255, 255, 1);
+  --proma-board--chip-selected--gradient-from: #faa94d;
+  --proma-board--chip-selected--gradient-to: #ffd102;
 
   --proma-board--chip-header--padding: 6px 3px 6px 5px;
   --proma-board--chip-header--color: #161a1f;
@@ -48,7 +50,7 @@
   --proma-controls--input--background: #f3f4f773;
   --proma-controls--input--border-color: #e9eaf0;
   --proma-controls--input-focus--background: #f3f4f7;
-  --proma-controls--input-focus--border-color: #257BFB;
+  --proma-controls--input-focus--border-color: #257bfb;
 }
 
 html,

@@ -294,7 +294,11 @@
         var(--proma-board--chip-selected--background-color, #3e3e3e),
         var(--proma-board--chip-selected--background-color, #3e3e3e)
       ),
-      linear-gradient(15deg, #f17814, #e9b03d);
+      linear-gradient(
+        15deg,
+        var(--proma-board--chip-selected--gradient-from, #f17814),
+        var(--proma-board--chip-selected--gradient-to, #e9b03d)
+      );
     background-clip: padding-box, border-box;
     background-origin: padding-box, border-box;
   }

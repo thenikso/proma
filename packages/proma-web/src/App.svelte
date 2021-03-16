@@ -154,10 +154,8 @@
 </script>
 
 <main class="theme-light">
-  <div bind:this={targetEl}>
-    <h1>Hello!</h1>
-    <input type="text" placeholder="What's your name?" />
-    <button type="button">Greet me</button>
+  <div class="MainBar">
+    <img src="/images/logo.webp" alt="Proma" style="width: 100%" />
   </div>
 
   <div class="Viewer">
@@ -174,27 +172,29 @@
       </div>
       <div class="Spacer" />
       <div class="Tools">
-        <div style="margin-bottom: 10px;">
-          <button type="button" on:click={runChipInstance}>Run</button>
-          <label>
-            <input type="checkbox" bind:checked={useCompiled} />
-            compiled
-          </label>
-        </div>
-        <div>
-          <button
-            type="button"
-            on:click={() => console.log(chipClass.toJSON())}
-          >
-            Print JSON
-          </button>
-          <button
-            type="button"
-            on:click={() => console.log(chipClass.compile())}
-          >
-            Print code
-          </button>
-          <button type="button" on:click={handleSave}>Save</button>
+        <div class="old-tools">
+          <div style="margin-bottom: 10px;">
+            <button type="button" on:click={runChipInstance}>Run</button>
+            <label>
+              <input type="checkbox" bind:checked={useCompiled} />
+              compiled
+            </label>
+          </div>
+          <div>
+            <button
+              type="button"
+              on:click={() => console.log(chipClass.toJSON())}
+            >
+              Print JSON
+            </button>
+            <button
+              type="button"
+              on:click={() => console.log(chipClass.compile())}
+            >
+              Print code
+            </button>
+            <button type="button" on:click={handleSave}>Save</button>
+          </div>
         </div>
       </div>
     </div>
@@ -276,15 +276,32 @@
     width: 100vw;
     height: 100vh;
 
-    display: grid;
-    grid-template-columns: 250px 1fr;
-    grid-template-rows: 1fr;
+    display: flex;
+    flex-direction: row;
   }
+
+  /* Main bar */
+  .MainBar {
+    box-sizing: border-box;
+    width: 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+
+    background-color: #fbfdfe;
+    box-shadow: 1px 0 3px #eaedf0;
+    z-index: 1;
+  }
+
+  /* Viewer */
 
   .Viewer {
     position: relative;
     width: 100%;
     height: 100%;
+
+    flex-grow: 1;
   }
 
   /* Header */
@@ -328,6 +345,9 @@
 
   .Header .Tools {
     pointer-events: all;
+
+    display: flex;
+    flex-direction: row-reverse;
   }
 
   /* Details */
@@ -338,7 +358,7 @@
     right: 30px;
     top: 130px;
     padding: 20px;
-    width: 250px;
+    width: 350px;
     max-height: calc(100% - 160px);
 
     background-color: var(
