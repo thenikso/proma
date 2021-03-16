@@ -214,16 +214,18 @@
         bind:this={headerOutputContainerEl}
       />
     </div>
-    <div class="ChipPorts">
-      <div class="ChipInputPorts" bind:this={inputContainerEl} />
-      <div class="ChipOutputPorts" bind:this={outputContainerEl} />
-    </div>
-    {#if hasPortExtras}
-      <div class="ChipPorts ChpPortsExtras">
-        <div class="ChipInputPorts" bind:this={inputExtrasContainerEl} />
-        <div class="ChipOutputPorts" bind:this={outputExtrasContainerEl} />
+    <div class="ChipPortsContainer">
+      <div class="ChipPorts">
+        <div class="ChipInputPorts" bind:this={inputContainerEl} />
+        <div class="ChipOutputPorts" bind:this={outputContainerEl} />
       </div>
-    {/if}
+      {#if hasPortExtras}
+        <div class="ChipPorts ChpPortsExtras">
+          <div class="ChipInputPorts" bind:this={inputExtrasContainerEl} />
+          <div class="ChipOutputPorts" bind:this={outputExtrasContainerEl} />
+        </div>
+      {/if}
+    </div>
     <div class="ChipExtra">
       <slot />
     </div>
@@ -303,7 +305,7 @@
 
   .ChipHeader {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
 
     color: var(--proma-board--chip-header--color, white);
     font-size: 1em;
@@ -330,19 +332,19 @@
   }
 
   .ChipKind-default .ChipHeader {
-    background-color: var(--proma-board--chip--kind-default, #3a764f);
+    background: var(--proma-board--chip--kind-default, #3a764f);
   }
 
   .ChipKind-outlet .ChipHeader {
-    background-color: var(--proma-board--chip--kind-outlet, #446c8f);
+    background: var(--proma-board--chip--kind-outlet, #446c8f);
   }
 
   .ChipKind-delegate .ChipHeader {
-    background-color: var(--proma-board--chip--kind-delegate, #b63434);
+    background: var(--proma-board--chip--kind-delegate, #b63434);
   }
 
   .ChipKind-control .ChipHeader {
-    background-color: var(--proma-board--chip--kind-control, #8D8D8D);
+    background: var(--proma-board--chip--kind-control, #8d8d8d);
   }
 
   .ChipHeader > div {
@@ -369,12 +371,15 @@
     opacity: 0.7;
   }
 
+  .ChipPortsContainer {
+    padding: 3px;
+  }
+
   .ChipPorts {
     display: grid;
     grid-template-rows: 100%;
     grid-template-columns: 1fr 1fr;
     grid-gap: 40px;
-    padding: 3px;
   }
 
   .ChipInputPorts {

@@ -93,11 +93,38 @@
 </div>
 
 <style>
+  .NameInput {
+    color: var(--proma-controls--input--color, white);
+    background-color: var(--proma-controls--input--background, #57575773);
+    border: 1px solid var(--proma-controls--input--border-color, #383839);
+    border-radius: 5px;
+    padding: 6px 8px;
+
+    transition-property: background-color, border-color, color;
+    transition-duration: var(--proma-board-transition-duration, 0.25s);
+    transition-timing-function: var(
+      --proma-board-transition-timing-function,
+      ease
+    );
+  }
+
+  .NameInput:focus-within {
+    background-color: var(--proma-controls--input-focus--background, #575757);
+    border-color: var(--proma-controls--input-focus--border-color, #257bfb);
+  }
+
   input {
     display: block;
     box-sizing: border-box;
     min-width: 80px;
     width: 100%;
+    color: inherit;
     font-family: inherit;
+    font-weight: inherit;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    outline: unset;
   }
 </style>

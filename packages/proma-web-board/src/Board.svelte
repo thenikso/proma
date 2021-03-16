@@ -747,6 +747,7 @@
   .Board {
     position: relative;
     overflow: hidden;
+    outline: none;
     width: 100%;
     height: 100%;
     min-width: 200px;

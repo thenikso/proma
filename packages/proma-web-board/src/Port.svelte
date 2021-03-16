@@ -85,12 +85,23 @@
     padding: 5px;
     border: 1px solid transparent;
     border-radius: 3px;
-    transition: border-color 0.25s ease;
+    background-color: transparent;
 
     cursor: default;
+
+    transition-property: border-color, background-color;
+    transition-duration: var(--proma-board-transition-duration, 0.25s);
+    transition-timing-function: var(
+      --proma-board-transition-timing-function,
+      ease
+    );
   }
 
   .Port:hover {
+    background-color: var(
+      --proma-board--port-hover--background-color,
+      transparent
+    );
     border-color: var(--proma-board--port-hover--border-color, #444444);
   }
 

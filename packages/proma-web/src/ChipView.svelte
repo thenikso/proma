@@ -25,6 +25,7 @@
   import { edit as editChip } from '@proma/core/core/index.mjs';
   import { Board, Chip, Inputs, Outputs, Port, Wire } from '@proma/web-board';
   import PortValueInput from './PortValueInput.svelte';
+  import AddPortButton from './components/AddPortButton.svelte';
 
   export let id = 'ChipView';
   export let chip;
@@ -393,7 +394,6 @@
       <Chip
         id={innerChip.id}
         title={innerChip.label}
-        subtitle={innerChip.id}
         kind={getChipKind(innerChip)}
         bind:x={chip.metadata[innerChip.id].x}
         bind:y={chip.metadata[innerChip.id].y}
@@ -422,9 +422,7 @@
                     {/if}
                   </Port>
                 {/each}
-                <button type="button" on:click={() => addVariadicPort(port)}>
-                  Add
-                </button>
+                <AddPortButton on:click={() => addVariadicPort(port)} />
               {/if}
             {/each}
           </Inputs>
@@ -446,9 +444,7 @@
                     type={getPortType(variadicPort)}
                   />
                 {/each}
-                <button type="button" on:click={() => addVariadicPort(port)}>
-                  Add
-                </button>
+                <AddPortButton on:click={() => addVariadicPort(port)} />
               {/if}
             {/each}
           </Outputs>
