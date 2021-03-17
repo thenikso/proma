@@ -1,9 +1,0 @@
-[
-  {
-    "functionId": "greet",
-    "ownerHostId": "nikso",
-    "chipSourceUrl": "s3://dev-proma-projects-data/nikso/default/greet.json",
-    "functionSlug": "greet",
-    "name": "Greet"
-  }
-]

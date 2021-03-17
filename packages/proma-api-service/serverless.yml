@@ -8,19 +8,56 @@ provider:
   name: aws
   runtime: nodejs12.x
   profile: nikso-serverless
-  region: ${opt:region, eu-west-1)
-  stage: ${opt:stage, dev}
+  region: ${opt:region, 'eu-west-1'}
+  stage: ${opt:stage, 'dev'}
   lambdaHashingVersion: 20201221
   apiGateway:
     shouldStartNameWithService: true
   environment:
     S3_PROJECT_DATA_BUCKET: ${self:provider.stage}-proma-projects-data
     DYNAMODB_HOSTS_TABLE: ${self:provider.stage}-hosts
-    DYNAMODB_FUNCTIONS_TABLE: ${self:provider.stage}-functions
+    DYNAMODB_PROJECTS_TABLE: ${self:provider.stage}-projects
+  iam:
+    role:
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - dynamodb:*
+          Resource:
+            - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_PROJECTS_TABLE}'
+        - Effect: 'Allow'
+          Action:
+            - s3:GetObject
+          Resource:
+            - 'arn:aws:s3:::${self:provider.environment.S3_PROJECT_DATA_BUCKET}/*'
 
 functions:
   auth:
-    handler: src/lib/authorizer.handler
+    handler: src/authorizer.handler
+  getProject:
+    handler: src/project.get
+    events:
+      - http:
+          method: get
+          path: /project/{hostId}/{projectSlug}
+          # authorizer: ${self:custom.authorizer}
+          request:
+            parameters:
+              paths:
+                hostId: true
+                projectSlug: true
+  postProject:
+    handler: src/project.post
+    events:
+      - http:
+          method: post
+          path: /project/{hostId}/{projectSlug}
+          # authorizer: ${self:custom.authorizer}
+          request:
+            parameters:
+              paths:
+                hostId: true
+                projectSlug: true
   run:
     handler: src/run.handler
     events:
@@ -34,12 +71,6 @@ functions:
                 user: true
                 project: true
                 func: true
-    iamRoleStatements:
-      - Effect: 'Allow'
-        Actions:
-          - dynamodb:Get
-        Resource:
-          - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FUNCTIONS_TABLE}'
 
 resources:
   Resources:
@@ -60,17 +91,17 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-    functionsTable:
+    projectsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.DYNAMODB_FUNCTIONS_TABLE}
+        TableName: ${self:provider.environment.DYNAMODB_PROJECTS_TABLE}
         AttributeDefinitions:
-          - AttributeName: functionId
+          - AttributeName: projectSlug
             AttributeType: S
           - AttributeName: ownerHostId
             AttributeType: S
         KeySchema:
-          - AttributeName: functionId
+          - AttributeName: projectSlug
             KeyType: HASH
           - AttributeName: ownerHostId
             KeyType: RANGE
@@ -116,8 +147,8 @@ custom:
         sources:
           - table: ${self:provider.environment.DYNAMODB_HOSTS_TABLE}
             sources: [./seeds/hosts.json]
-          - table: ${self:provider.environment.DYNAMODB_FUNCTIONS_TABLE}
-            sources: [./seeds/functions.json]
+          - table: ${self:provider.environment.DYNAMODB_PROJECTS_TABLE}
+            sources: [./seeds/projects.json]
   s3:
     host: localhost
     directory: ./buckets
