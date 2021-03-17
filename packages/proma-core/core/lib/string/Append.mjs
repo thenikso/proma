@@ -9,6 +9,7 @@ export default function install({ registry, chip, inputData, outputData }) {
 
       const value = outputData('value', {
         compute: () => input().join(''),
+        type: 'String',
       });
     }),
   );

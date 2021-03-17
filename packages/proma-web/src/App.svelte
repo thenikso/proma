@@ -298,7 +298,7 @@
     border: none;
     background: transparent;
     cursor: pointer;
-    height: 30px;
+    height: 25px;
   }
 
   .ImageButton > img {

@@ -8,7 +8,7 @@
   export let panX = 0;
   export let panY = 0;
   export let zoom = 1;
-  export let minZoom = 0.4;
+  export let minZoom = 0.1;
   export let maxZoom = 1;
   export let snap = 5;
   export let newWirePath = WirePath;

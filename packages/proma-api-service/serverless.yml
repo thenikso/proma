@@ -8,11 +8,15 @@ provider:
   name: aws
   runtime: nodejs12.x
   profile: nikso-serverless
-  region: eu-west-1
+  region: ${opt:region, eu-west-1)
+  stage: ${opt:stage, dev}
   lambdaHashingVersion: 20201221
-  stage: ${opt:stage, 'dev'}
   apiGateway:
     shouldStartNameWithService: true
+  environment:
+    S3_PROJECT_DATA_BUCKET: ${self:provider.stage}-proma-projects-data
+    DYNAMODB_HOSTS_TABLE: ${self:provider.stage}-hosts
+    DYNAMODB_FUNCTIONS_TABLE: ${self:provider.stage}-functions
 
 functions:
   auth:
@@ -30,23 +34,46 @@ functions:
                 user: true
                 project: true
                 func: true
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Actions:
+          - dynamodb:Get
+        Resource:
+          - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FUNCTIONS_TABLE}'
 
 resources:
   Resources:
     projectsBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: proma-projects
-    usersTable:
+        BucketName: ${self:provider.environment.S3_PROJECT_DATA_BUCKET}
+    hostsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: users
+        TableName: ${self:provider.environment.DYNAMODB_HOSTS_TABLE}
         AttributeDefinitions:
-          - AttributeName: email
+          - AttributeName: hostId
             AttributeType: S
         KeySchema:
-          - AttributeName: email
+          - AttributeName: hostId
             KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    functionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_FUNCTIONS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: functionId
+            AttributeType: S
+          - AttributeName: ownerHostId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: functionId
+            KeyType: HASH
+          - AttributeName: ownerHostId
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
@@ -85,10 +112,12 @@ custom:
       seed: true
       convertEmptyValues: true
     seed:
-      users:
+      hosts:
         sources:
-          - table: users
-            sources: [./seeds/users.json]
+          - table: ${self:provider.environment.DYNAMODB_HOSTS_TABLE}
+            sources: [./seeds/hosts.json]
+          - table: ${self:provider.environment.DYNAMODB_FUNCTIONS_TABLE}
+            sources: [./seeds/functions.json]
   s3:
     host: localhost
     directory: ./buckets
