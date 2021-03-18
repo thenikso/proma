@@ -93,13 +93,21 @@ export const endpoint: Handler = async (event) => {
 
   // Execute chip
   const deferred = defer();
-  chipInstance.out.then(() => {
-    deferred.resolve(chipInstance.out.result());
-  });
-  chipInstance.in.exec();
+  try {
+    chipInstance.out.then(() => {
+      deferred.resolve(chipInstance.out.result());
+    });
+    chipInstance.in.exec();
+  } catch (e) {
+    releaseLogCapture();
+    return error(400, e);
+  }
 
   // Wait for result
   const chipResult = await deferred.promise;
+
+  // Destroy chip
+  chipInstance.destroy();
 
   console.info('[result] Completed request');
   releaseLogCapture();
@@ -107,7 +115,12 @@ export const endpoint: Handler = async (event) => {
   const result = {
     statusCode: chipResult.statusCode || 200,
     body: JSON.stringify(
-      { result: chipResult.body || chipResult, chipErrors, logs, errors },
+      {
+        result: chipResult.body || chipResult,
+        chipErrors,
+        logs,
+        error: errors,
+      },
       null,
       2,
     ),

@@ -1,41 +1,15 @@
 <script>
-  import { onMount, createEventDispatcher } from 'svelte';
   // TODO used compiled version instead
   import * as proma from '@proma/core/core/index.mjs';
-  import {
-    createShortcutDispatcher,
-    shortcuts,
-    action,
-  } from '@proma/web-controls';
   import Overlay from './components/Overlay.svelte';
-  import ChipView from './ChipView.svelte';
+  import ChipBoard from './ChipBoard.svelte';
   import OutletsDetails from './OutletsDetails.svelte';
   import SubChipDetails from './SubChipDetails.svelte';
   import DEFAULT_CHIP from './defaultChip';
 
-  export let source;
-
-  //
-  // Events
-  //
-
-  const dispatch = createEventDispatcher();
-
-  function dispatchSave(detail) {
-    dispatch('save', detail);
-  }
-
-  //
-  // Chip loading
-  //
-
-  $: chipClass =
-    source &&
-    proma.fromJSON(proma.chip, source, (errors) => {
-      for (const e of errors) {
-        console.log(e.message);
-      }
-    });
+  export let chipClass;
+  // Show selected sub-chip or outlet details on panel
+  export let showDetails = false;
 
   //
   // Data
@@ -46,68 +20,6 @@
 
   let haveOutletSelected;
   let selectedSubChipId;
-
-  //
-  // Shortcuts
-  //
-
-  shortcuts.set('!cmd+S', handleSave);
-  shortcuts.set('[MainBoard:board] cmd+A', action('ChipView.selectAll'));
-  shortcuts.set('[MainBoard:chip] backspace', action('ChipView.removeChip'));
-  shortcuts.set(
-    '[MainBoard:port] alt+click',
-    action('ChipView.removeConnection'),
-  );
-
-  const dispatchShortcuts = createShortcutDispatcher();
-
-  onMount(() => {
-    const preventDefaultShortcuts = (e) => {
-      if (dispatchShortcuts(e, { capture: false })) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    const preventDefaultShortcutsCaptured = (e) => {
-      if (dispatchShortcuts(e, { capture: true })) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-
-    document.addEventListener('keydown', preventDefaultShortcutsCaptured, true);
-    document.addEventListener('keydown', preventDefaultShortcuts);
-
-    return () => {
-      document.removeEventListener(
-        'keydown',
-        preventDefaultShortcutsCaptured,
-        true,
-      );
-      document.removeEventListener('keydown', preventDefaultShortcuts);
-    };
-  });
-
-  //
-  // Instance run
-  //
-
-  let useCompiled = false;
-  let chipInstance;
-
-  function runChipInstance() {
-    if (chipInstance) {
-      chipInstance.destroy();
-    }
-    if (useCompiled) {
-      const code = chipClass.compile();
-      const makeCompiledChip = new Function('return (' + code + ')');
-      const ChipCompiled = makeCompiledChip();
-      chipInstance = new ChipCompiled(targetEl);
-    } else {
-      chipInstance = new chipClass(targetEl);
-    }
-  }
 
   //
   // Listing chips
@@ -128,17 +40,11 @@
   }
 
   function handleSelectionChange(e) {
+    if (!showDetails) return;
     const { chips, outlets } = e.detail;
     haveOutletSelected = chips.length === 0 && outlets.length > 0;
     selectedSubChipId =
       chips.length === 1 && outlets.length === 0 ? chips[0] : null;
-  }
-
-  function handleSave() {
-    dispatchSave({
-      chipURI: chipClass.URI,
-      chipSource: chipClass.toJSON(),
-    });
   }
 
   //
@@ -155,8 +61,8 @@
   }
 </script>
 
-<div class="Viewer">
-  <ChipView
+<div class="ChipEditor">
+  <ChipBoard
     id="MainBoard"
     chip={chipClass}
     on:subChip:request={handleChipRequest}
@@ -168,45 +74,20 @@
       <div class="current">{chipClass.URI}</div>
     </div>
     <div class="Spacer" />
-    <div class="Tools">
-      <button type="button" class="BigButton" on:click={runChipInstance}
-        >Run</button
-      >
-
-      <input type="checkbox" bind:checked={useCompiled} />
-
-      <button type="button" class="ImageButton" on:click={handleSave}>
-        <img src="/images/save.svg" alt="save" />
-      </button>
-
-      <div class="old-tools">
-        <div>
-          <button
-            type="button"
-            on:click={() => console.log(chipClass.toJSON())}
-          >
-            Print JSON
-          </button>
-          <button
-            type="button"
-            on:click={() => console.log(chipClass.compile())}
-          >
-            Print code
-          </button>
-        </div>
+    {#if $$slots.tools}
+      <div class="Tools">
+        <slot name="tools" />
       </div>
-    </div>
+    {/if}
   </div>
 
   {#if haveOutletSelected || selectedSubChipId}
-    <div class="Details">
-      <div style="flex-grow: 2">
-        {#if haveOutletSelected}
-          <OutletsDetails chip={chipClass} />
-        {:else if selectedSubChipId}
-          <SubChipDetails chip={chipClass} subChipId={selectedSubChipId} />
-        {/if}
-      </div>
+    <div class="Details SelectionDetails">
+      {#if haveOutletSelected}
+        <OutletsDetails chip={chipClass} />
+      {:else if selectedSubChipId}
+        <SubChipDetails chip={chipClass} subChipId={selectedSubChipId} />
+      {/if}
     </div>
   {/if}
 
@@ -267,32 +148,9 @@
 </div>
 
 <style>
-  .BigButton {
-    border: none;
-    border-radius: 5px;
-    padding: 15px 45px;
-    font-size: 20px;
-    cursor: pointer;
+  /* ChipEditor */
 
-    background: #fe9d28;
-    color: white;
-    font-weight: 500;
-  }
-
-  .ImageButton {
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    height: 25px;
-  }
-
-  .ImageButton > img {
-    height: 100%;
-  }
-
-  /* Viewer */
-
-  .Viewer {
+  .ChipEditor {
     position: relative;
     width: 100%;
     height: 100%;
@@ -322,7 +180,7 @@
   .Header:hover {
     transition: background-color 1s ease;
     transition-delay: 0.5s;
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.7);
   }
 
   .Header .Breadcrumbs {
@@ -341,22 +199,20 @@
 
   .Header .Tools {
     pointer-events: all;
-
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: center;
   }
 
   /* Details */
 
   .Details {
-    box-sizing: border-box;
-    position: absolute;
     right: 30px;
     top: 110px;
+    height: 100%;
+
+    box-sizing: border-box;
+    position: absolute;
     padding: 20px;
     width: 350px;
-    max-height: calc(100% - 160px);
+    max-height: calc(100% - 140px);
 
     background-color: var(
       --proma-board--chip-selected--background-color,
@@ -373,5 +229,11 @@
 
     display: flex;
     flex-direction: column;
+  }
+
+  .Details.SelectionDetails {
+    left: 30px;
+    bottom: 30px;
+    height: auto;
   }
 </style>

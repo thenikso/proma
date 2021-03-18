@@ -1,17 +1,17 @@
 <script context="module">
   import { action } from '@proma/web-controls';
 
-  action.provide('ChipView.removeChip', ({ path: [chipView, chip] }) => {
+  action.provide('ChipBoard.removeChip', ({ path: [chipView, chip] }) => {
     for (const c of chip) {
       chipView.removeChip(c.chip);
     }
   });
 
-  action.provide('ChipView.removeConnection', ({ path: [chipView, port] }) => {
+  action.provide('ChipBoard.removeConnection', ({ path: [chipView, port] }) => {
     chipView.removeConnection(port);
   });
 
-  action.provide('ChipView.selectAll', ({ path: [chipView], sourceEvent }) => {
+  action.provide('ChipBoard.selectAll', ({ path: [chipView], sourceEvent }) => {
     chipView.selectAllChips();
     // TODO these should got in the action as `action('name', true)` to prevent?
     sourceEvent.stopPropagation();
@@ -27,7 +27,7 @@
   import PortValueInput from './PortValueInput.svelte';
   import AddPortButton from './components/AddPortButton.svelte';
 
-  export let id = 'ChipView';
+  export let id = 'ChipBoard';
   export let chip;
   // export let instance = null;
 
@@ -362,7 +362,7 @@
   }
 </script>
 
-<div {id} class="ChipView">
+<div {id} class="ChipBoard">
   <Board
     refreshKey={updatePortsKey}
     on:board:contextmenu={handleBoardContextmenu}
@@ -481,7 +481,7 @@
 </div>
 
 <style>
-  .ChipView {
+  .ChipBoard {
     position: relative;
     width: 100%;
     height: 100%;

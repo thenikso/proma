@@ -79,13 +79,14 @@
   }
 </script>
 
-<div class="NameInput" {...$$restProps}>
+<div class="NameInput">
   <input
     type="text"
     bind:value={internalValue}
     {placeholder}
     on:keydown={handleKeydown}
     on:blur={handleBlur}
+    {...$$restProps}
   />
   {#if error}
     <div class="error">{error.message}</div>
