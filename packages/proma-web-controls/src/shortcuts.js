@@ -277,6 +277,8 @@ function resolveSingleShortcut(shortcut, action) {
   return { shortcut, matchTarget, matchEvent, action, capture: !!capturing };
 }
 
+const MOD_KEYS = ['meta', 'win', 'cmd', 'shift', 'alt', 'ctrl'];
+
 // Transform an event matcher string like "alt+click" (or series of events like
 // "cmd+K > cmd+L") into a function that matches an event and return a boolean.
 function makeShortcutMatcher(eventString) {
@@ -286,9 +288,25 @@ function makeShortcutMatcher(eventString) {
     .split('>')
     .map((x) => x.split('+').map((x) => x.trim()));
   // combinationsMathcers is [ [ matcherFunc, matcherFunc ] ]
-  const combinationsMathcers = combinations.map((tokens) =>
-    tokens.map(makeShortcutTokenMatcher),
-  );
+  const combinationsMathcers = combinations.map((tokens) => {
+    const mods = {
+      metaKey:
+        tokens.includes('meta') ||
+        tokens.includes('win') ||
+        tokens.includes('cmd'),
+      shiftKey: tokens.includes('shift'),
+      altKey: tokens.includes('alt'),
+      ctrlKey: tokens.includes('ctrl'),
+    };
+    const metaMatcher = (e) => {
+      for (const m in mods) {
+        if (e[m] !== mods[m]) return false;
+      }
+      return true;
+    };
+    tokens = tokens.filter((t) => !MOD_KEYS.includes(t));
+    return [metaMatcher, ...tokens.map(makeShortcutTokenMatcher)];
+  });
   // sequenceMathers is [ shortcutMatcher ] or [ shortcutMatcher, shortcutMatcher ]
   // of matchers to be matched in sequence
   const sequenceMathers = combinationsMathcers.map(
@@ -335,14 +353,6 @@ function makeShortcutTokenMatcher(shortcutToken) {
     case 'mousemove':
     case 'contextmenu':
       return (e) => e.type === shortcutToken;
-    case 'alt':
-      return (e) => e.altKey;
-    case 'ctrl':
-      return (e) => e.ctrlKey;
-    case 'cmd':
-    case 'meta':
-    case 'win':
-      return (e) => e.metaKey;
     default:
       return (e) =>
         (e.type === 'keydown' || e.type === 'keyup') &&
