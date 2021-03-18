@@ -384,7 +384,11 @@
       >
         <Outputs>
           {#each inputOutlets as outlet}
-            <Port name={outlet.name} type={getPortType(outlet)} />
+            <Port
+              name={outlet.name}
+              type={getPortType(outlet)}
+              hideName={shouldHideName(outlet)}
+            />
           {/each}
         </Outputs>
       </Chip>
@@ -462,7 +466,11 @@
       >
         <Inputs>
           {#each outputOutlets as outlet}
-            <Port name={outlet.name} type={getPortType(outlet)} />
+            <Port
+              name={outlet.name}
+              type={getPortType(outlet)}
+              hideName={shouldHideName(outlet)}
+            />
           {/each}
         </Inputs>
       </Chip>

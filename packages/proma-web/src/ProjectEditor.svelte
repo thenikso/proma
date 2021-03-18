@@ -7,7 +7,7 @@
     StringInput,
   } from '@proma/web-controls';
   import { onMount } from 'svelte';
-  import ChipView from './ChipEditor.svelte';
+  import ChipEditor from './ChipEditor.svelte';
 
   export let currentRoute;
   export let params;
@@ -162,7 +162,7 @@
       Loading
     {:then project}
       {#if chipClass}
-        <ChipView {chipClass}>
+        <ChipEditor {chipClass}>
           <div class="ChipViewTools" slot="tools">
             <button type="button" class="run-button" on:click={runRemove}>
               Run
@@ -176,7 +176,7 @@
               <img src="/images/save.svg" alt="save" />
             </button>
           </div>
-        </ChipView>
+        </ChipEditor>
         {#if runPromise}
           <section class="RunWindow">
             <header class="navigation">
