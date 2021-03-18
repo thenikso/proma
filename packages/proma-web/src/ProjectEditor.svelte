@@ -64,6 +64,13 @@
   // Shortcuts
   //
 
+  let keyMods = {
+    metaKey: false,
+    altKey: false,
+    ctrlKey: false,
+    shiftKey: false,
+  };
+
   shortcuts.set('!cmd+S', saveChip);
   shortcuts.set('[MainBoard:board] cmd+A', action('ChipBoard.selectAll'));
   shortcuts.set('[MainBoard:chip] backspace', action('ChipBoard.removeChip'));
@@ -86,14 +93,29 @@
       }
     };
     const preventDefaultShortcutsCaptured = (e) => {
+      keyMods = {
+        metaKey: e.metaKey,
+        altKey: e.altKey,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+      };
       if (dispatchShortcuts(e, { capture: true })) {
         e.preventDefault();
         e.stopPropagation();
       }
     };
+    const resetKeyMods = () => {
+      keyMods = {
+        metaKey: false,
+        altKey: false,
+        ctrlKey: false,
+        shiftKey: false,
+      };
+    };
 
     document.addEventListener('keydown', preventDefaultShortcutsCaptured, true);
     document.addEventListener('keydown', preventDefaultShortcuts);
+    document.addEventListener('keyup', resetKeyMods, true);
 
     return () => {
       document.removeEventListener(
@@ -102,6 +124,7 @@
         true,
       );
       document.removeEventListener('keydown', preventDefaultShortcuts);
+      document.removeEventListener('keyup', resetKeyMods, true);
     };
   });
 
@@ -206,7 +229,13 @@
         <ChipEditor {chipClass}>
           <div class="ChipViewTools" slot="tools">
             <button type="button" class="run-button" on:click={runRemote}>
-              Run
+              {#if keyMods.metaKey && keyMods.shiftKey && keyMods.altKey}
+                <span>Test</span> <small>compiled</small>
+              {:else if keyMods.metaKey && keyMods.shiftKey}
+                <span>Test</span>
+              {:else}
+                <span>Run</span>
+              {/if}
             </button>
             <button
               type="button"
@@ -301,14 +330,20 @@
   .ChipViewTools .run-button {
     border: none;
     border-radius: 5px;
-    padding: 15px 45px;
+    padding: 5px 45px;
     font-size: 20px;
     cursor: pointer;
+    height: 60px;
 
     background: #fe9d28;
     color: white;
     font-weight: 500;
     outline: none;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   .ChipViewTools .save-button {
