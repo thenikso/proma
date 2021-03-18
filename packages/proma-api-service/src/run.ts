@@ -84,7 +84,8 @@ export const endpoint: Handler = async (event) => {
       },
     );
     const chipCode: string = chipClass.compile();
-    // TODO can not give access to `global`... perhaps with a proxy?
+    // TODO can not give access to `global`. Use something like `entrypointGlobal.ts`
+    // to mask all global objects
     const makeChipCompiledClass = new Function(
       'fetch',
       'return (' + chipCode + ')',
