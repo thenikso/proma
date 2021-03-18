@@ -338,10 +338,10 @@ export class ChipInfo {
       }
       return chip[side][portName];
     }
-    if (side === INPUT || defaultSide === INPUT) {
+    if (side === INPUT || (!side && defaultSide === INPUT)) {
       return this.getInputPortOutlet(portName);
     }
-    if (side === OUTPUT || defaultSide === OUTPUT) {
+    if (side === OUTPUT || (!side && defaultSide === OUTPUT)) {
       return this.getOutputPortOutlet(portName);
     }
     const port1 = this.getInputPortOutlet(portName);
