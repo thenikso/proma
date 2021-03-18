@@ -2,6 +2,7 @@ import type { Handler } from './lib/types';
 import { defer, error, btoa, interceptStdout, timeout } from './lib/utils';
 import aws from './lib/aws';
 import * as proma from '@proma/core';
+import fetch from 'node-fetch';
 
 export const endpoint: Handler = async (event) => {
   // TODO the user id should be here or in some other authorizer prop
@@ -83,8 +84,12 @@ export const endpoint: Handler = async (event) => {
       },
     );
     const chipCode: string = chipClass.compile();
-    const makeChipCompiledClass = new Function('return (' + chipCode + ')');
-    const chipCompiledClass = makeChipCompiledClass();
+    // TODO can not give access to `global`... perhaps with a proxy?
+    const makeChipCompiledClass = new Function(
+      'fetch',
+      'return (' + chipCode + ')',
+    );
+    const chipCompiledClass = makeChipCompiledClass(fetch);
     chipInstance = new chipCompiledClass(event);
   } catch (e) {
     releaseLogCapture();

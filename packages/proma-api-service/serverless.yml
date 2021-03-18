@@ -52,7 +52,6 @@ functions:
       - http:
           method: post
           path: /project/{hostId}/{projectSlug}
-          resp: json
           cors: true
           # authorizer: ${self:custom.authorizer}
           request:
@@ -66,7 +65,6 @@ functions:
       - http:
           method: get
           path: /run/{hostId}/{projectSlug}/{endpoint}
-          resp: json
           cors: true
           request:
             parameters:

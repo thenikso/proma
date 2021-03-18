@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@proma/core": "^0.1.0",
-    "aws-sdk": "2.863.0"
+    "aws-sdk": "2.863.0",
+    "node-fetch": "2.6.1"
   }
 }
