@@ -353,7 +353,7 @@
     box-sizing: border-box;
     position: absolute;
     right: 30px;
-    top: 130px;
+    top: 110px;
     padding: 20px;
     width: 350px;
     max-height: calc(100% - 160px);

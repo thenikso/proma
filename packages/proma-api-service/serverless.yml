@@ -52,25 +52,28 @@ functions:
       - http:
           method: post
           path: /project/{hostId}/{projectSlug}
+          resp: json
+          cors: true
           # authorizer: ${self:custom.authorizer}
           request:
             parameters:
               paths:
                 hostId: true
                 projectSlug: true
-  run:
-    handler: src/run.handler
+  runEndpoint:
+    handler: src/run.endpoint
     events:
       - http:
           method: get
-          path: /run/{user}/{project}/{func}
-          # authorizer: ${self:custom.authorizer}
+          path: /run/{hostId}/{projectSlug}/{endpoint}
+          resp: json
+          cors: true
           request:
             parameters:
               paths:
-                user: true
-                project: true
-                func: true
+                hostId: true
+                projectSlug: true
+                endpoint: true
 
 resources:
   Resources:

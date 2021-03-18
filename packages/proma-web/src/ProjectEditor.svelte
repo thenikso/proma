@@ -75,7 +75,7 @@
 
 <main class="theme-light">
   <div class="MainBar">
-    <img src="/images/logo.webp" alt="Proma" style="width: 100%" />
+    <img src="/images/logo.webp" alt="Proma" style="width: 60px" />
   </div>
   <div class="MainContent">
     {#await projectPromise}

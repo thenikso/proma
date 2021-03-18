@@ -1,99 +1,117 @@
-import type { APIGatewayProxyWithLambdaAuthorizerHandler } from 'aws-lambda';
+import type { Handler } from './lib/types';
+import { defer, error, btoa, interceptStdout } from './lib/utils';
 import aws from './lib/aws';
 import * as proma from '@proma/core';
 
-export const handler: APIGatewayProxyWithLambdaAuthorizerHandler<{}> = async (
-  event,
-) => {
+export const endpoint: Handler = async (event) => {
   // TODO the user id should be here or in some other authorizer prop
   // console.log(event.requestContext.authorizer.principalId);
 
-  const data = await aws.db
-    .scan({
-      TableName: 'users',
-      Limit: 10,
-    })
-    .promise();
-  const item = data.Items![0].name;
+  // TODO if mapping from a URL like `<host>.proma.app/project/func` we would
+  // need to extract the hostId from the domain
 
-  let { user, project, func } = event.pathParameters!;
+  let { hostId, projectSlug, endpoint } = event.pathParameters!;
+  if (!projectSlug) {
+    projectSlug = 'default';
+  }
+  if (!endpoint) {
+    endpoint = 'index';
+  }
 
-  // TODO if mapping from a URL like `<user>.proma.app/project/func` we would
-  // need to extract the user from the domain
+  // TODO capture logs and invocations for reporting and billing
+  const logs: string[] = [];
+  const errors: string[] = [];
+  const releaseLogCapture = interceptStdout(
+    (s) => {
+      logs.push(s);
+    },
+    (s) => {
+      errors.push(s);
+    },
+  );
 
-  // Load chip data
-  let chipData: any;
+  const endpointPath = `/${hostId}/${projectSlug}/${endpoint}`;
+  console.info(`[inform] Running endpoint "${endpointPath}"...`);
+
+  // Read project info from databast
+  let project: { [key: string]: any };
   try {
-    const s3obj = await aws.s3
-      .getObject({
-        Bucket: 'proma-projects',
-        Key: `${project}/${func}.json`,
-      })
-      .promise();
-    chipData = JSON.parse(s3obj.Body!.toString('utf8'));
+    project = (
+      await aws.db
+        .get({
+          TableName: process.env.DYNAMODB_PROJECTS_TABLE!,
+          Key: {
+            projectSlug,
+            ownerHostId: hostId,
+          },
+        })
+        .promise()
+    ).Item!;
   } catch (e) {
-    console.error('Could not read function chip file');
-    console.error(e);
+    releaseLogCapture();
+    return error(404, e);
   }
 
-  let handler: any;
-  if (chipData) {
-    const Handler = proma.fromJSON(proma.chip, chipData);
-    // new Handler()
-    const HandlerCode = Handler.compile();
-
-    const makeCompiledHandler = new Function('return (' + HandlerCode + ')');
-    // We can either use the live or compiled version, based on environment
-    handler = new (makeCompiledHandler())();
-    // Save in cache
-    // hit = { handler, time: codeCachedAtTime, environment };
+  // Get endpoint
+  const projectFiles = Array.from(
+    Object.entries((project.files || {}) as { [filename: string]: string }),
+  );
+  const endpoints = projectFiles.filter(([fileName]) =>
+    fileName.startsWith(`endpoints/${endpoint}.`),
+  );
+  if (endpoints.length === 0) {
+    releaseLogCapture();
+    return error(
+      404,
+      `Can not find endpoint ${hostId}/${projectSlug}/endpoints/${endpoint}.*`,
+    );
   }
 
-  // TODO the lambda execution will be billed based on the time it takes for
-  // this chip to execute. We should eventually measure the performance and stop
-  // chips that takes too long (on the free plan)
-  let result: Promise<string> | undefined;
-  if (handler) {
-    // Setup handler execution as a promise and execute
-    const deferred = defer<string>();
-    handler.in.query = { name: user };
-    handler.out.then(() => {
-      deferred.resolve(handler.out.result());
-    });
-    handler.in.exec();
-    result = deferred.promise;
-  }
+  // TODO search for best endpoint match if multiple
+  const [, endpointBase64] = endpoints[0];
 
-  console.log(result);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify(
-      {
-        message: 'Hello!',
-        // input: event,
-        item,
-        chipResult: await result,
+  // Construct chip
+  let chipInstance;
+  let chipErrors: [Error] | undefined;
+  try {
+    const endpointChipSource = JSON.parse(btoa(endpointBase64));
+    const chipClass = proma.fromJSON(
+      proma.chip,
+      endpointChipSource,
+      (errors) => {
+        chipErrors = errors;
       },
+    );
+    const chipCode: string = chipClass.compile();
+    const makeChipCompiledClass = new Function('return (' + chipCode + ')');
+    const chipCompiledClass = makeChipCompiledClass();
+    chipInstance = new chipCompiledClass(event);
+  } catch (e) {
+    releaseLogCapture();
+    return error(400, e);
+  }
+
+  // Execute chip
+  const deferred = defer();
+  chipInstance.out.then(() => {
+    deferred.resolve(chipInstance.out.result());
+  });
+  chipInstance.in.exec();
+
+  // Wait for result
+  const chipResult = await deferred.promise;
+
+  console.info('[result] Completed request');
+  releaseLogCapture();
+
+  const result = {
+    statusCode: chipResult.statusCode || 200,
+    body: JSON.stringify(
+      { result: chipResult.body || chipResult, chipErrors, logs, errors },
       null,
       2,
     ),
   };
-};
 
-function defer<T>() {
-  const result: any = {
-    promise: null,
-    resolve: null,
-    reject: null,
-  };
-  result.promise = new Promise<T>((res, rej) => {
-    result.resolve = res;
-    result.reject = rej;
-  });
-  return result as {
-    promise: Promise<T>;
-    resolve: (value: T | PromiseLike<T>) => void;
-    reject: (reason?: any) => void;
-  };
-}
+  return result;
+};
