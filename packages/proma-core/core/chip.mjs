@@ -93,6 +93,10 @@ export class Chip {
         }
         const port = inputPorts.find((p) => p.name === portInfo.name);
         if (portInfo.isVariadic) {
+          // Make sure to generate variadic ports by accessing them
+          for (let j = 0, l = canonicalValues.length - i; j < l; j++) {
+            port.variadic[j];
+          }
           port.explicitValue = canonicalValues.slice(i);
           break;
         }
