@@ -163,13 +163,16 @@
     // TODO wrap console
 
     let chipClassToUse = chipClass;
-    const code = chipClass.compile();
+    let code;
 
     if (compiled === true) {
+      code = chipClass.compile();
       const makeChipClassToUse = new Function('return (' + code + ')');
       chipClassToUse = makeChipClassToUse();
-      console.log(code);
+    } else {
+      code = chipClass.toJSON();
     }
+    console.log(code);
 
     // TODO get example event from somewhere
     chipInstance = new chipClassToUse({

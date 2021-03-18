@@ -400,7 +400,8 @@ function executeCompiler(
         for (const conn of conns) {
           if (conn) {
             let outputIdentifier;
-            if (conn.chip !== scope[0]) {
+            // conn.chip might be undefined if compiling an outlet
+            if (conn.chip && conn.chip !== scope[0]) {
               outputIdentifier = compile(
                 conn,
                 [conn.chip, ...scope],
@@ -506,7 +507,8 @@ function makeOutputFlowSinkCompiler(portInfo) {
     if (conn) {
       continuation = compile(
         conn,
-        conn.chip !== scope[0] ? [conn.chip, ...scope] : scope,
+        // conn.chip might be undefined if compiling an outlet
+        conn.chip && conn.chip !== scope[0] ? [conn.chip, ...scope] : scope,
         codeWrapper,
       );
     }

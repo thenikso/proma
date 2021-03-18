@@ -1,5 +1,14 @@
 import { describe } from '../runner/riteway.mjs';
-import { chip, fromJSON } from '../../core/index.mjs';
+import {
+  chip,
+  fromJSON,
+  inputFlow,
+  inputData,
+  outputFlow,
+  outputData,
+  wire,
+} from '../../core/index.mjs';
+import { js } from '../utils.mjs';
 import { Log } from '../lib.mjs';
 
 describe('[core/compile] compilation regression checks', async (assert) => {
@@ -81,5 +90,90 @@ describe('[core/compile] compilation regression checks', async (assert) => {
     should: 'be identical',
     actual: TestChip.compile(),
     expected: TestChip.compile(),
+  });
+
+  const AsyncEcho = chip('test/core/compile/AsyncEcho', () => {
+    const exec = inputFlow('exec', async () => {
+      try {
+        const data = await Promise.resolve(input());
+        output(data);
+        error(null);
+      } catch (e) {
+        output(null);
+        error(e);
+      }
+      then();
+    });
+    const input = inputData('input', { canonical: true });
+
+    const then = outputFlow('then');
+    const output = outputData('output');
+    const error = outputData('error');
+  });
+
+  const Endpoint = chip('test/core/compile/Endpoint', () => {
+    const exec = inputFlow('exec');
+    const echo = new AsyncEcho('test');
+    const then = outputFlow('then');
+    const res = outputData('res');
+
+    wire(exec, echo.in.exec);
+    wire(echo.out.output, res);
+    wire(echo.out.then, then);
+  });
+
+  assert({
+    given: 'compiling and enpoint (regression found in testing)',
+    should: 'compile',
+    actual: Endpoint.compile(),
+    expected: js`
+    class test_core_compile_Endpoint {
+      constructor() {
+        const $out = Object.seal({
+          res: undefined,
+          then: undefined
+        });
+
+        Object.defineProperties(this.in = {}, {
+          exec: {
+            value: async () => {
+              try {
+                const data = await Promise.resolve("test");
+                $out.res = data;
+              } catch (e) {
+                $out.res = null;
+              }
+
+              this.out.then();
+            }
+          }
+        });
+
+        Object.freeze(this.in);
+
+        Object.defineProperties(this.out = {}, {
+          res: {
+            value: () => $out.res
+          },
+
+          then: {
+            value: value => {
+              if (typeof value !== "undefined") {
+                $out.then = value;
+                return;
+              }
+
+              ($out.then || (() => {}))();
+            }
+          }
+        });
+
+        Object.freeze(this.out);
+
+        Object.defineProperty(this, "destroy", {
+          value: () => {}
+        });
+      }
+    }`,
   });
 });

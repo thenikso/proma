@@ -124,15 +124,21 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
           const pathArray = pathFromNodePath(path);
           // Find the block body this output is used in. That might be used for
           // injecting output declarations later
-          let scopeBobyPath = path.parentPath;
-          while (!namedTypes.BlockStatement.check(scopeBobyPath.value)) {
-            scopeBobyPath = scopeBobyPath.parentPath;
+          let scopeBlockPath = path.parentPath;
+          const scopeTrail = [scopeBlockPath.value, path.value];
+          while (!namedTypes.BlockStatement.check(scopeBlockPath.value)) {
+            scopeBlockPath = scopeBlockPath.parentPath;
+            scopeTrail.unshift(scopeBlockPath.value);
           }
+          const scopeBlockBodyIndex = scopeBlockPath.value.body.findIndex((b) =>
+            scopeTrail.includes(b),
+          );
           replaceOutputData.push({
             portName,
             path: pathArray,
             argPath: [...pathArray, 'arguments', 0],
-            scopePath: pathFromNodePath(scopeBobyPath),
+            scopeBlockPath: pathFromNodePath(scopeBlockPath),
+            scopeBlockBodyIndex,
           });
           return false;
         }
@@ -167,7 +173,13 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
     // later
     const injectInScope = [];
 
-    for (let { portName, path, argPath, scopePath } of replaceOutputData) {
+    for (let {
+      portName,
+      path,
+      argPath,
+      scopeBlockPath,
+      scopeBlockBodyIndex,
+    } of replaceOutputData) {
       const argBlock = getPath(ast, argPath);
       const resultBlock =
         compileOutputData(portName, argBlock) ||
@@ -188,7 +200,8 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
       // Add declarations to be injected in the block scope
       if (resultBlock.body.length > 0) {
         injectInScope.push({
-          scopePath,
+          scopeBlockPath,
+          scopeBlockBodyIndex,
           injectBlock: resultBlock,
         });
       }
@@ -208,20 +221,40 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
     // Inject output declarations in the proper scope (that is, the scope of
     // the statement that used the output port)
     if (injectInScope.length > 0) {
-      // Prepare injection cursors
+      // Prepare injection cursors. These are on a per scope block basis and
+      // inside there is a map of original insertion point to current cursors.
+      // This allow for the insertion of output blocks just before the usage of
+      // the output.
       const cursors = new Map();
-      for (const { scopePath } of injectInScope) {
-        const scopeBlock = getPath(ast, scopePath);
-        cursors.set(scopeBlock, 0);
+      for (const { scopeBlockPath, scopeBlockBodyIndex } of injectInScope) {
+        const scopeBlock = getPath(ast, scopeBlockPath);
+        const cursorsByInsertionIndex = cursors.get(scopeBlock) || {};
+        cursorsByInsertionIndex[scopeBlockBodyIndex] = scopeBlockBodyIndex;
+        cursors.set(scopeBlock, cursorsByInsertionIndex);
       }
       // Inject
-      for (const { scopePath, injectBlock } of injectInScope) {
-        const scopeBlock = getPath(ast, scopePath);
-        let cursor = cursors.get(scopeBlock);
+      for (const {
+        scopeBlockPath,
+        scopeBlockBodyIndex,
+        injectBlock,
+      } of injectInScope) {
+        const scopeBlock = getPath(ast, scopeBlockPath);
+        const cursorsByInsertionIndex = cursors.get(scopeBlock);
+        const cursor = cursorsByInsertionIndex[scopeBlockBodyIndex];
 
-        scopeBlock.body.unshift(...injectBlock.body);
+        scopeBlock.body = [
+          ...scopeBlock.body.slice(0, cursor),
+          ...injectBlock.body,
+          ...scopeBlock.body.slice(cursor),
+        ];
 
-        cursor += injectBlock.body.length;
+        const injectionLength = injectBlock.body.length;
+        for (const insertionIndex in cursorsByInsertionIndex) {
+          if (insertionIndex >= cursors) {
+            cursorsByInsertionIndex[insertionIndex] += injectionLength;
+          }
+        }
+
         cursors.set(scopeBlock, cursor);
       }
     }
