@@ -565,6 +565,7 @@
   tabindex="-1"
   class="Board"
   class:grab
+  class:dragging
   {style}
   bind:this={boardEl}
   bind:offsetWidth={boardWidth}
@@ -783,6 +784,10 @@
 
   .Board.grab * {
     pointer-events: none;
+  }
+
+  .Board.dragging {
+    user-select: none;
   }
 
   .BoardConnections {

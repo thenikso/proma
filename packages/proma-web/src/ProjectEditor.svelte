@@ -142,7 +142,6 @@
     project &&
     selectedEndpoint &&
     `http://localhost:3000/dev/run/${project.ownerHostId}/${project.projectSlug}/${selectedEndpoint}?name=nico`;
-  $: console.log(runUrl);
 
   let runPromise;
 
