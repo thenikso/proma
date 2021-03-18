@@ -15,6 +15,12 @@ export function defer<T = any>() {
   };
 }
 
+export function timeout(ms: number, err?: Error) {
+  return new Promise((resolve, reject) => {
+    setTimeout(err ? () => reject(err) : resolve, ms);
+  });
+}
+
 export function ok(data: any) {
   return {
     statusCode: 200,

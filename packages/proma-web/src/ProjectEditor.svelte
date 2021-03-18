@@ -331,6 +331,7 @@
     flex-grow: 1;
     margin: 0;
     padding: 5px 3px;
+    overflow: auto;
   }
 
   .RunWindow .logs {
@@ -341,5 +342,6 @@
     padding: 5px 3px;
     margin: 0;
     min-height: 100px;
+    overflow: auto;
   }
 </style>

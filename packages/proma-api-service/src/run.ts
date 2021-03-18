@@ -1,5 +1,5 @@
 import type { Handler } from './lib/types';
-import { defer, error, btoa, interceptStdout } from './lib/utils';
+import { defer, error, btoa, interceptStdout, timeout } from './lib/utils';
 import aws from './lib/aws';
 import * as proma from '@proma/core';
 
@@ -104,7 +104,16 @@ export const endpoint: Handler = async (event) => {
   }
 
   // Wait for result
-  const chipResult = await deferred.promise;
+  let chipResult: any;
+  try {
+    chipResult = await Promise.race([
+      deferred.promise,
+      timeout(5000, new Error('timeout (5s)')),
+    ]);
+  } catch (e) {
+    releaseLogCapture();
+    return error(400, e);
+  }
 
   // Destroy chip
   chipInstance.destroy();
