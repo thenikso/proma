@@ -8,6 +8,7 @@
   } from '@proma/web-controls';
   import { onMount } from 'svelte';
   import ChipEditor from './ChipEditor.svelte';
+  import { defer } from './lib/utils';
 
   export let currentRoute;
   export let params;
@@ -70,6 +71,10 @@
     '[MainBoard:port] alt+click',
     action('ChipBoard.removeConnection'),
   );
+  // TODO shortcut should match longest one first (or not match missing modifiers?)
+  shortcuts.set('[MainBoard:board] cmd+enter', runRemote);
+  shortcuts.set('[MainBoard:board] cmd+shift+enter', () => runLocal());
+  shortcuts.set('[MainBoard:board] cmd+shift+alt+enter', () => runLocal(true));
 
   const dispatchShortcuts = createShortcutDispatcher();
 
@@ -145,11 +150,44 @@
 
   let runPromise;
 
-  async function runRemove() {
+  async function runRemote() {
     if (!runUrl) return;
     await saveChip();
     runPromise = fetch(runUrl).then((res) => res.json());
-    return runPromise;
+  }
+
+  let chipInstance;
+
+  async function runLocal(compiled) {
+    if (!chipClass) return;
+    // TODO wrap console
+
+    let chipClassToUse = chipClass;
+    const code = chipClass.compile();
+
+    if (compiled === true) {
+      const makeChipClassToUse = new Function('return (' + code + ')');
+      chipClassToUse = makeChipClassToUse();
+      console.log(code);
+    }
+
+    // TODO get example event from somewhere
+    chipInstance = new chipClassToUse({
+      queryStringParameters: {
+        name: 'test',
+      },
+    });
+
+    const deferred = defer();
+    runPromise = deferred.promise;
+
+    chipInstance.out.then(() => {
+      deferred.resolve({
+        result: chipInstance.out.result(),
+        code,
+      });
+    });
+    chipInstance.in.exec();
   }
 </script>
 
@@ -164,7 +202,7 @@
       {#if chipClass}
         <ChipEditor {chipClass}>
           <div class="ChipViewTools" slot="tools">
-            <button type="button" class="run-button" on:click={runRemove}>
+            <button type="button" class="run-button" on:click={runRemote}>
               Run
             </button>
             <button
