@@ -8,6 +8,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "serve .",
+    "test": "node test/index.mjs",
     "build": "rollup -c"
   },
   "devDependencies": {

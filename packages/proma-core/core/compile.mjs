@@ -203,9 +203,22 @@ function makeChipInstanceMock(chipInfo) {
   );
 }
 
+// When using `compile` from a custom compilation function, we allow users
+// to use the local outlet to refer to the chip instance port.
+function getPortAndChipInstance(port, scope) {
+  const [chip, parentChip] = scope;
+  if (port.isOutlet && !isOutlet(port, scope)) {
+    port = chip[port.isInput ? INPUT : OUTPUT][port.name];
+  }
+  return { port, chip, parentChip };
+}
+
 function getConnectedPorts(port, scope) {
-  const parentChip = isOutlet(port, scope) ? scope[0] : scope[1];
-  return info(parentChip).getConnectedPorts(port, parentChip);
+  const { port: resolvedPort, parentChip } = getPortAndChipInstance(
+    port,
+    scope,
+  );
+  return info(parentChip).getConnectedPorts(resolvedPort, parentChip);
 }
 
 //
@@ -221,12 +234,8 @@ const CUSTOM_COMPILER_TOOLS = {
 };
 
 function compile(port, scope, codeWrapper) {
-  // When using `compile` from a custom compilation function, we allow users
-  // to use the local outlet to refer to the chip instance port.
-  if (port.isOutlet && !isOutlet(port, scope)) {
-    port = scope[0][port.isInput ? INPUT : OUTPUT][port.name];
-  }
-  return compiler(info(port))(port, scope, codeWrapper);
+  const { port: resolvedPort } = getPortAndChipInstance(port, scope);
+  return compiler(info(resolvedPort))(resolvedPort, scope, codeWrapper);
 }
 
 // Get the compiler for a port

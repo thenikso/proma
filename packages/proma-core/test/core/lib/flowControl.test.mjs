@@ -102,7 +102,7 @@ describe('[core/lib/flowControl] If', async (assert) => {
     actual: compileAndRun(
       () => {
         const exec = inputFlow('exec');
-        const input = inputData('input');
+        const input = inputData('input', { defaultValue: false });
 
         const branch = new lib.flowControl.If();
 
@@ -129,7 +129,7 @@ describe('[core/lib/flowControl] If', async (assert) => {
       class TestChip {
         constructor() {
           const $in = Object.seal({
-            input: undefined
+            input: false
           });
 
           const $out = Object.seal({
@@ -179,4 +179,91 @@ describe('[core/lib/flowControl] If', async (assert) => {
       ['x', 'x'],
     ),
   });
+});
+
+describe('[core/lib/flowControl] Sequence', async (assert) => {
+  assert({
+    given: 'a Sequence usage',
+    should: 'compile and run',
+    actual: compileAndRun(
+      () => {
+        const exec = inputFlow('exec');
+
+        const branch = new lib.flowControl.Sequence();
+
+        const first = outputFlow('first');
+        const second = outputFlow('second');
+
+        wire(exec, branch.in.exec);
+        wire(branch.out.then0, first);
+        wire(branch.out.then1, second);
+      },
+      (chip) => {
+        const res = [];
+        chip.out.first(() => res.push('first'));
+        chip.out.second(() => res.push('second'));
+        chip.in.exec();
+        chip.in.exec();
+        return res;
+      },
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          const $out = Object.seal({
+            first: undefined,
+            second: undefined
+          });
+
+          const lib_flowControl_Sequence_1__then0 = () => this.out.first();
+          const lib_flowControl_Sequence_1__then1 = () => this.out.second();
+
+          Object.defineProperties(this.in = {}, {
+            exec: {
+              value: () => {
+                lib_flowControl_Sequence_1__then0();
+                lib_flowControl_Sequence_1__then1();
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            first: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.first = value;
+                  return;
+                }
+
+                ($out.first || (() => {}))();
+              }
+            },
+
+            second: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.second = value;
+                  return;
+                }
+
+                ($out.second || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
+      ['first', 'second', 'first', 'second'],
+    ),
+  });
+
+  // TODO modify to await async functions and make it an actual sequence?
 });
