@@ -46,7 +46,7 @@ describe('[core/compile] compilation regression checks', async (assert) => {
       },
       {
         id: 'CustomEvent_1',
-        chipURI: 'CustomEvent:event<event:Event>',
+        chipURI: 'CustomEvent:event(event:Event)',
       },
     ],
     connections: [

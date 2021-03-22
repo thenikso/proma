@@ -122,7 +122,7 @@ export function event(name, ...ports) {
     chipURI: {
       enumerable: true,
       value:
-        ports.length === 0 ? `${name}:event` : `${name}:event<${handleArgs}>`,
+        ports.length === 0 ? `${name}:event` : `${name}:event(${handleArgs})`,
     },
   });
   return EventChip;

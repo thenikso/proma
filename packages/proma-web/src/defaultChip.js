@@ -32,7 +32,7 @@ export default {
     },
     {
       id: 'CustomEvent_1',
-      chipURI: 'CustomEvent:event<event:Event>',
+      chipURI: 'CustomEvent:event(event:Event)',
     },
     {
       id: 'lib_flow_Sequence_2',

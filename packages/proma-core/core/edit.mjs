@@ -7,7 +7,7 @@ import { event } from './api.mjs';
 
 const VALID_CUSTOM_CHIPS = { event };
 const CUSTOM_CHIP_REGEXP = new RegExp(
-  `^(.+):(${Object.keys(VALID_CUSTOM_CHIPS).join('|')})(?:<(.+)>)?$`,
+  `^(.+?):(${Object.keys(VALID_CUSTOM_CHIPS).join('|')})(?:\\((.+)\\))?$`,
   'i',
 );
 
@@ -154,7 +154,7 @@ class EditableChipInfo {
     if (typeof chipToAdd === 'string') {
       let chipClass;
       // Special case for custom chips in the form of
-      // `my/chip/Uri:event<portA:number, portB:String>`
+      // `my/chip/Uri:event(portA:number, portB:String)`
       const [, cleanURI, customChip, customParams] =
         CUSTOM_CHIP_REGEXP.exec(chipToAdd) || [];
       if (cleanURI) {

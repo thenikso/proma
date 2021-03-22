@@ -215,7 +215,7 @@ describe('[core/serialize] to JSON', async (assert) => {
       chips: [
         {
           id: 'TestEvent_1',
-          chipURI: 'TestEvent:event<event:Event, num:Number>',
+          chipURI: 'TestEvent:event(event:Event, num:Number)',
         },
       ],
     },
@@ -270,7 +270,7 @@ describe('[core/serialize] from JSON', async (assert) => {
         chips: [
           {
             id: 'TestEvent',
-            chipURI: 'TestEvent:event<event:Event, num:Number>',
+            chipURI: 'TestEvent:event(event:Event, num:Number)',
           },
         ],
       });
