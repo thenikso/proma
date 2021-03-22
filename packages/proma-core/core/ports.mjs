@@ -184,7 +184,8 @@ export class PortList {
             if (portInfo.isVariadic) {
               const variadicIndex = portInfo.variadicIndex(key);
               if (variadicIndex >= 0) {
-                port.explicitValue[variadicIndex] = value;
+                // Make sure to access the variadic port to create its instance
+                port.variadic[variadicIndex].explicitValue = value;
               } else if (Array.isArray(value)) {
                 port.explicitValue = value;
               } else {

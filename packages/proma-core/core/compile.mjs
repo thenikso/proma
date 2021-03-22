@@ -229,6 +229,7 @@ function getConnectedPorts(port, scope) {
 const CUSTOM_COMPILER_TOOLS = {
   compile,
   recast,
+  getPortAndChipInstance,
   isOutlet,
   getConnectedPorts,
 };
@@ -749,7 +750,7 @@ function makeInputDataSinkCompiler(portInfo) {
     const parentChip = scope[0];
 
     // Variadic inputs may need resolution of ports into an array value
-    if (portInfo.isVariadic) {
+    if (portInstance.variadic) {
       const variadicValues = literalCompiler(portInstance.value);
       // TODO check that variadicValues is an array
       let index = 0;

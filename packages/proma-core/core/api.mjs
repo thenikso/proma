@@ -115,9 +115,9 @@ export function event(name, ...ports) {
     const outputs = ports.map(({ name, type }) => outputData(name, { type }));
   });
   Object.defineProperties(EventChip.prototype, {
-    isEvent: {
+    customChipKind: {
       enumerable: true,
-      value: true,
+      value: 'event',
     },
     chipURI: {
       enumerable: true,
@@ -126,6 +126,89 @@ export function event(name, ...ports) {
     },
   });
   return EventChip;
+}
+
+export function switchChip(name, type = 'any') {
+  const SwitchChip = plainChip(name, () => {
+    const exec = inputFlow('exec', {
+      execute: () => {
+        const allCases = cases();
+        const allCasesCont = thens();
+        const sel = discriminant();
+        for (let i = 0, l = allCases.length; i < l; i++) {
+          const caseValue = allCases[i];
+          if (caseValue === sel) {
+            allCasesCont[i]();
+            return;
+          }
+        }
+        thenDefault();
+      },
+      executeCompiler: (port, scope, codeWrapper, tools) => {
+        const disc = tools.compile(discriminant, scope, codeWrapper, tools);
+        if (!disc) return;
+        const switchCases = [];
+        const { port: casesPort } = tools.getPortAndChipInstance(cases, scope);
+        const { port: thensPort } = tools.getPortAndChipInstance(thens, scope);
+        for (let i = 0, l = casesPort.variadic.length; i < l; i++) {
+          const casePort = casesPort.variadic[i];
+          const thenPort = thensPort.variadic[i];
+          const caseDiscr = tools.compile(casePort, scope, codeWrapper, tools);
+          let caseBlock = tools.compile(thenPort, scope, codeWrapper, tools);
+          if (!tools.recast.types.namedTypes.Statement.check(caseBlock)) {
+            caseBlock = tools.recast.types.builders.expressionStatement(
+              caseBlock,
+            );
+          }
+          switchCases.push(
+            tools.recast.types.builders.switchCase(caseDiscr, [
+              caseBlock,
+              tools.recast.types.builders.breakStatement(),
+            ]),
+          );
+        }
+        let defaultCaseBlock = tools.compile(
+          thenDefault,
+          scope,
+          codeWrapper,
+          tools,
+        );
+        if (!tools.recast.types.namedTypes.Statement.check(defaultCaseBlock)) {
+          defaultCaseBlock = tools.recast.types.builders.expressionStatement(
+            defaultCaseBlock,
+          );
+        }
+        if (defaultCaseBlock) {
+          switchCases.push(
+            tools.recast.types.builders.switchCase(null, [
+              defaultCaseBlock,
+              tools.recast.types.builders.breakStatement(),
+            ]),
+          );
+        }
+        if (switchCases.length === 0) return;
+        return tools.recast.types.builders.switchStatement(disc, switchCases);
+      },
+    });
+    const discriminant = inputData('discriminant', { canonical: true, type });
+    const cases = inputData('cases', {
+      type: `[${type}]`,
+      variadic: 'case{index}',
+    });
+    const thenDefault = outputFlow('thenDefault');
+    const thens = outputFlow('thens', { variadic: 'then{index}' });
+  });
+  Object.defineProperties(SwitchChip.prototype, {
+    customChipKind: {
+      enumerable: true,
+      value: 'switch',
+    },
+    chipURI: {
+      enumerable: true,
+      value: `${name}:switch(${type})`,
+    },
+  });
+  return SwitchChip;
 }
 
 // NOTE externalReferenceObj must be specified as `{ myReference }` so that

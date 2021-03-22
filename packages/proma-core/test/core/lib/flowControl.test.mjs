@@ -467,3 +467,132 @@ describe('[core/lib/flowControl] WhileLoop', async (assert) => {
     ),
   });
 });
+
+describe('[core/lib/flowControl] Switch', async (assert) => {
+  assert({
+    given: 'a Switch usage',
+    should: 'compile and run',
+    actual: compileAndRun(
+      () => {
+        const exec = inputFlow('exec');
+        const input = inputData('input', { defaultValue: false });
+
+        const swi = new lib.flowControl.Switch();
+        swi.id = 'Switch';
+        swi.in.case0 = 'one';
+        swi.in.case1 = 'two';
+
+        const one = outputFlow('one');
+        const two = outputFlow('two');
+        const def = outputFlow('def');
+
+        wire(exec, swi.in.exec);
+        wire(input, swi.in.discriminant);
+        wire(swi.out.then0, one);
+        wire(swi.out.then1, two);
+        wire(swi.out.thenDefault, def);
+      },
+      (chip) => {
+        const res = [];
+        chip.out.one(() => res.push(1));
+        chip.out.two(() => res.push(2));
+        chip.out.def(() => res.push('default'));
+        chip.in.input = 'one';
+        chip.in.exec();
+        chip.in.exec();
+        chip.in.input = 'two';
+        chip.in.exec();
+        chip.in.input = 'three';
+        chip.in.exec();
+        return res;
+      },
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          const $in = Object.seal({
+            input: false
+          });
+
+          const $out = Object.seal({
+            one: undefined,
+            two: undefined,
+            def: undefined
+          });
+
+          const Switch__then0 = () => this.out.one();
+          const Switch__then1 = () => this.out.two();
+
+          Object.defineProperties(this.in = {}, {
+            input: {
+              get: () => () => $in.input,
+
+              set: value => {
+                $in.input = value;
+              }
+            },
+
+            exec: {
+              value: () => {
+                switch ($in.input) {
+                case "one":
+                  Switch__then0();
+                  break;
+                case "two":
+                  Switch__then1();
+                  break;
+                default:
+                  this.out.def();
+                  break;
+                }
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            one: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.one = value;
+                  return;
+                }
+
+                ($out.one || (() => {}))();
+              }
+            },
+
+            two: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.two = value;
+                  return;
+                }
+
+                ($out.two || (() => {}))();
+              }
+            },
+
+            def: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.def = value;
+                  return;
+                }
+
+                ($out.def || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`, [1, 1, 2, 'default']),
+  });
+});

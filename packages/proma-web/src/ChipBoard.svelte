@@ -352,7 +352,7 @@
   }
 
   function getChipKind(innerChip) {
-    if (innerChip.isEvent) {
+    if (innerChip.customChipKind === 'event') {
       return 'delegate';
     }
     if (innerChip.isDataless) {

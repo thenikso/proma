@@ -5,6 +5,7 @@ export default function install({
   inputData,
   outputFlow,
   outputData,
+  switchChip,
 }) {
   const If = chip('lib/flowControl/If', () => {
     const exec = inputFlow('exec', {
@@ -112,10 +113,13 @@ export default function install({
     const completed = outputFlow('completed');
   });
 
+  const Switch = switchChip('lib/flowControl/Switch');
+
   return {
     If: registry.add(If),
     Sequence: registry.add(Sequence),
     ForLoop: registry.add(ForLoop),
     WhileLoop: registry.add(WhileLoop),
+    Switch: registry.add(Switch),
   };
 }
