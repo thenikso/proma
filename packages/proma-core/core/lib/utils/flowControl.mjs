@@ -4,6 +4,7 @@ export default function install({
   inputFlow,
   inputData,
   outputFlow,
+  outputData,
 }) {
   const If = chip('lib/flowControl/If', () => {
     const exec = inputFlow('exec', {
@@ -16,17 +17,17 @@ export default function install({
       },
       executeCompiler: (portInstance, outterScope, codeWrapper, tools) => {
         const cont = tools.compile(whenTrue, outterScope, codeWrapper, tools);
-        const alt = tools.compile(whenFalse, outterScope, codeWrapper, tools) || null;
+        const alt =
+          tools.compile(whenFalse, outterScope, codeWrapper, tools) || null;
         return tools.recast.types.builders.ifStatement(
           tools.compile(condition, outterScope, codeWrapper, tools),
           tools.recast.types.builders.blockStatement([
             tools.recast.types.builders.expressionStatement(cont),
           ]),
-          alt && tools.recast.types.builders.blockStatement([
-            tools.recast.types.builders.expressionStatement(
-              alt,
-            ),
-          ]),
+          alt &&
+            tools.recast.types.builders.blockStatement([
+              tools.recast.types.builders.expressionStatement(alt),
+            ]),
         );
       },
     });
@@ -67,8 +68,37 @@ export default function install({
     const then = outputFlow('then', { variadic: 'then{index}' });
   });
 
+  const ForLoop = chip('lib/flowControl/ForLoop', () => {
+    const exec = inputFlow('exec', {
+      execute: () => {
+        for (let i = firstIndex(), l = lastIndex(); i < l; i++) {
+          index(i);
+          loopBody();
+        }
+        completed();
+      },
+      // executeCompiler: (portInstance, outterScope, codeWrapper, tools) => {
+      //   debugger;
+      // },
+    });
+    const firstIndex = inputData('firstIndex', {
+      canonical: true,
+      defaultValue: 0,
+      type: 'number',
+    });
+    const lastIndex = inputData('lastIndex', {
+      canonical: true,
+      type: 'number',
+    });
+
+    const loopBody = outputFlow('loopBody');
+    const index = outputData('index', { type: 'number' });
+    const completed = outputFlow('completed');
+  });
+
   return {
     If: registry.add(If),
     Sequence: registry.add(Sequence),
+    ForLoop: registry.add(ForLoop),
   };
 }
