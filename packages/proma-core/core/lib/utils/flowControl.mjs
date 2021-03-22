@@ -77,9 +77,6 @@ export default function install({
         }
         completed();
       },
-      // executeCompiler: (portInstance, outterScope, codeWrapper, tools) => {
-      //   debugger;
-      // },
     });
     const firstIndex = inputData('firstIndex', {
       canonical: true,
@@ -96,9 +93,29 @@ export default function install({
     const completed = outputFlow('completed');
   });
 
+  const WhileLoop = chip('lib/flowControl/WhileLoop', () => {
+    const exec = inputFlow('exec', {
+      execute: () => {
+        while (condition()) {
+          loopBody();
+        }
+        completed();
+      },
+    });
+    const condition = inputData('condition', {
+      canonical: true,
+      defaultValue: false,
+      type: 'boolean',
+    });
+
+    const loopBody = outputFlow('loopBody');
+    const completed = outputFlow('completed');
+  });
+
   return {
     If: registry.add(If),
     Sequence: registry.add(Sequence),
     ForLoop: registry.add(ForLoop),
+    WhileLoop: registry.add(WhileLoop),
   };
 }

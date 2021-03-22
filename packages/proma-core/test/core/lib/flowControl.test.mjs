@@ -190,7 +190,7 @@ describe('[core/lib/flowControl] Sequence', async (assert) => {
         const exec = inputFlow('exec');
 
         const seq = new lib.flowControl.Sequence();
-        seq.id = 'Sequence'
+        seq.id = 'Sequence';
 
         const first = outputFlow('first');
         const second = outputFlow('second');
@@ -269,7 +269,7 @@ describe('[core/lib/flowControl] Sequence', async (assert) => {
   // TODO modify to await async functions and make it an actual sequence?
 });
 
-describe.only('[core/lib/flowControl] ForLoop', async (assert) => {
+describe('[core/lib/flowControl] ForLoop', async (assert) => {
   assert({
     given: 'a ForLoop usage',
     should: 'compile and run',
@@ -278,7 +278,7 @@ describe.only('[core/lib/flowControl] ForLoop', async (assert) => {
         const exec = inputFlow('exec');
 
         const loop = new lib.flowControl.ForLoop(1, 4);
-        loop.id = 'ForLoop'
+        loop.id = 'ForLoop';
 
         const done = outputFlow('done');
         const then = outputFlow('then');
@@ -358,9 +358,112 @@ describe.only('[core/lib/flowControl] ForLoop', async (assert) => {
           });
         }
       }`,
-      [1,2,3,'done',1,2,3,'done'],
+      [1, 2, 3, 'done', 1, 2, 3, 'done'],
     ),
   });
+});
 
-  // TODO modify to await async functions and make it an actual sequence?
+describe('[core/lib/flowControl] WhileLoop', async (assert) => {
+  assert({
+    given: 'a WhileLoop usage',
+    should: 'compile and run',
+    actual: compileAndRun(
+      () => {
+        const exec = inputFlow('exec');
+        const input = inputData('input', { defaultValue: false });
+
+        const loop = new lib.flowControl.WhileLoop();
+        loop.id = 'WhileLoop';
+
+        const done = outputFlow('done');
+        const then = outputFlow('then');
+
+        wire(exec, loop.in.exec);
+        wire(input, loop.in.condition);
+        wire(loop.out.loopBody, then);
+        wire(loop.out.completed, done);
+      },
+      (chip) => {
+        const res = [];
+        chip.out.then(() => {
+          res.push('x');
+          if (res.length > 3) {
+            chip.in.input = false;
+          }
+        });
+        chip.out.done(() => res.push('done'));
+        chip.in.input = true;
+        chip.in.exec();
+        return res;
+      },
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          const $in = Object.seal({
+            input: false
+          });
+
+          const $out = Object.seal({
+            done: undefined,
+            then: undefined
+          });
+
+          Object.defineProperties(this.in = {}, {
+            input: {
+              get: () => () => $in.input,
+
+              set: value => {
+                $in.input = value;
+              }
+            },
+
+            exec: {
+              value: () => {
+                while ($in.input) {
+                  this.out.then();
+                }
+
+                this.out.done();
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            done: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.done = value;
+                  return;
+                }
+
+                ($out.done || (() => {}))();
+              }
+            },
+
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.then = value;
+                  return;
+                }
+
+                ($out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
+      ['x', 'x', 'x', 'x', 'done'],
+    ),
+  });
 });
