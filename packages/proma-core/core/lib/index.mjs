@@ -1,6 +1,7 @@
 import installLiteral from './Literal.mjs';
 import installGetProperty from './GetProperty.mjs';
 import installSetProperty from './SetProperty.mjs';
+import installGetPropertyAtPath from './GetPropertyAtPath.mjs';
 // string
 import installAppend from './string/Append.mjs';
 // flow
@@ -18,6 +19,7 @@ export default function installLib(proma) {
     Literal: installLiteral(proma),
     GetProperty: installGetProperty(proma),
     SetProperty: installSetProperty(proma),
+    GetPropertyAtPath: installGetPropertyAtPath(proma),
     string: {
       Append: installAppend(proma),
     },
