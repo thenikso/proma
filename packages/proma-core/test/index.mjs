@@ -8,6 +8,8 @@ import './core/types.test.mjs';
 import './core/external.test.mjs';
 import './core/compile.test.mjs';
 
+import './core/lib/flowControl.test.mjs';
+
 import './programs/hooks.test.mjs';
 import './programs/outputs.test.mjs';
 import './programs/connections.test.mjs';

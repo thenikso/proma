@@ -203,6 +203,11 @@ function makeChipInstanceMock(chipInfo) {
   );
 }
 
+function getConnectedPorts(port, scope) {
+  const parentChip = isOutlet(port, scope) ? scope[0] : scope[1];
+  return info(parentChip).getConnectedPorts(port, parentChip);
+}
+
 //
 // Compilers
 //
@@ -211,9 +216,16 @@ function makeChipInstanceMock(chipInfo) {
 const CUSTOM_COMPILER_TOOLS = {
   compile,
   recast,
+  isOutlet,
+  getConnectedPorts,
 };
 
 function compile(port, scope, codeWrapper) {
+  // When using `compile` from a custom compilation function, we allow users
+  // to use the local outlet to refer to the chip instance port.
+  if (port.isOutlet && !isOutlet(port, scope)) {
+    port = scope[0][port.isInput ? INPUT : OUTPUT][port.name];
+  }
   return compiler(info(port))(port, scope, codeWrapper);
 }
 

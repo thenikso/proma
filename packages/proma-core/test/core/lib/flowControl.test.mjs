@@ -1,0 +1,182 @@
+import { describe } from '../../runner/riteway.mjs';
+import { js, compileAndRun, compileAndRunResult } from '../../utils.mjs';
+import {
+  chip,
+  inputFlow,
+  inputData,
+  outputFlow,
+  outputData,
+  wire,
+  lib,
+} from '../../../core/index.mjs';
+
+describe('[core/lib/flowControl] If', async (assert) => {
+  assert({
+    given: 'an If chip',
+    should: 'compile and run',
+    actual: compileAndRun(lib.flowControl.If, (chip) => {
+      const res = [];
+      chip.out.whenTrue(() => res.push(true));
+      chip.out.whenFalse(() => res.push(false));
+      chip.in.exec();
+      chip.in.condition = true;
+      chip.in.exec();
+      chip.in.exec();
+      chip.in.condition = false;
+      chip.in.exec();
+      return res;
+    }),
+    expected: compileAndRunResult(
+      js`
+      class lib_flowControl_If {
+        constructor(condition) {
+          const $in = Object.seal({
+            condition: condition || false
+          });
+
+          const $out = Object.seal({
+            whenTrue: undefined,
+            whenFalse: undefined
+          });
+
+          Object.defineProperties(this.in = {}, {
+            condition: {
+              get: () => () => $in.condition,
+
+              set: value => {
+                $in.condition = value;
+              }
+            },
+
+            exec: {
+              value: () => {
+                if ($in.condition) {
+                  this.out.whenTrue();
+                } else {
+                  this.out.whenFalse();
+                }
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            whenTrue: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.whenTrue = value;
+                  return;
+                }
+
+                ($out.whenTrue || (() => {}))();
+              }
+            },
+
+            whenFalse: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.whenFalse = value;
+                  return;
+                }
+
+                ($out.whenFalse || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
+      [false, true, true, false],
+    ),
+  });
+
+  assert({
+    given: 'an If usage with only whenTrue connected',
+    should: 'not compile the else branch',
+    actual: compileAndRun(
+      () => {
+        const exec = inputFlow('exec');
+        const input = inputData('input');
+
+        const branch = new lib.flowControl.If();
+
+        const then = outputFlow('then');
+
+        wire(exec, branch.in.exec);
+        wire(input, branch.in.condition);
+        wire(branch.out.whenTrue, then);
+      },
+      (chip) => {
+        const res = [];
+        chip.out.then(() => res.push('x'));
+        chip.in.exec();
+        chip.in.input = true;
+        chip.in.exec();
+        chip.in.exec();
+        chip.in.input = false;
+        chip.in.exec();
+        return res;
+      },
+    ),
+    expected: compileAndRunResult(
+      js`
+      class TestChip {
+        constructor() {
+          const $in = Object.seal({
+            input: undefined
+          });
+
+          const $out = Object.seal({
+            then: undefined
+          });
+
+          Object.defineProperties(this.in = {}, {
+            input: {
+              get: () => () => $in.input,
+
+              set: value => {
+                $in.input = value;
+              }
+            },
+
+            exec: {
+              value: () => {
+                if ($in.input) {
+                  this.out.then();
+                }
+              }
+            }
+          });
+
+          Object.freeze(this.in);
+
+          Object.defineProperties(this.out = {}, {
+            then: {
+              value: value => {
+                if (typeof value !== "undefined") {
+                  $out.then = value;
+                  return;
+                }
+
+                ($out.then || (() => {}))();
+              }
+            }
+          });
+
+          Object.freeze(this.out);
+
+          Object.defineProperty(this, "destroy", {
+            value: () => {}
+          });
+        }
+      }`,
+      ['x', 'x'],
+    ),
+  });
+});

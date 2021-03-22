@@ -325,7 +325,7 @@ export default class ClassWrapper {
           }
           if (!namedTypes.ArrowFunctionExpression.check(flowBlock)) {
             if (!namedTypes.BlockStatement.check(flowBlock)) {
-              if (!namedTypes.ExpressionStatement.check(flowBlock)) {
+              if (!namedTypes.Statement.check(flowBlock)) {
                 flowBlock = expressionStatement(flowBlock);
               }
               flowBlock = blockStatement([flowBlock]);

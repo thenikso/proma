@@ -4,7 +4,7 @@ import installSetProperty from './SetProperty.mjs';
 // string
 import installAppend from './string/Append.mjs';
 // flow
-import installSequence from './flow/Sequence.mjs';
+import installFlowControl from './utils/flowControl.mjs';
 // html
 import installQuerySelector from './html/QuerySelector.mjs';
 import installBindEvent from './html/BindEvent.mjs';
@@ -21,9 +21,7 @@ export default function installLib(proma) {
     string: {
       Append: installAppend(proma),
     },
-    flow: {
-      Sequence: installSequence(proma),
-    },
+    flowControl: installFlowControl(proma),
     html: {
       QuerySelector: installQuerySelector(proma),
       BindEvent: installBindEvent(proma),
