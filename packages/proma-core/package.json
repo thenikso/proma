@@ -10,13 +10,12 @@
     "dev": "serve .",
     "test": "node test/index.mjs",
     "build": "rollup -c",
-    "build:vendors:recast": "node ./scripts/browserify-esm.js ../../node_modules/recast/main.js ./vendor/recast.mjs"
+    "build:vendors:recast": "node ./scripts/node-to-browser.js ../../node_modules/recast/main.js ./vendor/recast.mjs"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "17.1.0",
     "@rollup/plugin-node-resolve": "11.2.0",
-    "browserify": "17.0.0",
-    "esmify": "2.1.1",
+    "esbuild": "0.9.6",
     "recast": "0.20.4",
     "rollup": "2.42.3",
     "serve": "11.3.2"
