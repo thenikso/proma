@@ -1,12 +1,4 @@
-// https://github.com/benjamn/recast
-
-// NOTE this is the output of
-// ./node_modules/.bin/browserify node_modules/recast/main.js -o recast.mjs
-// manually modified to be an .mjs file by adding this `let temp` and some lines at the
-// end of this file
-let temp;
-
-(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+const exp = (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){(function (){
 'use strict';
 
@@ -516,7 +508,7 @@ var objectKeys = Object.keys || function (obj) {
 };
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"object-assign":33,"util/":4}],2:[function(require,module,exports){
+},{"object-assign":34,"util/":4}],2:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1138,7 +1130,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":3,"_process":35,"inherits":2}],5:[function(require,module,exports){
+},{"./support/isBuffer":3,"_process":36,"inherits":2}],5:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -1342,7 +1334,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./es-proposals":9,"tslib":58}],6:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./es-proposals":9,"tslib":31}],6:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -1355,7 +1347,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"./babel-core":5,"./flow":17,"tslib":58}],7:[function(require,module,exports){
+},{"./babel-core":5,"./flow":17,"tslib":31}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LogicalOperators = exports.AssignmentOperators = exports.BinaryOperators = void 0;
@@ -1676,7 +1668,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./core-operators":7,"tslib":58}],9:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./core-operators":7,"tslib":31}],9:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -1718,7 +1710,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./es2020":14,"tslib":58}],10:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./es2020":14,"tslib":31}],10:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -1740,7 +1732,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/types":29,"./core-operators":7,"./es6":15,"tslib":58}],11:[function(require,module,exports){
+},{"../lib/types":29,"./core-operators":7,"./es6":15,"tslib":31}],11:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -1762,7 +1754,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./es2016":10,"tslib":58}],12:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./es2016":10,"tslib":31}],12:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -1798,7 +1790,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./es2017":11,"tslib":58}],13:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./es2017":11,"tslib":31}],13:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -1817,7 +1809,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./es2018":12,"tslib":58}],14:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./es2018":12,"tslib":31}],14:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -1869,7 +1861,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./core-operators":7,"./es2019":13,"tslib":58}],15:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./core-operators":7,"./es2019":13,"tslib":31}],15:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -2107,7 +2099,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./core":8,"tslib":58}],16:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./core":8,"tslib":31}],16:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -2158,7 +2150,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./es2020":14,"tslib":58}],17:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./es2020":14,"tslib":31}],17:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -2509,7 +2501,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./es-proposals":9,"./type-annotations":19,"tslib":58}],18:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./es-proposals":9,"./type-annotations":19,"tslib":31}],18:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -2619,7 +2611,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./es2020":14,"tslib":58}],19:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./es2020":14,"tslib":31}],19:[function(require,module,exports){
 "use strict";;
 /**
  * Type annotation defs shared between Flow and TypeScript.
@@ -2661,7 +2653,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"tslib":58}],20:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"tslib":31}],20:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -2807,7 +2799,7 @@ function default_1(fork) {
         .field("static", Boolean, defaults["false"])
         .field("computed", Boolean, defaults["false"])
         .field("optional", Boolean, defaults["false"])
-        .field("key", or(def("Identifier"), def("StringLiteral"), def("NumericLiteral"),
+        .field("key", or(def("Identifier"), def("StringLiteral"), def("NumericLiteral"), 
     // Only allowed if .computed is true.
     def("Expression")))
         // classMethodOrDeclareMethodCommon
@@ -3000,14 +2992,14 @@ function default_1(fork) {
     or("public", "private", "protected", void 0), defaults["undefined"]);
     // Defined already in es6 and babel-core.
     def("ClassBody")
-        .field("body", [or(def("MethodDefinition"), def("VariableDeclarator"), def("ClassPropertyDefinition"), def("ClassProperty"), def("ClassPrivateProperty"), def("ClassMethod"), def("ClassPrivateMethod"),
+        .field("body", [or(def("MethodDefinition"), def("VariableDeclarator"), def("ClassPropertyDefinition"), def("ClassProperty"), def("ClassPrivateProperty"), def("ClassMethod"), def("ClassPrivateMethod"), 
         // Just need to add these types:
         def("TSDeclareMethod"), TSTypeMember)]);
 }
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"../lib/shared":28,"../lib/types":29,"./babel-core":5,"./type-annotations":19,"tslib":58}],21:[function(require,module,exports){
+},{"../lib/shared":28,"../lib/types":29,"./babel-core":5,"./type-annotations":19,"tslib":31}],21:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -3061,7 +3053,7 @@ function createFork() {
 }
 module.exports = exports["default"];
 
-},{"./lib/equiv":23,"./lib/node-path":24,"./lib/path":26,"./lib/path-visitor":25,"./lib/types":29,"tslib":58}],22:[function(require,module,exports){
+},{"./lib/equiv":23,"./lib/node-path":24,"./lib/path":26,"./lib/path-visitor":25,"./lib/types":29,"tslib":31}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.namedTypes = void 0;
@@ -3225,7 +3217,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"./types":29,"tslib":58}],24:[function(require,module,exports){
+},{"./types":29,"tslib":31}],24:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -3638,7 +3630,7 @@ function nodePathPlugin(fork) {
 exports.default = nodePathPlugin;
 module.exports = exports["default"];
 
-},{"./path":26,"./scope":27,"./types":29,"tslib":58}],25:[function(require,module,exports){
+},{"./path":26,"./scope":27,"./types":29,"tslib":31}],25:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -3983,7 +3975,7 @@ function pathVisitorPlugin(fork) {
 exports.default = pathVisitorPlugin;
 module.exports = exports["default"];
 
-},{"./node-path":24,"./types":29,"tslib":58}],26:[function(require,module,exports){
+},{"./node-path":24,"./types":29,"tslib":31}],26:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -4316,7 +4308,7 @@ function pathPlugin(fork) {
 exports.default = pathPlugin;
 module.exports = exports["default"];
 
-},{"./types":29,"tslib":58}],27:[function(require,module,exports){
+},{"./types":29,"tslib":31}],27:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -4638,7 +4630,7 @@ function scopePlugin(fork) {
 exports.default = scopePlugin;
 module.exports = exports["default"];
 
-},{"./types":29,"tslib":58}],28:[function(require,module,exports){
+},{"./types":29,"tslib":31}],28:[function(require,module,exports){
 "use strict";;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -4687,7 +4679,7 @@ function default_1(fork) {
 exports.default = default_1;
 module.exports = exports["default"];
 
-},{"./types":29,"tslib":58}],29:[function(require,module,exports){
+},{"./types":29,"tslib":31}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Def = void 0;
@@ -5469,7 +5461,7 @@ function typesPlugin(_fork) {
 exports.default = typesPlugin;
 ;
 
-},{"tslib":58}],30:[function(require,module,exports){
+},{"tslib":31}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.visit = exports.use = exports.Type = exports.someField = exports.PathVisitor = exports.Path = exports.NodePath = exports.namedTypes = exports.getSupertypeNames = exports.getFieldValue = exports.getFieldNames = exports.getBuilderName = exports.finalize = exports.eachField = exports.defineMethod = exports.builtInTypes = exports.builders = exports.astNodesAreEquivalent = void 0;
@@ -5530,9 +5522,317 @@ exports.visit = visit;
 // retaining its member types.
 Object.assign(namedTypes_1.namedTypes, n);
 
-},{"./def/babel":6,"./def/core":8,"./def/es-proposals":9,"./def/es2016":10,"./def/es2017":11,"./def/es2018":12,"./def/es2019":13,"./def/es2020":14,"./def/es6":15,"./def/esprima":16,"./def/flow":17,"./def/jsx":18,"./def/typescript":20,"./fork":21,"./gen/namedTypes":22,"tslib":58}],31:[function(require,module,exports){
+},{"./def/babel":6,"./def/core":8,"./def/es-proposals":9,"./def/es2016":10,"./def/es2017":11,"./def/es2018":12,"./def/es2019":13,"./def/es2020":14,"./def/es6":15,"./def/esprima":16,"./def/flow":17,"./def/jsx":18,"./def/typescript":20,"./fork":21,"./gen/namedTypes":22,"tslib":31}],31:[function(require,module,exports){
+(function (global){(function (){
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
 
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global global, define, System, Reflect, Promise */
+var __extends;
+var __assign;
+var __rest;
+var __decorate;
+var __param;
+var __metadata;
+var __awaiter;
+var __generator;
+var __exportStar;
+var __values;
+var __read;
+var __spread;
+var __spreadArrays;
+var __spreadArray;
+var __await;
+var __asyncGenerator;
+var __asyncDelegator;
+var __asyncValues;
+var __makeTemplateObject;
+var __importStar;
+var __importDefault;
+var __classPrivateFieldGet;
+var __classPrivateFieldSet;
+var __createBinding;
+(function (factory) {
+    var root = typeof global === "object" ? global : typeof self === "object" ? self : typeof this === "object" ? this : {};
+    if (typeof define === "function" && define.amd) {
+        define("tslib", ["exports"], function (exports) { factory(createExporter(root, createExporter(exports))); });
+    }
+    else if (typeof module === "object" && typeof module.exports === "object") {
+        factory(createExporter(root, createExporter(module.exports)));
+    }
+    else {
+        factory(createExporter(root));
+    }
+    function createExporter(exports, previous) {
+        if (exports !== root) {
+            if (typeof Object.create === "function") {
+                Object.defineProperty(exports, "__esModule", { value: true });
+            }
+            else {
+                exports.__esModule = true;
+            }
+        }
+        return function (id, v) { return exports[id] = previous ? previous(id, v) : v; };
+    }
+})
+(function (exporter) {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+
+    __extends = function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+
+    __assign = Object.assign || function (t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+
+    __rest = function (s, e) {
+        var t = {};
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+            t[p] = s[p];
+        if (s != null && typeof Object.getOwnPropertySymbols === "function")
+            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                    t[p[i]] = s[p[i]];
+            }
+        return t;
+    };
+
+    __decorate = function (decorators, target, key, desc) {
+        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+        return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+
+    __param = function (paramIndex, decorator) {
+        return function (target, key) { decorator(target, key, paramIndex); }
+    };
+
+    __metadata = function (metadataKey, metadataValue) {
+        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
+    };
+
+    __awaiter = function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+
+    __generator = function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+    __exportStar = function(m, o) {
+        for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(o, p)) __createBinding(o, m, p);
+    };
+
+    __createBinding = Object.create ? (function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    }) : (function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+    });
+
+    __values = function (o) {
+        var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+        if (m) return m.call(o);
+        if (o && typeof o.length === "number") return {
+            next: function () {
+                if (o && i >= o.length) o = void 0;
+                return { value: o && o[i++], done: !o };
+            }
+        };
+        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+    };
+
+    __read = function (o, n) {
+        var m = typeof Symbol === "function" && o[Symbol.iterator];
+        if (!m) return o;
+        var i = m.call(o), r, ar = [], e;
+        try {
+            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+        }
+        catch (error) { e = { error: error }; }
+        finally {
+            try {
+                if (r && !r.done && (m = i["return"])) m.call(i);
+            }
+            finally { if (e) throw e.error; }
+        }
+        return ar;
+    };
+
+    /** @deprecated */
+    __spread = function () {
+        for (var ar = [], i = 0; i < arguments.length; i++)
+            ar = ar.concat(__read(arguments[i]));
+        return ar;
+    };
+
+    /** @deprecated */
+    __spreadArrays = function () {
+        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+        for (var r = Array(s), k = 0, i = 0; i < il; i++)
+            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+                r[k] = a[j];
+        return r;
+    };
+
+    __spreadArray = function (to, from) {
+        for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+            to[j] = from[i];
+        return to;
+    };
+
+    __await = function (v) {
+        return this instanceof __await ? (this.v = v, this) : new __await(v);
+    };
+
+    __asyncGenerator = function (thisArg, _arguments, generator) {
+        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+        var g = generator.apply(thisArg, _arguments || []), i, q = [];
+        return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+        function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+        function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+        function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);  }
+        function fulfill(value) { resume("next", value); }
+        function reject(value) { resume("throw", value); }
+        function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+    };
+
+    __asyncDelegator = function (o) {
+        var i, p;
+        return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
+        function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
+    };
+
+    __asyncValues = function (o) {
+        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+        var m = o[Symbol.asyncIterator], i;
+        return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+        function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+        function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+    };
+
+    __makeTemplateObject = function (cooked, raw) {
+        if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
+        return cooked;
+    };
+
+    var __setModuleDefault = Object.create ? (function(o, v) {
+        Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+        o["default"] = v;
+    };
+
+    __importStar = function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+
+    __importDefault = function (mod) {
+        return (mod && mod.__esModule) ? mod : { "default": mod };
+    };
+
+    __classPrivateFieldGet = function (receiver, privateMap) {
+        if (!privateMap.has(receiver)) {
+            throw new TypeError("attempted to get private field on non-instance");
+        }
+        return privateMap.get(receiver);
+    };
+
+    __classPrivateFieldSet = function (receiver, privateMap, value) {
+        if (!privateMap.has(receiver)) {
+            throw new TypeError("attempted to set private field on non-instance");
+        }
+        privateMap.set(receiver, value);
+        return value;
+    };
+
+    exporter("__extends", __extends);
+    exporter("__assign", __assign);
+    exporter("__rest", __rest);
+    exporter("__decorate", __decorate);
+    exporter("__param", __param);
+    exporter("__metadata", __metadata);
+    exporter("__awaiter", __awaiter);
+    exporter("__generator", __generator);
+    exporter("__exportStar", __exportStar);
+    exporter("__createBinding", __createBinding);
+    exporter("__values", __values);
+    exporter("__read", __read);
+    exporter("__spread", __spread);
+    exporter("__spreadArrays", __spreadArrays);
+    exporter("__spreadArray", __spreadArray);
+    exporter("__await", __await);
+    exporter("__asyncGenerator", __asyncGenerator);
+    exporter("__asyncDelegator", __asyncDelegator);
+    exporter("__asyncValues", __asyncValues);
+    exporter("__makeTemplateObject", __makeTemplateObject);
+    exporter("__importStar", __importStar);
+    exporter("__importDefault", __importDefault);
+    exporter("__classPrivateFieldGet", __classPrivateFieldGet);
+    exporter("__classPrivateFieldSet", __classPrivateFieldSet);
+});
+
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],32:[function(require,module,exports){
+
+},{}],33:[function(require,module,exports){
 (function webpackUniversalModuleDefinition(root, factory) {
 /* istanbul ignore next */
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -12242,7 +12542,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ ])
 });
 ;
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -12334,7 +12634,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -12385,7 +12685,7 @@ exports.homedir = function () {
 	return '/'
 };
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -12571,7 +12871,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.printComments = exports.attach = void 0;
@@ -12879,7 +13179,7 @@ function printComments(path, print) {
 }
 exports.printComments = printComments;
 
-},{"./lines":38,"./util":44,"assert":1,"ast-types":30,"tslib":58}],37:[function(require,module,exports){
+},{"./lines":39,"./util":45,"assert":1,"ast-types":30,"tslib":47}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -13408,7 +13708,7 @@ FPp.firstInStatement = function () {
 };
 exports.default = FastPath;
 
-},{"./util":44,"assert":1,"ast-types":30,"tslib":58}],38:[function(require,module,exports){
+},{"./util":45,"assert":1,"ast-types":30,"tslib":47}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.concat = exports.fromString = exports.countSpaces = exports.Lines = void 0;
@@ -14064,7 +14364,7 @@ exports.concat = concat;
 // Lines.prototype will be fully populated.
 var emptyLines = fromString("");
 
-},{"./mapping":39,"./options":40,"./util":44,"assert":1,"source-map":56,"tslib":58}],39:[function(require,module,exports){
+},{"./mapping":40,"./options":41,"./util":45,"assert":1,"source-map":59,"tslib":47}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
@@ -14263,7 +14563,7 @@ function skipChars(sourceLines, sourceFromPos, targetLines, targetFromPos, targe
     return sourceCursor;
 }
 
-},{"./util":44,"assert":1,"tslib":58}],40:[function(require,module,exports){
+},{"./util":45,"assert":1,"tslib":47}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.normalize = void 0;
@@ -14319,7 +14619,7 @@ function normalize(opts) {
 }
 exports.normalize = normalize;
 
-},{"../parsers/esprima":57,"os":34}],41:[function(require,module,exports){
+},{"../parsers/esprima":48,"os":35}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parse = void 0;
@@ -14571,7 +14871,7 @@ TCp.findTokenRange = function (loc) {
     loc.end.token = this.endTokenIndex;
 };
 
-},{"./comments":36,"./lines":38,"./options":40,"./util":44,"assert":1,"ast-types":30,"esprima":32,"tslib":58}],42:[function(require,module,exports){
+},{"./comments":37,"./lines":39,"./options":41,"./util":45,"assert":1,"ast-types":30,"esprima":33,"tslib":47}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getReprinter = exports.Patcher = void 0;
@@ -14649,7 +14949,7 @@ Pp.tryToReprintComments = function (newNode, oldNode, print) {
         reprints.forEach(function (reprint) {
             var oldComment = reprint.oldPath.getValue();
             assert_1.default.ok(oldComment.leading || oldComment.trailing);
-            patcher.replace(oldComment.loc,
+            patcher.replace(oldComment.loc, 
             // Comments can't have .comments, so it doesn't matter whether we
             // print with comments or without.
             print(reprint.newPath).indentTail(oldComment.loc.indent));
@@ -14959,7 +15259,7 @@ function findChildReprints(newPath, oldPath, reprints) {
     return true;
 }
 
-},{"./fast-path":37,"./lines":38,"./util":44,"assert":1,"ast-types":30,"tslib":58}],43:[function(require,module,exports){
+},{"./fast-path":38,"./lines":39,"./util":45,"assert":1,"ast-types":30,"tslib":47}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Printer = void 0;
@@ -16245,7 +16545,7 @@ function genericPrintNoParens(path, options, print) {
         case "EnumStringBody":
         case "EnumSymbolBody": {
             if (n.type === "EnumSymbolBody" || n.explicitType) {
-                parts.push(" of ",
+                parts.push(" of ", 
                 // EnumBooleanBody => boolean, etc.
                 n.type.slice(4, -4).toLowerCase());
             }
@@ -17222,7 +17522,7 @@ function maybeAddSemicolon(lines) {
     return lines;
 }
 
-},{"./comments":36,"./fast-path":37,"./lines":38,"./options":40,"./patcher":42,"./util":44,"assert":1,"ast-types":30,"tslib":58}],44:[function(require,module,exports){
+},{"./comments":37,"./fast-path":38,"./lines":39,"./options":41,"./patcher":43,"./util":45,"assert":1,"ast-types":30,"tslib":47}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isTrailingCommaEnabled = exports.getParentExportDeclaration = exports.isExportDeclaration = exports.fixFaultyLocations = exports.getTrueLoc = exports.composeSourceMaps = exports.copyPos = exports.comparePos = exports.getUnionOfKeys = exports.getOption = void 0;
@@ -17547,7 +17847,7 @@ function isTrailingCommaEnabled(options, context) {
 }
 exports.isTrailingCommaEnabled = isTrailingCommaEnabled;
 
-},{"assert":1,"ast-types":30,"source-map":56,"tslib":58}],45:[function(require,module,exports){
+},{"assert":1,"ast-types":30,"source-map":59,"tslib":47}],46:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -17616,7 +17916,41 @@ function runString(code, transformer, options) {
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"./lib/parser":41,"./lib/printer":43,"_process":35,"ast-types":30,"fs":31,"tslib":58}],46:[function(require,module,exports){
+},{"./lib/parser":42,"./lib/printer":44,"_process":36,"ast-types":30,"fs":32,"tslib":47}],47:[function(require,module,exports){
+arguments[4][31][0].apply(exports,arguments)
+},{"dup":31}],48:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.parse = void 0;
+// This module is suitable for passing as options.parser when calling
+// recast.parse to process ECMAScript code with Esprima:
+//
+//   const ast = recast.parse(source, {
+//     parser: require("recast/parsers/esprima")
+//   });
+//
+var util_1 = require("../lib/util");
+function parse(source, options) {
+    var comments = [];
+    var ast = require("esprima").parse(source, {
+        loc: true,
+        locations: true,
+        comment: true,
+        onComment: comments,
+        range: util_1.getOption(options, "range", false),
+        tolerant: util_1.getOption(options, "tolerant", true),
+        tokens: true,
+        jsx: util_1.getOption(options, "jsx", false)
+    });
+    if (!Array.isArray(ast.comments)) {
+        ast.comments = comments;
+    }
+    return ast;
+}
+exports.parse = parse;
+;
+
+},{"../lib/util":45,"esprima":33}],49:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -17739,7 +18073,7 @@ ArraySet.prototype.toArray = function ArraySet_toArray() {
 
 exports.ArraySet = ArraySet;
 
-},{"./util":55}],47:[function(require,module,exports){
+},{"./util":58}],50:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -17881,7 +18215,7 @@ exports.decode = function base64VLQ_decode(aStr, aIndex, aOutParam) {
   aOutParam.rest = aIndex;
 };
 
-},{"./base64":48}],48:[function(require,module,exports){
+},{"./base64":51}],51:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -17950,7 +18284,7 @@ exports.decode = function (charCode) {
   return -1;
 };
 
-},{}],49:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -18063,7 +18397,7 @@ exports.search = function search(aNeedle, aHaystack, aCompare, aBias) {
   return index;
 };
 
-},{}],50:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2014 Mozilla Foundation and contributors
@@ -18144,7 +18478,7 @@ MappingList.prototype.toArray = function MappingList_toArray() {
 
 exports.MappingList = MappingList;
 
-},{"./util":55}],51:[function(require,module,exports){
+},{"./util":58}],54:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -18260,7 +18594,7 @@ exports.quickSort = function (ary, comparator) {
   doQuickSort(ary, comparator, 0, ary.length - 1);
 };
 
-},{}],52:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -19316,7 +19650,7 @@ IndexedSourceMapConsumer.prototype.sourceContentFor =
  * and an object is returned with the following properties:
  *
  *   - line: The line number in the generated source, or null.  The
- *     line number is 1-based.
+ *     line number is 1-based. 
  *   - column: The column number in the generated source, or null.
  *     The column number is 0-based.
  */
@@ -19407,7 +19741,7 @@ IndexedSourceMapConsumer.prototype._parseMappings =
 
 exports.IndexedSourceMapConsumer = IndexedSourceMapConsumer;
 
-},{"./array-set":46,"./base64-vlq":47,"./binary-search":49,"./quick-sort":51,"./util":55}],53:[function(require,module,exports){
+},{"./array-set":49,"./base64-vlq":50,"./binary-search":52,"./quick-sort":54,"./util":58}],56:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -19834,7 +20168,7 @@ SourceMapGenerator.prototype.toString =
 
 exports.SourceMapGenerator = SourceMapGenerator;
 
-},{"./array-set":46,"./base64-vlq":47,"./mapping-list":50,"./util":55}],54:[function(require,module,exports){
+},{"./array-set":49,"./base64-vlq":50,"./mapping-list":53,"./util":58}],57:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -20249,7 +20583,7 @@ SourceNode.prototype.toStringWithSourceMap = function SourceNode_toStringWithSou
 
 exports.SourceNode = SourceNode;
 
-},{"./source-map-generator":53,"./util":55}],55:[function(require,module,exports){
+},{"./source-map-generator":56,"./util":58}],58:[function(require,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -20739,7 +21073,7 @@ function computeSourceURL(sourceRoot, sourceURL, sourceMapURL) {
 }
 exports.computeSourceURL = computeSourceURL;
 
-},{}],56:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 /*
  * Copyright 2009-2011 Mozilla Foundation and contributors
  * Licensed under the New BSD license. See LICENSE.txt or:
@@ -20749,357 +21083,5 @@ exports.SourceMapGenerator = require('./lib/source-map-generator').SourceMapGene
 exports.SourceMapConsumer = require('./lib/source-map-consumer').SourceMapConsumer;
 exports.SourceNode = require('./lib/source-node').SourceNode;
 
-},{"./lib/source-map-consumer":52,"./lib/source-map-generator":53,"./lib/source-node":54}],57:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.parse = void 0;
-// This module is suitable for passing as options.parser when calling
-// recast.parse to process ECMAScript code with Esprima:
-//
-//   const ast = recast.parse(source, {
-//     parser: require("recast/parsers/esprima")
-//   });
-//
-var util_1 = require("../lib/util");
-function parse(source, options) {
-    var comments = [];
-    var ast = require("esprima").parse(source, {
-        loc: true,
-        locations: true,
-        comment: true,
-        onComment: comments,
-        range: util_1.getOption(options, "range", false),
-        tolerant: util_1.getOption(options, "tolerant", true),
-        tokens: true,
-        jsx: util_1.getOption(options, "jsx", false)
-    });
-    if (!Array.isArray(ast.comments)) {
-        ast.comments = comments;
-    }
-    return ast;
-}
-exports.parse = parse;
-;
-
-},{"../lib/util":44,"esprima":32}],58:[function(require,module,exports){
-(function (global){(function (){
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global global, define, System, Reflect, Promise */
-var __extends;
-var __assign;
-var __rest;
-var __decorate;
-var __param;
-var __metadata;
-var __awaiter;
-var __generator;
-var __exportStar;
-var __values;
-var __read;
-var __spread;
-var __spreadArrays;
-var __spreadArray;
-var __await;
-var __asyncGenerator;
-var __asyncDelegator;
-var __asyncValues;
-var __makeTemplateObject;
-var __importStar;
-var __importDefault;
-var __classPrivateFieldGet;
-var __classPrivateFieldSet;
-var __createBinding;
-(function (factory) {
-    var root = typeof global === "object" ? global : typeof self === "object" ? self : typeof this === "object" ? this : {};
-    if (typeof define === "function" && define.amd) {
-        define("tslib", ["exports"], function (exports) { factory(createExporter(root, createExporter(exports))); });
-    }
-    else if (typeof module === "object" && typeof module.exports === "object") {
-        factory(createExporter(root, createExporter(module.exports)));
-    }
-    else {
-        factory(createExporter(root));
-    }
-    function createExporter(exports, previous) {
-        if (exports !== root) {
-            if (typeof Object.create === "function") {
-                Object.defineProperty(exports, "__esModule", { value: true });
-            }
-            else {
-                exports.__esModule = true;
-            }
-        }
-        return function (id, v) { return exports[id] = previous ? previous(id, v) : v; };
-    }
-})
-(function (exporter) {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-
-    __extends = function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-
-    __assign = Object.assign || function (t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-    };
-
-    __rest = function (s, e) {
-        var t = {};
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-            t[p] = s[p];
-        if (s != null && typeof Object.getOwnPropertySymbols === "function")
-            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                    t[p[i]] = s[p[i]];
-            }
-        return t;
-    };
-
-    __decorate = function (decorators, target, key, desc) {
-        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-        return c > 3 && r && Object.defineProperty(target, key, r), r;
-    };
-
-    __param = function (paramIndex, decorator) {
-        return function (target, key) { decorator(target, key, paramIndex); }
-    };
-
-    __metadata = function (metadataKey, metadataValue) {
-        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
-    };
-
-    __awaiter = function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-
-    __generator = function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-    __exportStar = function(m, o) {
-        for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(o, p)) __createBinding(o, m, p);
-    };
-
-    __createBinding = Object.create ? (function(o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-    }) : (function(o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        o[k2] = m[k];
-    });
-
-    __values = function (o) {
-        var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-        if (m) return m.call(o);
-        if (o && typeof o.length === "number") return {
-            next: function () {
-                if (o && i >= o.length) o = void 0;
-                return { value: o && o[i++], done: !o };
-            }
-        };
-        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-    };
-
-    __read = function (o, n) {
-        var m = typeof Symbol === "function" && o[Symbol.iterator];
-        if (!m) return o;
-        var i = m.call(o), r, ar = [], e;
-        try {
-            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-        }
-        catch (error) { e = { error: error }; }
-        finally {
-            try {
-                if (r && !r.done && (m = i["return"])) m.call(i);
-            }
-            finally { if (e) throw e.error; }
-        }
-        return ar;
-    };
-
-    /** @deprecated */
-    __spread = function () {
-        for (var ar = [], i = 0; i < arguments.length; i++)
-            ar = ar.concat(__read(arguments[i]));
-        return ar;
-    };
-
-    /** @deprecated */
-    __spreadArrays = function () {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-        for (var r = Array(s), k = 0, i = 0; i < il; i++)
-            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                r[k] = a[j];
-        return r;
-    };
-
-    __spreadArray = function (to, from) {
-        for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-            to[j] = from[i];
-        return to;
-    };
-
-    __await = function (v) {
-        return this instanceof __await ? (this.v = v, this) : new __await(v);
-    };
-
-    __asyncGenerator = function (thisArg, _arguments, generator) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-        var g = generator.apply(thisArg, _arguments || []), i, q = [];
-        return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-        function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-        function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-        function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);  }
-        function fulfill(value) { resume("next", value); }
-        function reject(value) { resume("throw", value); }
-        function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-    };
-
-    __asyncDelegator = function (o) {
-        var i, p;
-        return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
-        function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
-    };
-
-    __asyncValues = function (o) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-        var m = o[Symbol.asyncIterator], i;
-        return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-        function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-        function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-    };
-
-    __makeTemplateObject = function (cooked, raw) {
-        if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
-        return cooked;
-    };
-
-    var __setModuleDefault = Object.create ? (function(o, v) {
-        Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-        o["default"] = v;
-    };
-
-    __importStar = function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-
-    __importDefault = function (mod) {
-        return (mod && mod.__esModule) ? mod : { "default": mod };
-    };
-
-    __classPrivateFieldGet = function (receiver, privateMap) {
-        if (!privateMap.has(receiver)) {
-            throw new TypeError("attempted to get private field on non-instance");
-        }
-        return privateMap.get(receiver);
-    };
-
-    __classPrivateFieldSet = function (receiver, privateMap, value) {
-        if (!privateMap.has(receiver)) {
-            throw new TypeError("attempted to set private field on non-instance");
-        }
-        privateMap.set(receiver, value);
-        return value;
-    };
-
-    exporter("__extends", __extends);
-    exporter("__assign", __assign);
-    exporter("__rest", __rest);
-    exporter("__decorate", __decorate);
-    exporter("__param", __param);
-    exporter("__metadata", __metadata);
-    exporter("__awaiter", __awaiter);
-    exporter("__generator", __generator);
-    exporter("__exportStar", __exportStar);
-    exporter("__createBinding", __createBinding);
-    exporter("__values", __values);
-    exporter("__read", __read);
-    exporter("__spread", __spread);
-    exporter("__spreadArrays", __spreadArrays);
-    exporter("__spreadArray", __spreadArray);
-    exporter("__await", __await);
-    exporter("__asyncGenerator", __asyncGenerator);
-    exporter("__asyncDelegator", __asyncDelegator);
-    exporter("__asyncValues", __asyncValues);
-    exporter("__makeTemplateObject", __makeTemplateObject);
-    exporter("__importStar", __importStar);
-    exporter("__importDefault", __importDefault);
-    exporter("__classPrivateFieldGet", __classPrivateFieldGet);
-    exporter("__classPrivateFieldSet", __classPrivateFieldSet);
-});
-
-}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]
-
-// NOTE added
-,59:[
-    function (require, module, exports) {
-      temp = require('./main');
-    },
-    { './main': 45 }
-]
-// NODE end add
-
-},{},[/* changed */59]);
-
-export default temp;
+},{"./lib/source-map-consumer":55,"./lib/source-map-generator":56,"./lib/source-node":57}]},{},[46]);
+export default exp(46);
