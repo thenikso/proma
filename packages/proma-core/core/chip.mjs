@@ -98,10 +98,17 @@ export class Chip {
             port.variadic[j];
           }
           port.explicitValue = canonicalValues.slice(i);
+          i = canonicalValues.length;
           break;
         }
         port.explicitValue = canonicalValues[i];
         i++;
+      }
+      // If canonical values have not been used, we issue a warning
+      if (i < canonicalValues.length) {
+        throw new Error(
+          `Specified ${canonicalValues.length} canonical values but accepting only ${i}`,
+        );
       }
     }
   }
