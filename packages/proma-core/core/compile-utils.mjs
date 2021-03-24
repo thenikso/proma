@@ -26,6 +26,16 @@ export function literalCompiler(value) {
       if (Array.isArray(value)) {
         return builders.arrayExpression(value.map(literalCompiler));
       }
+      if (value.constructor === Object) {
+        return builders.objectExpression(
+          Object.entries(value).map(([key, val]) =>
+            builders.objectProperty(
+              builders.identifier(key),
+              literalCompiler(val),
+            ),
+          ),
+        );
+      }
     default:
       throw new Error(`Can not compile literal: ${value}`);
   }
