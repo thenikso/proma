@@ -793,6 +793,8 @@ function makeInputDataSinkCompiler(portInfo) {
     if (typeof portInstance.value !== 'undefined') {
       return literalCompiler(portInstance.value);
     }
+
+    return literalCompiler(undefined);
   };
 }
 

@@ -6,7 +6,9 @@ export default function install({ registry, chip, inputData, outputData }) {
         type: 'String',
         canonical: true,
       });
-      const fallback = inputData('fallback', { canonical: true });
+      const fallback = inputData('fallback', {
+        canonical: true,
+      });
 
       const value = outputData('value', {
         compute: () => {
