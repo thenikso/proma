@@ -298,14 +298,17 @@ function makeShortcutMatcher(eventString) {
       altKey: tokens.includes('alt'),
       ctrlKey: tokens.includes('ctrl'),
     };
-    const metaMatcher = (e) => {
+    if (tokens.includes('mousewheel')) {
+      delete mods.ctrlKey;
+    }
+    const modsMatcher = (e) => {
       for (const m in mods) {
         if (e[m] !== mods[m]) return false;
       }
       return true;
     };
     tokens = tokens.filter((t) => !MOD_KEYS.includes(t));
-    return [metaMatcher, ...tokens.map(makeShortcutTokenMatcher)];
+    return [modsMatcher, ...tokens.map(makeShortcutTokenMatcher)];
   });
   // sequenceMathers is [ shortcutMatcher ] or [ shortcutMatcher, shortcutMatcher ]
   // of matchers to be matched in sequence
