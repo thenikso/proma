@@ -1,0 +1,22 @@
+import eq from '../../vendor/fast-deep-equal.mjs';
+
+export default function install({ registry, chip, inputData, outputData }) {
+  return registry.add(
+    chip(
+      'lib/Equal',
+      () => {
+        const A = inputData('A', { canonical: true });
+        const B = inputData('B', { canonical: true });
+        const equal = outputData('equal', {
+          compute: () => eq(A(), B()),
+          type: 'boolean',
+        });
+      },
+      {
+        imports: {
+          eq: 'https://esm.sh/fast-deep-equal',
+        },
+      },
+    ),
+  );
+}

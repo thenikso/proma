@@ -10,7 +10,8 @@
     "dev": "serve .",
     "test": "node test/index.mjs",
     "build": "rollup -c",
-    "build:vendors:recast": "node ./scripts/browserify.js ../../node_modules/recast/main.js ./vendor/recast.mjs"
+    "build:vendors:recast": "node ./scripts/browserify.js ../../node_modules/recast/main.js ./vendor/recast.mjs",
+    "build:vendors:fast-deep-equal": "node ./scripts/browserify.js ../../node_modules/fast-deep-equal/es6/index.js ./vendor/fast-deep-equal.mjs"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "17.1.0",

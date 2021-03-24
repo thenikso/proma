@@ -3,6 +3,7 @@ import installGetProperty from './GetProperty.mjs';
 import installSetProperty from './SetProperty.mjs';
 import installGetPropertyAtPath from './GetPropertyAtPath.mjs';
 import installToString from './ToString.mjs';
+import installEqual from './Equal.mjs';
 // string
 import installAppend from './string/Append.mjs';
 // flow
@@ -22,6 +23,7 @@ export default function installLib(proma) {
     SetProperty: installSetProperty(proma),
     GetPropertyAtPath: installGetPropertyAtPath(proma),
     ToString: installToString(proma),
+    Equal: installEqual(proma),
     string: {
       Append: installAppend(proma),
     },
