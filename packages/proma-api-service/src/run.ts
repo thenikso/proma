@@ -3,6 +3,7 @@ import { defer, error, btoa, interceptStdout, timeout } from './lib/utils';
 import aws from './lib/aws';
 import * as proma from '@proma/core';
 import fetch from 'node-fetch';
+import eq from 'fast-deep-equal';
 
 export const endpoint: Handler = async (event) => {
   // TODO the user id should be here or in some other authorizer prop
@@ -91,7 +92,12 @@ export const endpoint: Handler = async (event) => {
         const parts = importUrl.split('/');
         const name = parts[parts.length - 1];
         console.info(`[inform] attempt to import "${importUrl}" as "${name}"`);
-        return require(name);
+        switch (name) {
+          case 'fast-deep-equal':
+            return eq;
+          default:
+            throw new Error(`Can not import module '${importUrl}'`);
+        }
       },
     );
     chipInstance = new chipCompiledClass(event);
