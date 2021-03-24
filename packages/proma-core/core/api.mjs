@@ -350,11 +350,14 @@ function makeChipFactory($customChips, $hooks) {
         return compilation.compile(wrapper, $hooks);
       }
 
-      static async compiledClass(context) {
+      static async compiledClass(context, importModule) {
         const imports = Object.entries(this.imports);
         const importsNames = imports.map(([name]) => name);
         const importsValues = imports.map(([, url]) =>
-          import(url).then((m) => m.default || m),
+          (importModule
+            ? Promise.resolve(importModule(url))
+            : import(url)
+          ).then((m) => m.default || m),
         );
         const ctx = Object.entries(context || {}).filter(
           ([name]) => !importsNames.includes(name),
