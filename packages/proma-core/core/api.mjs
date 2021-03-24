@@ -337,9 +337,40 @@ function makeChipFactory($customChips, $hooks) {
         return chipInfo.URI;
       }
 
+      static get imports() {
+        return Object.assign(
+          {},
+          config.imports,
+          ...chipInfo.chips.map((c) => c.constructor.imports),
+        );
+      }
+
       static compile(wrapper) {
         const compilation = new Compilation(chipInfo, null);
         return compilation.compile(wrapper, $hooks);
+      }
+
+      static async compiledClass(context) {
+        const imports = Object.entries(this.imports);
+        const importsNames = imports.map(([name]) => name);
+        const importsValues = imports.map(([, url]) =>
+          import(url).then((m) => m.default || m),
+        );
+        const ctx = Object.entries(context || {}).filter(
+          ([name]) => !importsNames.includes(name),
+        );
+        const ctxNames = ctx.map(([name]) => name);
+        const ctxValues = ctx.map(([, val]) => val);
+        const code = this.compile();
+        const makeCompiledClass = new Function(
+          ...importsNames,
+          ...ctxNames,
+          'return (' + code + ')',
+        );
+        return makeCompiledClass(
+          ...(await Promise.all(importsValues)),
+          ...(await Promise.all(ctxValues)),
+        );
       }
 
       static toJSON() {

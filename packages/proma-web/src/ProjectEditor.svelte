@@ -190,8 +190,7 @@
 
     if (compiled === true) {
       code = chipClass.compile();
-      const makeChipClassToUse = new Function('return (' + code + ')');
-      chipClassToUse = makeChipClassToUse();
+      chipClassToUse = await chipClass.compiledClass();
     } else {
       code = chipClass.toJSON();
     }
@@ -199,6 +198,7 @@
 
     // TODO get example event from somewhere
     chipInstance = new chipClassToUse({
+      httpMethod: 'GET',
       queryStringParameters: {
         name: 'test',
       },

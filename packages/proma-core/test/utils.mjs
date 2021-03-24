@@ -41,7 +41,6 @@ export function compileAndRun(build, run, initData, externalContext) {
       if (!externalContext && initData) {
         compInitData = [];
         externalContext = {};
-        // const newInitData
         for (const data of initData) {
           if (data instanceof ExternalReference) {
             externalContext[data.reference] = data.value;
@@ -51,12 +50,24 @@ export function compileAndRun(build, run, initData, externalContext) {
           }
         }
       }
-      const context = Object.entries(externalContext || {});
+      const imports = Object.entries(C.imports).map(([name, url]) => [
+        name,
+        import(url).then((m) => m.default || m),
+      ]);
+      const importsNames = imports.map(([name]) => name);
+      const context = [...Object.entries(externalContext || {}), ...imports];
       const contextNames = context.map(([key]) => key);
       const contextValues = context.map(([, value]) => value);
       const makeClass = new Function(...contextNames, 'return (' + code + ')');
-      const CClass = makeClass(...contextValues);
-      cComp = new CClass(...compInitData);
+      if (contextValues.some((v) => v instanceof Promise)) {
+        cComp = Promise.all(contextValues).then((contextValues) => {
+          const CClass = makeClass(...contextValues);
+          return new CClass(...compInitData);
+        });
+      } else {
+        const CClass = makeClass(...contextValues);
+        cComp = new CClass(...compInitData);
+      }
     } catch (e) {
       console.log = originalLog;
       console.log(code);
@@ -71,7 +82,11 @@ export function compileAndRun(build, run, initData, externalContext) {
     live = run(c, liveLogs);
     const runComp = () => {
       console.log = (msg) => compLogs.push(msg);
-      comp = cComp ? run(cComp, compLogs) : undefined;
+      if (cComp instanceof Promise) {
+        comp = cComp.then((cComp) => run(cComp, compLogs));
+      } else {
+        comp = cComp ? run(cComp, compLogs) : undefined;
+      }
     };
     if (live instanceof Promise) {
       live = live
@@ -85,7 +100,12 @@ export function compileAndRun(build, run, initData, externalContext) {
     }
   } else {
     live = liveLogs;
-    comp = cComp ? compLogs : undefined;
+    comp =
+      cComp instanceof Promise
+        ? cComp.then(() => compLogs)
+        : cComp
+        ? compLogs
+        : undefined;
   }
   // Return async results
   if (live instanceof Promise || comp instanceof Promise) {

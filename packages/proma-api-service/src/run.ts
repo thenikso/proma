@@ -83,14 +83,17 @@ export const endpoint: Handler = async (event) => {
         chipErrors = errors;
       },
     );
-    const chipCode: string = chipClass.compile();
     // TODO can not give access to `global`. Use something like `entrypointGlobal.ts`
     // to mask all global objects
-    const makeChipCompiledClass = new Function(
-      'fetch',
-      'return (' + chipCode + ')',
+    const chipCompiledClass = await chipClass.compiledClass(
+      { fetch },
+      (importUrl: string) => {
+        const parts = importUrl.split('/');
+        const name = parts[parts.length - 1];
+        console.info(`[inform] attempt to import "${importUrl}" as "${name}"`);
+        return require(name);
+      },
     );
-    const chipCompiledClass = makeChipCompiledClass(fetch);
     chipInstance = new chipCompiledClass(event);
   } catch (e) {
     releaseLogCapture();
