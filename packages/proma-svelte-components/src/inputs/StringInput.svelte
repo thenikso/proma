@@ -95,9 +95,9 @@
 
 <style>
   .StringInput {
-    color: var(--proma-controls--input--color, white);
-    background-color: var(--proma-controls--input--background, #57575773);
-    border: 1px solid var(--proma-controls--input--border-color, #383839);
+    color: var(--proma-input--color, white);
+    background-color: var(--proma-input--background, #57575773);
+    border: 1px solid var(--proma-input--border-color, #383839);
     border-radius: 5px;
     padding: 4px 6px;
     font-family: var(
@@ -122,8 +122,8 @@
   }
 
   .StringInput:focus-within {
-    background-color: var(--proma-controls--input-focus--background, #575757);
-    border-color: var(--proma-controls--input-focus--border-color, #257bfb);
+    background-color: var(--proma-input--focus--background, #575757);
+    border-color: var(--proma-input--focus--border-color, #257bfb);
   }
 
   input {

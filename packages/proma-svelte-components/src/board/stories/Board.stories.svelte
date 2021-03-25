@@ -1,5 +1,6 @@
 <script>
   import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+  import Theme from '../../stories/LightThemeDecorator.svelte';
 
   import Board from '../Board.svelte';
   import Wire from '../Wire.svelte';
@@ -70,4 +71,50 @@
   </Board>
 </Template>
 
-<Story name="with Chips" args={{}} />
+<Story name="Example" args={{}} />
+
+<Story name="Themed" let:args>
+  <Theme>
+    <Board
+      {...args}
+      on:wire:start={detail(args['on:wire:start'])}
+      on:wire:probe={detail(args['on:wire:probe'])}
+      on:wire:end={detail(args['on:wire:end'])}
+      on:board:contextmenu={detail(args['on:board:contextmenu'])}
+      on:chip:contextmenu={detail(args['on:chip:contextmenu'])}
+      on:port:contextmenu={detail(args['on:port:contextmenu'])}
+    >
+      <Chip id="one">
+        <Inputs>
+          <Port name="execute" type="exec" />
+          <Port name="message" />
+        </Inputs>
+        <Outputs>
+          <Port name="then" type="exec" />
+          <Port name="value" />
+        </Outputs>
+      </Chip>
+      <Chip id="two" x={200} y={200}>
+        <Inputs>
+          <Port name="execute" type="exec" />
+          <Port name="message" />
+        </Inputs>
+        <Outputs>
+          <Port name="then" type="exec" />
+        </Outputs>
+      </Chip>
+      <Wire
+        outputChip="one"
+        outputPort="value"
+        inputChip="two"
+        inputPort="message"
+      />
+      <Wire
+        outputChip="one"
+        outputPort="then"
+        inputChip="two"
+        inputPort="execute"
+      />
+    </Board>
+  </Theme>
+</Story>
