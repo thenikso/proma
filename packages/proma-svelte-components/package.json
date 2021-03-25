@@ -1,0 +1,32 @@
+{
+  "name": "@proma/svelte-components",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "svelte": "src/index.js",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "rollup -c",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.13.10",
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-node-resolve": "^11.0.0",
+    "@storybook/addon-actions": "^6.2.0-rc.8",
+    "@storybook/addon-essentials": "^6.2.0-rc.8",
+    "@storybook/addon-links": "^6.2.0-rc.8",
+    "@storybook/addon-svelte-csf": "^1.0.0",
+    "@storybook/svelte": "^6.2.0-rc.8",
+    "babel-loader": "^8.2.2",
+    "rollup": "^2.3.4",
+    "rollup-plugin-css-only": "^3.1.0",
+    "rollup-plugin-livereload": "^2.0.0",
+    "rollup-plugin-svelte": "^7.0.0",
+    "rollup-plugin-terser": "^7.0.0",
+    "sirv-cli": "^1.0.0",
+    "svelte": "^3.35.0",
+    "svelte-loader": "^3.0.0"
+  },
+  "dependencies": {}
+}
