@@ -1,1 +1,4 @@
-export { default as Button } from './Button.svelte';
+export * from './board';
+export * from './shortcuts';
+export * from './actions';
+export * from './input;

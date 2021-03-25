@@ -1,26 +1,13 @@
 <script>
   import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+
   import Chip from '../Chip.svelte';
   import Inputs from '../Inputs.svelte';
   import Outputs from '../Outputs.svelte';
   import Port from '../Port.svelte';
-
-  const meta = {
-  title: 'Board/Chip with ports',
-  component: Chip,
-  argTypes: {
-    // label: { control: 'text' },
-    // primary: { control: 'boolean' },
-    // backgroundColor: { control: 'color' },
-    // size: {
-    //   control: { type: 'select', options: ['small', 'medium', 'large'] },
-    // },
-    // onClick: { action: 'onClick' },
-  },
-}
 </script>
 
-<Meta {...meta} />
+<Meta title="Board/Chip" component={Chip} />
 
 <Template let:args>
   <Chip {...args}>
@@ -35,6 +22,6 @@
   </Chip>
 </Template>
 
-<Story name="Empty" args={{}} />
+<Story name="with Ports" args={{}} />
 
 <Story name="Selected" args={{ selected: true }} />
