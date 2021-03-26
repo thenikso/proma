@@ -1,4 +1,4 @@
-const serverless = require('adapter-serverless');
+const serverless = require('@thenikso/adapter-serverless');
 const pkg = require('./package.json');
 
 /** @type {import('@sveltejs/kit').Config} */

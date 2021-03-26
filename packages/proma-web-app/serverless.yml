@@ -29,7 +29,7 @@ plugins:
 functions:
   server:
     name: svelte-server-${self:provider.stage}
-    description: Serves Svelte website using Fastify serverless.
+    description: Serves Svelte website using Polka serverless.
     handler: build/serverless.handler
     events:
       - http: ANY /

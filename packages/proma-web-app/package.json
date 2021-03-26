@@ -4,10 +4,10 @@
   "scripts": {
     "dev": "svelte-kit dev",
     "build": "svelte-kit build",
-    "start": "svelte-kit start"
+    "start": "svelte-kit build && serverless offline"
   },
   "devDependencies": {
-    "@sveltejs/adapter-node": "next",
+    "@nikso/adapter-serverless": "0.1.0",
     "@sveltejs/kit": "next",
     "serverless": "2.31.0",
     "serverless-offline": "6.9.0",
@@ -18,10 +18,5 @@
   "engines": {
     "node": ">= 12.17.0"
   },
-  "dependencies": {
-    "aws-lambda-fastify": "1.4.4",
-    "fastify": "3.14.0",
-    "fastify-static": "4.0.1",
-    "lambda-log": "2.4.0"
-  }
+  "dependencies": {}
 }
