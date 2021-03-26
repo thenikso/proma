@@ -1,21 +1,27 @@
 {
-  "name": "proma-web-app",
+  "name": "@proma/web-app",
   "version": "0.0.1",
   "scripts": {
     "dev": "svelte-kit dev",
     "build": "svelte-kit build",
-    "start": "svelte-kit start",
-    "lint": "prettier --check .",
-    "format": "prettier --write ."
+    "start": "svelte-kit start"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "next",
     "@sveltejs/kit": "next",
+    "serverless": "2.31.0",
+    "serverless-offline": "6.9.0",
     "svelte": "^3.29.0",
     "vite": "^2.1.0"
   },
   "type": "module",
   "engines": {
     "node": ">= 12.17.0"
+  },
+  "dependencies": {
+    "aws-lambda-fastify": "1.4.4",
+    "fastify": "3.14.0",
+    "fastify-static": "4.0.1",
+    "lambda-log": "2.4.0"
   }
 }
