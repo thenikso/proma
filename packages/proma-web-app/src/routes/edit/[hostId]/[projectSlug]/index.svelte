@@ -23,14 +23,14 @@
 </script>
 
 <script>
-  import '$lib/ssr-polyfills';
+  import { browser } from '$app/env';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
 
   export let project;
   export let selectedFilePath;
 
-  $: selectedFileType = ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
-  $: selectedFileSource = atob(project?.files?.[selectedFilePath] || '');
+  $: selectedFileType = browser && ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
+  $: selectedFileSource = browser && atob(project?.files?.[selectedFilePath] || '');
 
   // Will be initalized as a function to save the selected file source
   let getFileEditedSource;
@@ -50,7 +50,7 @@
 
   <div class="EditorHeader">
     <div class="Breadcrumbs">
-      <div class="current">Title</div>
+      <div class="current">{selectedFilePath}</div>
     </div>
     <div class="Spacer" />
     {#if $$slots.tools}

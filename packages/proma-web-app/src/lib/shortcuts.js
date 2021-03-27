@@ -1,3 +1,4 @@
+import { browser } from '$app/env';
 import { onMount } from 'svelte';
 import {
   createShortcutDispatcher,
@@ -23,10 +24,9 @@ shortcuts.set(
 let shortcutsInitialized = false;
 
 export function initShortcuts() {
-  if (shortcutsInitialized) {
-    throw new Error('Shortcuts already initalized');
+  if (shortcutsInitialized || !browser) {
+    return;
   }
-
   shortcutsInitialized = true;
 
   const dispatchShortcuts = createShortcutDispatcher();
