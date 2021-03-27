@@ -112,7 +112,10 @@ class EditableChipInfo {
         value: function dispatch(eventName, detail) {
           const names = eventName.split(':');
           let partialName = '';
-          const listeners = [];
+          const listeners = [
+            ...(events.get('*') || []),
+            ...getSharedEvents(chipInfo, '*'),
+          ];
           for (const n of names) {
             partialName += n;
             listeners.push(...(events.get(partialName) || []));

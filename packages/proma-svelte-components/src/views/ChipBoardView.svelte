@@ -37,16 +37,16 @@
 
   const dispatch = createEventDispatcher();
 
-  function dispatchChange(chip) {
-    dispatch('change', { chip });
+  function dispatchMetadataChange(detail) {
+    dispatch('metadata:change', detail);
   }
 
   function dispatchSubChipAddRequest(detail) {
     dispatch('subChip:request', detail);
   }
 
-  function dispatchSelectionChange(details) {
-    dispatch('selection:change', details);
+  function dispatchSelectionChange(detail) {
+    dispatch('selection:change', detail);
   }
 
   //
@@ -90,24 +90,8 @@
     innerChips = stableChip.chips;
     connections = stableChip.connections;
 
-    metadata = {
-      $: {
-        panX: 0,
-        panY: 0,
-        zoom: 1,
-        ...(stableChip?.metadata?.$ ?? {}),
-      },
-      $in: { x: -400, y: 0, ...(stableChip?.metadata?.$in ?? {}) },
-      $out: { x: -400, y: 0, ...(stableChip?.metadata?.$out ?? {}) },
-      ...Object.fromEntries(
-        stableChip.chips.map((c, i) => [
-          c.id,
-          { x: 0, y: 100 * i, ...(stableChip?.metadata?.[c.id] ?? {}) },
-        ]),
-      ),
-    };
-
-    selectedChipIds = metadata.$.selected || [];
+    metadata = cloneMetadata(stableChip);
+    selectedChipIds = metadata.$.selected;
   }
 
   //
@@ -116,13 +100,13 @@
 
   let metadata;
 
-  $: if (edit && metadata) {
-    updateChipMetadata(chip, metadata);
-  }
+  $: updateChipMetadata(metadata);
 
-  function updateChipMetadata(chip, metadata) {
-    chip.metadata = metadata;
-    dispatchChange(chip);
+  function updateChipMetadata(metadata) {
+    if (edit) {
+      chip.metadata = metadata;
+    }
+    dispatchMetadataChange({ chip, metadata });
   }
 
   function meta(port) {
@@ -130,6 +114,27 @@
       metadata[port.chip.id] = {};
     }
     return metadata[port.chip.id];
+  }
+
+  function cloneMetadata(chip) {
+    return {
+      ...(chip?.metadata ?? {}),
+      $: {
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        ...(chip?.metadata?.$ ?? {}),
+        selected: [...(chip?.metadata?.$?.selected || [])],
+      },
+      $in: { x: -400, y: 0, ...(chip?.metadata?.$in ?? {}) },
+      $out: { x: -400, y: 0, ...(chip?.metadata?.$out ?? {}) },
+      ...Object.fromEntries(
+        chip.chips.map((c, i) => [
+          c.id,
+          { x: 0, y: 100 * i, ...(chip?.metadata?.[c.id] ?? {}) },
+        ]),
+      ),
+    };
   }
 
   //

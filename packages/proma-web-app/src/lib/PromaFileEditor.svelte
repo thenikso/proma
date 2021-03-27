@@ -1,8 +1,10 @@
 <script>
+  // TODO use compiled library
   import * as proma from '@proma/core';
   import { ChipBoardView } from '@proma/svelte-components';
 
   export let source;
+  export let getEditedSource = undefined;
 
   //
   // Data
@@ -20,9 +22,12 @@
       console.error(errors);
     });
   $: chipEditor = sourceChip && proma.edit(sourceChip);
+
+  $: if (chipEditor) {
+    getEditedSource = function getSource() {
+      return JSON.stringify(chipEditor.Chip.toJSON());
+    };
+  }
 </script>
 
-<ChipBoardView
-  chip={sourceChip}
-  edit={chipEditor}
-/>
+<ChipBoardView chip={sourceChip} edit={chipEditor} />

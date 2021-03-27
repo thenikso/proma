@@ -31,10 +31,18 @@
 
   $: selectedFileType = ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
   $: selectedFileSource = atob(project?.files?.[selectedFilePath] || '');
+
+  // Will be initalized as a function to save the selected file source
+  let getFileEditedSource;
 </script>
 
-{#if selectedFileType === 'proma'}
-  <PromaFileEditor source={selectedFileSource} />
-{:else}
-  <div>Unsupported file type "${selectedFileType}"</div>
+{#if typeof window !== 'undefined'}
+  {#if selectedFileType === 'proma'}
+    <PromaFileEditor
+      source={selectedFileSource}
+      bind:getEditedSource={getFileEditedSource}
+    />
+  {:else}
+    <div>Unsupported file type "${selectedFileType}"</div>
+  {/if}
 {/if}

@@ -13,15 +13,20 @@
     }
   };
 
-  $: {
-    if (edit) {
-      edit.off('port:value', handlePortValueChange, true);
+  let oldEdit;
+
+  $: if (edit !== oldEdit) {
+    if (oldEdit) {
+      oldEdit.off('port:value', handlePortValueChange, true);
     }
+    oldEdit = edit;
     edit.on('port:value', handlePortValueChange, true);
   }
 
   onDestroy(() => {
-    edit.off('port:value', handlePortValueChange, true);
+    if (oldEdit) {
+      edit.off('port:value', handlePortValueChange, true);
+    }
   });
 
   // TODO switch input based on port type

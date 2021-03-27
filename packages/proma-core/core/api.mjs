@@ -356,7 +356,7 @@ function makeChipFactory($customChips, $hooks) {
         const importsValues = imports.map(([, url]) =>
           (importModule
             ? Promise.resolve(importModule(url))
-            : import(url)
+            : import(/* @vite-ignore */url)
           ).then((m) => m.default || m),
         );
         const ctx = Object.entries(context || {}).filter(
