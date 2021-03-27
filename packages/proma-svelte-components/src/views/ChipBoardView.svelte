@@ -89,6 +89,25 @@
     outputOutlets = stableChip.outputOutlets;
     innerChips = stableChip.chips;
     connections = stableChip.connections;
+
+    metadata = {
+      $: {
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        ...(stableChip?.metadata?.$ ?? {}),
+      },
+      $in: { x: -400, y: 0, ...(stableChip?.metadata?.$in ?? {}) },
+      $out: { x: -400, y: 0, ...(stableChip?.metadata?.$out ?? {}) },
+      ...Object.fromEntries(
+        stableChip.chips.map((c, i) => [
+          c.id,
+          { x: 0, y: 100 * i, ...(stableChip?.metadata?.[c.id] ?? {}) },
+        ]),
+      ),
+    };
+
+    selectedChipIds = metadata.$.selected || [];
   }
 
   //
@@ -96,26 +115,6 @@
   //
 
   let metadata;
-
-  $: if (stableChip) {
-    metadata = Object.assign(
-      {
-        $: {
-          panX: 0,
-          panY: 0,
-          zoom: 1,
-        },
-        $in: { x: -400, y: 0 },
-        $out: { x: -400, y: 0 },
-        ...Object.fromEntries(
-          chip.chips.map((c, i) => [c.id, { x: 0, y: 100 * i }]),
-        ),
-      },
-      stableChip.metadata,
-    );
-
-    selectedChipIds = metadata.$.selected;
-  }
 
   $: if (edit && metadata) {
     updateChipMetadata(chip, metadata);
@@ -249,7 +248,9 @@
 
   function prepareVariadicPort(port) {
     const variadicSize = getPortVariadicSize(port);
-    edit.setPortVariadicCount(port, variadicSize);
+    if (edit) {
+      edit.setPortVariadicCount(port, variadicSize);
+    }
     variadicPorts[variadicRefName(port)] = Array.from(port.variadic);
     return port;
   }
@@ -286,7 +287,7 @@
         // edit.addChip may change the `chipInstance.id` if already existing
         edit.addChip(chipInstance);
         // Add metadata entry
-        chip.metadata[chipInstance.id] = {
+        metadata[chipInstance.id] = {
           x: boardX,
           y: boardY,
         };
@@ -442,7 +443,7 @@
                   type={getPortType(port)}
                   hideName={shouldHideName(port)}
                 >
-                  {#if updatePortsKey && port.isData && !edit.hasConnections(port)}
+                  {#if edit && updatePortsKey && port.isData && !edit.hasConnections(port)}
                     <PortValueInput {edit} {port} />
                   {/if}
                 </Port>
@@ -452,12 +453,14 @@
                     name={variadicPort.name}
                     type={getPortType(variadicPort)}
                   >
-                    {#if updatePortsKey && variadicPort.isData && !edit.hasConnections(variadicPort)}
+                    {#if edit && updatePortsKey && variadicPort.isData && !edit.hasConnections(variadicPort)}
                       <PortValueInput {edit} port={variadicPort} />
                     {/if}
                   </Port>
                 {/each}
-                <AddPortButton on:click={() => addVariadicPort(port)} />
+                {#if edit}
+                  <AddPortButton on:click={() => addVariadicPort(port)} />
+                {/if}
               {/if}
             {/each}
           </Inputs>
@@ -479,7 +482,9 @@
                     type={getPortType(variadicPort)}
                   />
                 {/each}
-                <AddPortButton on:click={() => addVariadicPort(port)} />
+                {#if edit}
+                  <AddPortButton on:click={() => addVariadicPort(port)} />
+                {/if}
               {/if}
             {/each}
           </Outputs>

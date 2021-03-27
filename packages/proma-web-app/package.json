@@ -18,5 +18,8 @@
   "engines": {
     "node": ">= 12.17.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@proma/core": "^0.1.0",
+    "@proma/svelte-components": "^0.1.0"
+  }
 }

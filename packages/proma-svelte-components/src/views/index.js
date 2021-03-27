@@ -1,3 +1,3 @@
-export { default as ChipBoardView } as './ChipBoardView.svelte';
-export { default as SubChipDetailsView } as './SubChipDetailsView.svelte';
-export { default as ChipOutletsDetailsView } as './ChipOutletsDetailsView.svelte';
+export { default as ChipBoardView } from './ChipBoardView.svelte';
+export { default as SubChipDetailsView } from './SubChipDetailsView.svelte';
+export { default as ChipOutletsDetailsView } from './ChipOutletsDetailsView.svelte';

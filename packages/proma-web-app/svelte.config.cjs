@@ -6,6 +6,7 @@ module.exports = {
   kit: {
     adapter: serverless(),
     paths: {
+      // assets: 'http://localhost:3000/dev',
       base: '/dev',
     },
 
