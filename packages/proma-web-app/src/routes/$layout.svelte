@@ -1,3 +1,10 @@
+<script>
+  // TODO better shortcut initalization
+  import { initShortcuts } from '$lib/shortcuts';
+
+  initShortcuts();
+</script>
+
 <div class="theme-light">
   <slot />
 </div>

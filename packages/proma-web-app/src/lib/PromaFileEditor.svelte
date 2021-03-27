@@ -1,5 +1,4 @@
 <script>
-  // TODO use compiled library
   import * as proma from '@proma/core';
   import { ChipBoardView, Overlay } from '@proma/svelte-components';
 
