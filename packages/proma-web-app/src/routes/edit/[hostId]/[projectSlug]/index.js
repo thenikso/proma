@@ -18,6 +18,7 @@ export async function post({ headers, params, body }) {
   // if (headers.accept.indexOf('application/json') < 0) {
   //   return undefined;
   // }
+  console.log('saving', body);
   return {
     body: {
       test: true,

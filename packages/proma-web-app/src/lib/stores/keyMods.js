@@ -1,4 +1,5 @@
 import { readable } from 'svelte/store';
+import { browser } from '$app/env';
 
 export const keyMods = readable(
   {
@@ -8,6 +9,8 @@ export const keyMods = readable(
     shiftKey: false,
   },
   (set) => {
+    if (!browser) return;
+
     const setKeyMods = (e) => {
       set({
         metaKey: e.metaKey,

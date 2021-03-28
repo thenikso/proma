@@ -1,4 +1,6 @@
 <script context="module">
+  import { action } from '@proma/svelte-components';
+
   export async function load({ page, fetch, session, context }) {
     const { hostId, projectSlug } = page.params;
 
@@ -8,7 +10,7 @@
       },
     }).then((res) => res.json());
 
-    let selectedFilePath = page.query.get('file');
+    const selectedFilePath = page.query.get('file');
     if (!selectedFilePath) {
       selectedFilePath = Object.keys(project.files)[0];
     }
@@ -20,20 +22,66 @@
       },
     };
   }
+
+  // TODO this should probably be in a store
+
+  let getCurrentProjectToSave;
+  let savingPromise;
+
+  action.provide('CurrentProject.save', async () => {
+    if (!getCurrentProjectToSave) return;
+    const projectToSave = getCurrentProjectToSave();
+    if (!projectToSave) return;
+    savingPromise = await fetch(
+      `/edit/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
+      {
+        method: 'post',
+        headers: {
+          accept: 'application/json',
+        },
+        body: JSON.stringify(projectToSave),
+      },
+    ).then((res) => res.json());
+    return savingPromise;
+  });
 </script>
 
 <script>
   import { browser } from '$app/env';
+  import { keyMods } from '$lib/stores/keyMods';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
+  import PromaRunView from '$lib/PromaRunView.svelte';
 
   export let project;
   export let selectedFilePath;
 
-  $: selectedFileType = browser && ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
-  $: selectedFileSource = browser && atob(project?.files?.[selectedFilePath] || '');
+  $: selectedFileType =
+    browser && ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
+  $: selectedFileSource =
+    browser && atob(project?.files?.[selectedFilePath] || '');
 
   // Will be initalized as a function to save the selected file source
   let getFileEditedSource;
+
+  $: getCurrentProjectToSave =
+    getFileEditedSource &&
+    function projectToSave() {
+      const selectedFileContent = btoa(getFileEditedSource());
+      project.files[selectedFilePath] = selectedFileContent;
+      return project;
+    };
+
+  const save = action('CurrentProject.save');
+  let isSaving;
+
+  function handleSaveClick() {
+    if (isSaving) return;
+    isSaving = save().then(() =>
+      setTimeout(() => {
+        isSaving = null;
+      }, 1000),
+    );
+  }
 </script>
 
 <div class="Editor Editor-fileType-{selectedFileType}">
@@ -53,11 +101,31 @@
       <div class="current">{selectedFilePath}</div>
     </div>
     <div class="Spacer" />
-    {#if $$slots.tools}
-      <div class="Tools">
-        <slot name="tools" />
-      </div>
-    {/if}
+    <div class="Tools">
+      <!-- TODO switch by selectedFileType -->
+      <button type="button" class="Tools-Run">
+        {#if $keyMods.metaKey && $keyMods.shiftKey && $keyMods.altKey}
+          <span>Test</span> <small>compiled</small>
+        {:else if $keyMods.metaKey && $keyMods.shiftKey}
+          <span>Test</span>
+        {:else}
+          <span>Run</span>
+        {/if}
+      </button>
+
+      <button
+        type="button"
+        class="Tools-Save"
+        on:click={handleSaveClick}
+        disabled={isSaving}
+      >
+        <img src="/images/save.svg" alt="save" />
+      </button>
+    </div>
+  </div>
+
+  <div class="RunPanel">
+    <PromaRunView />
   </div>
 </div>
 
@@ -107,7 +175,78 @@
     flex-grow: 1;
   }
 
-  .EditorHeader .Tools {
+  /* Tools */
+
+  .Tools {
     pointer-events: all;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+  }
+
+  .Tools > * {
+    margin-left: 20px;
+  }
+
+  .Tools-Save {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    height: 25px;
+    outline: none;
+  }
+
+  .Tools-Save:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .Tools-Save > img {
+    height: 100%;
+  }
+
+  .Tools-Run {
+    border: none;
+    border-radius: 5px;
+    padding: 5px 45px;
+    font-size: 20px;
+    cursor: pointer;
+    height: 60px;
+
+    background: #fe9d28;
+    color: white;
+    font-weight: 500;
+    outline: none;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Run panel */
+
+  .RunPanel {
+    right: 30px;
+    top: 110px;
+    height: 100%;
+
+    box-sizing: border-box;
+    position: absolute;
+    width: 350px;
+    max-height: calc(100% - 140px);
+
+    background-color: var(
+      --proma-board--chip-selected--background-color,
+      #3e3e3e
+    );
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--proma-board--chip--border-color, #1d1d1d);
+    border-radius: 5px;
+    box-shadow: var(
+      --proma-board--chip--shadow,
+      0 2px 1px rgba(29, 29, 29, 0.8)
+    );
   }
 </style>

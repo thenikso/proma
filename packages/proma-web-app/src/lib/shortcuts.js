@@ -10,7 +10,7 @@ import {
 // Shortcuts
 //
 
-// shortcuts.set('!cmd+S', saveChip);
+shortcuts.set('!cmd+S', action('CurrentProject.save'));
 shortcuts.set('[PromaFile:board] cmd+A', action('ChipBoard.selectAll'));
 shortcuts.set('[PromaFile:chip] backspace', action('ChipBoard.removeChip'));
 shortcuts.set(

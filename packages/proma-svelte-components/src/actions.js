@@ -2,10 +2,16 @@ const actions = new Map();
 
 export function action(actionId) {
   const handler = actions.get(actionId);
-  if (typeof handler === 'function') {
-    return handler;
+  if (typeof handler !== 'function') {
+    return function actionHandler(...args) {
+      const handler = actions.get(actionId);
+      if (typeof handler !== 'function') {
+        console.warn(`Can not find action "${actionId}"`);
+      }
+      return handler(...args);
+    };
   }
-  throw new Error(`Can not find action "${actionId}"`);
+  return handler;
 }
 
 action.provide = function provideAction(actionId, handler) {
