@@ -1,6 +1,6 @@
 <script context="module">
   import { browser } from '$app/env';
-  import { action } from '$lib/components';
+  import { action } from '@proma/svelte-components';
 
   if (browser) {
     action.provide('PromaFile.runRemote', ({ target: promaFile }) => {
@@ -24,7 +24,7 @@
     ChipBoardView,
     Overlay,
     createShortcutDispatcher,
-  } from '$lib/components';
+  } from '@proma/svelte-components';
 
   export let id = 'PromaFile';
   export let source;

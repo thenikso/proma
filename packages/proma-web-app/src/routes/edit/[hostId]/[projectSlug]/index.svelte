@@ -1,6 +1,6 @@
 <script context="module">
   import { browser } from '$app/env';
-  import { action } from '$lib/components';
+  import { action } from '@proma/svelte-components';
 
   export async function load({ page, fetch, session, context }) {
     const { hostId, projectSlug } = page.params;

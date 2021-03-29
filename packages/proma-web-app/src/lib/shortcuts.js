@@ -4,7 +4,7 @@ import {
   createShortcutDispatcher,
   shortcuts,
   action,
-} from '$lib/components';
+} from '@proma/svelte-components';
 
 //
 // Shortcuts

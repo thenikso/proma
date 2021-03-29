@@ -1,6 +1,6 @@
 <script>
   import { onDestroy } from 'svelte';
-  import StringInput from '../inputs/StringInput.svelte';
+  import { StringInput } from '../inputs';
 
   export let chip;
   export let edit;
