@@ -1,6 +1,6 @@
-const { resolve } = require('path');
+import { resolve } from 'path';
 
-module.exports = function envPlugin(aliases) {
+export default function envPlugin(aliases) {
   return {
     name: 'alias',
     setup(build) {

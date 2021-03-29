@@ -1,7 +1,10 @@
-const path = require('path');
-const esbuild = require('esbuild');
-const sveltePlugin = require('esbuild-svelte');
-const aliasPlugin = require('./scripts/esbuild-alias-plugin');
+import path from 'path';
+import esbuild from 'esbuild';
+import sveltePlugin from 'esbuild-svelte';
+import aliasPlugin from './scripts/esbuild-alias-plugin.mjs';
+import childProcess from 'child_process';
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 const PROD = process.env.NODE_ENV === 'production';
 const WATCH = process.argv.includes('-w') || process.argv.includes('--watch');
@@ -41,7 +44,7 @@ let server;
 
 function serve() {
   if (server) return;
-  server = require('child_process').spawn('npm', ['run', 'serve'], {
+  server = childProcess.spawn('npm', ['run', 'serve'], {
     stdio: ['ignore', 'inherit', 'inherit'],
     shell: true,
   });

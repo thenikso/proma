@@ -1,6 +1,6 @@
 const envFilter = /^env(?:\/([A-Z]+))?$/;
 
-module.exports = function envPlugin(defaults) {
+export default function envPlugin(defaults) {
   return {
     name: 'env',
     setup(build) {
