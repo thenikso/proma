@@ -1,6 +1,0 @@
-/node_modules/
-/testbench/public/build/
-/dist
-
-.DS_Store
-/*.log
