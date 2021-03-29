@@ -6,7 +6,7 @@ frameworkVersion: '2'
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   profile: nikso-proma
   region: ${opt:region, 'eu-west-1'}
   stage: ${opt:stage, 'dev'}
@@ -17,80 +17,74 @@ provider:
     S3_PROJECT_DATA_BUCKET: ${self:provider.stage}-proma-projects-data
     DYNAMODB_HOSTS_TABLE: ${self:provider.stage}-hosts
     DYNAMODB_PROJECTS_TABLE: ${self:provider.stage}-projects
-  iam:
-    role:
-      statements:
-        - Effect: 'Allow'
-          Action:
-            - dynamodb:*
-          Resource:
-            - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_PROJECTS_TABLE}'
-        - Effect: 'Allow'
-          Action:
-            - s3:GetObject
-          Resource:
-            - 'arn:aws:s3:::${self:provider.environment.S3_PROJECT_DATA_BUCKET}/*'
+  # iam:
+  #   role:
+  #     statements:
+  #       - Effect: 'Allow'
+  #         Action:
+  #           - dynamodb:*
+  #         Resource:
+  #           - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_PROJECTS_TABLE}'
+  #       - Effect: 'Allow'
+  #         Action:
+  #           - s3:GetObject
+  #         Resource:
+  #           - 'arn:aws:s3:::${self:provider.environment.S3_PROJECT_DATA_BUCKET}/*'
 
-functions:
-  test1:
-    handler: backend/test1.handler
-    events:
-      - http:
-          method: get
-          path: /test
-  test2:
-    handler: backend/test2.handler
-    events:
-      - http:
-          method: get
-          path: /test2
+# functions:
+#   test1:
+#     handler: backend/test1.handler
+#     events:
+#       - http:
+#           method: get
+#           path: /test
 
-resources:
-  Resources:
-    projectsBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:provider.environment.S3_PROJECT_DATA_BUCKET}
-    hostsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_HOSTS_TABLE}
-        AttributeDefinitions:
-          - AttributeName: hostId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: hostId
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-    projectsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_PROJECTS_TABLE}
-        AttributeDefinitions:
-          - AttributeName: projectSlug
-            AttributeType: S
-          - AttributeName: ownerHostId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: projectSlug
-            KeyType: HASH
-          - AttributeName: ownerHostId
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+# resources:
+#   Resources:
+#     projectsBucket:
+#       Type: AWS::S3::Bucket
+#       Properties:
+#         BucketName: ${self:provider.environment.S3_PROJECT_DATA_BUCKET}
+#     hostsTable:
+#       Type: AWS::DynamoDB::Table
+#       Properties:
+#         TableName: ${self:provider.environment.DYNAMODB_HOSTS_TABLE}
+#         AttributeDefinitions:
+#           - AttributeName: hostId
+#             AttributeType: S
+#         KeySchema:
+#           - AttributeName: hostId
+#             KeyType: HASH
+#         ProvisionedThroughput:
+#           ReadCapacityUnits: 1
+#           WriteCapacityUnits: 1
+#     projectsTable:
+#       Type: AWS::DynamoDB::Table
+#       Properties:
+#         TableName: ${self:provider.environment.DYNAMODB_PROJECTS_TABLE}
+#         AttributeDefinitions:
+#           - AttributeName: projectSlug
+#             AttributeType: S
+#           - AttributeName: ownerHostId
+#             AttributeType: S
+#         KeySchema:
+#           - AttributeName: projectSlug
+#             KeyType: HASH
+#           - AttributeName: ownerHostId
+#             KeyType: RANGE
+#         ProvisionedThroughput:
+#           ReadCapacityUnits: 1
+#           WriteCapacityUnits: 1
 
 package:
   individually: true
 
 plugins:
-  - serverless-esbuild
+  # - serverless-esbuild
   - serverless-finch
-  - serverless-dynamodb-local
-  - serverless-s3-local
-  - serverless-offline # serverless-offline needs to be last in the list
+  # - serverless-dynamodb-local
+  # - serverless-s3-local
+  # - serverless-offline # serverless-offline needs to be last in the list
 
 custom:
   authorizer:
@@ -103,7 +97,7 @@ custom:
     bundle: true
     minify: false
   client:
-    bucketName: proma-frontend
+    bucketName: ${self:provider.stage}-proma-frontend
     distributionFolder: frontend/public
     indexDocument: index.html
     errorDocument: index.html

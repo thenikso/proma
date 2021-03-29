@@ -4,17 +4,16 @@ const sveltePlugin = require('esbuild-svelte');
 const { watch } = require('chokidar');
 
 const WATCH = process.argv.includes('-w') || process.argv.includes('--watch');
+const SERVE = process.argv.includes('-s') || process.argv.includes('--serve');
 
 function build() {
-  esbuild
-    .build({
-      entryPoints: [path.resolve(__dirname, './src/main.js')],
-      bundle: true,
-      outfile: path.resolve(__dirname, './public/build/bundle.js'),
-      plugins: [sveltePlugin()],
-      logLevel: 'info',
-    })
-    .catch(() => process.exit(1));
+  return esbuild.build({
+    entryPoints: [path.resolve(__dirname, './src/main.js')],
+    bundle: true,
+    outfile: path.resolve(__dirname, './public/build/bundle.js'),
+    plugins: [sveltePlugin()],
+    logLevel: 'info',
+  });
 }
 
 let server;
@@ -34,14 +33,17 @@ function serve() {
   }
 }
 
-build();
+build().catch(() => process.exit(1));
 
 if (WATCH) {
   console.log('Watching files...\n');
   const watcher = watch([path.resolve(__dirname, './src/**/*')]);
   watcher.on('change', () => {
     console.log('Rebuilding...\n');
-    build();
+    build().catch(() => {});
   });
+}
+
+if (SERVE) {
   serve();
 }

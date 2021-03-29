@@ -6,11 +6,13 @@
   "scripts": {
     "setup": "serverless dynamodb install",
     "serve": "serve frontend/public -s",
-    "dev:frontend": "node frontend/esbuild.js -w",
+    "dev:frontend": "node frontend/esbuild.js -w -s",
     "dev:backend": "serverless offline start",
     "dev": "yarn dev:frontend | yarn dev:backend",
     "build": "node frontend/esbuild.js && serverless package",
-    "deploy": "node frontend/esbuild.js && serverless deploy"
+    "deploy:backend": "serverless deploy",
+    "deploy:frontend": "node frontend/esbuild.js && serverless client deploy --no-confirm",
+    "deploy": "yarn deploy:backend && yarn deploy:frontend"
   },
   "author": "Nicola Peduzzi <thenikso@gmail.com>",
   "devDependencies": {
@@ -21,9 +23,10 @@
     "serverless-dynamodb-local": "0.2.39",
     "serverless-esbuild": "1.9.0",
     "serverless-finch": "2.6.0",
-    "serverless-offline": "6.8.0",
+    "serverless-offline": "6.9.0",
     "serverless-s3-local": "0.6.7",
-    "svelte": "3.35.0"
+    "svelte": "3.35.0",
+    "svelte-router-spa": "6.0.1"
   },
   "dependencies": {
     "aws-sdk": "2.863.0",

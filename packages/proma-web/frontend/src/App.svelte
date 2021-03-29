@@ -1,25 +1,18 @@
-<main>
-  <h1>Hello with esbuild!</h1>
-</main>
+<script>
+  import { Router } from 'svelte-router-spa';
 
-<style>
-  main {
-    text-align: center;
-    padding: 1em;
-    max-width: 240px;
-    margin: 0 auto;
-  }
+  import Dashboard from './pages/Dashboard.svelte';
+  import ProjectEditor from './pages/ProjectEditor.svelte';
+  import NotFound from './pages/_error.svelte';
 
-  h1 {
-    color: #ff3e00;
-    text-transform: uppercase;
-    font-size: 4em;
-    font-weight: 100;
-  }
+  const routes = [
+    { name: '/', component: Dashboard },
+    { name: 'edit/:hostId/:projectSlug', component: ProjectEditor },
+    {
+      name: '404',
+      component: NotFound,
+    },
+  ];
+</script>
 
-  @media (min-width: 640px) {
-    main {
-      max-width: none;
-    }
-  }
-</style>
+<Router {routes} />
