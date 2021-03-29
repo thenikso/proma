@@ -7,8 +7,10 @@ export default function install({ registry, chip, inputData, outputData }) {
       () => {
         const A = inputData('A', { canonical: true });
         const B = inputData('B', { canonical: true });
+        const compute = () => eq(A(), B());
+        compute.toString = () => '() => eq(A(), B())';
         const equal = outputData('equal', {
-          compute: () => eq(A(), B()),
+          compute,
           type: 'boolean',
         });
       },

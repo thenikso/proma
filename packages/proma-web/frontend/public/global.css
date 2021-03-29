@@ -1,0 +1,64 @@
+html,
+body {
+  overflow: hidden;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', Helvetica, Arial,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+}
+
+:root {
+  --proma-board-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  --proma-board-transition-duration: 0.25s;
+  --proma-board-transition-timing-function: ease;
+
+  --proma-board--type-any: #00a7ef;
+  --proma-board--type-exec: #8c9cae;
+  --proma-board--type-string: #55d67c;
+  --proma-board--type-number: #57acee;
+  --proma-board--type-boolean: #eeac57;
+  --proma-board--type-object: #ac57ee;
+  --proma-board--type-array: #bf7df2;
+  --proma-board--type-tuple: #cd82a3;
+  --proma-board--type-function: #d6557c;
+
+  --proma-board--canvas--color: black;
+  --proma-board--canvas--background-color: #f3f5f7;
+  --proma-board--canvas--background-image: url("data:image/svg+xml,%3Csvg width='100px' height='100px' viewBox='0 0 100 100' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cg id='bg-points' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd' fill-opacity='1'%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='2' cy='2' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='27' cy='2' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='52' cy='2' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='2' cy='27' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='27' cy='27' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='52' cy='27' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='2' cy='52' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='27' cy='52' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='52' cy='52' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='77' cy='2' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='77' cy='27' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='77' cy='52' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='2' cy='77' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='27' cy='77' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='52' cy='77' r='2'%3E%3C/circle%3E%3Ccircle id='Oval' fill='%23E5E8EA' cx='77' cy='77' r='2'%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+
+  --proma-board--selection--border: 3px dotted #8c9cae;
+  --proma-board--selection--border-radius: 3px;
+
+  --proma-board--chip--kind-default: #ffffff78;
+  --proma-board--chip--kind-outlet: #94bdec78;
+  --proma-board--chip--kind-delegate: #f1adb078;
+  --proma-board--chip--kind-control: #e7e7eb78;
+
+  --proma-board--chip--color: #262f38;
+  --proma-board--chip--background-color: rgba(255, 255, 255, 0.7);
+  --proma-board--chip--shadow: 0 2px 4px rgba(221, 226, 231, 0.3);
+  --proma-board--chip--border-color: rgba(229, 233, 236, 1);
+  --proma-board--chip--border-width: 2px;
+  --proma-board--chip--border-radius: 5px;
+
+  --proma-board--chip-selected--background-color: rgba(255, 255, 255, 1);
+  --proma-board--chip-selected--gradient-from: #faa94d;
+  --proma-board--chip-selected--gradient-to: #ffd102;
+
+  --proma-board--chip-header--padding: 6px 3px 6px 5px;
+  --proma-board--chip-header--color: #161a1f;
+  --proma-board--chip-header--border-bottom: 1px solid
+    var(--proma-board--chip--border-color);
+  --proma-board--chip-header-title--font-size: 1.2em;
+
+  --proma-board--port-hover--background-color: transparent;
+  --proma-board--port-hover--border-color: transparent;
+
+  --proma-input--color: #3f3f3f;
+  --proma-input--background: #f3f4f773;
+  --proma-input--border-color: #e9eaf0;
+  --proma-input--focus--background: #f3f4f7;
+  --proma-input--focus--border-color: #faa94d;
+  --proma-input-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+}
