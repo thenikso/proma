@@ -1,0 +1,131 @@
+org: nikso
+app: proma
+service: proma-web
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  profile: nikso-proma
+  region: ${opt:region, 'eu-west-1'}
+  stage: ${opt:stage, 'dev'}
+  lambdaHashingVersion: 20201221
+  apiGateway:
+    shouldStartNameWithService: true
+  environment:
+    S3_PROJECT_DATA_BUCKET: ${self:provider.stage}-proma-projects-data
+    DYNAMODB_HOSTS_TABLE: ${self:provider.stage}-hosts
+    DYNAMODB_PROJECTS_TABLE: ${self:provider.stage}-projects
+  iam:
+    role:
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - dynamodb:*
+          Resource:
+            - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_PROJECTS_TABLE}'
+        - Effect: 'Allow'
+          Action:
+            - s3:GetObject
+          Resource:
+            - 'arn:aws:s3:::${self:provider.environment.S3_PROJECT_DATA_BUCKET}/*'
+
+functions:
+  test1:
+    handler: backend/test1.handler
+    events:
+      - http:
+          method: get
+          path: /test
+  test2:
+    handler: backend/test2.handler
+    events:
+      - http:
+          method: get
+          path: /test2
+
+resources:
+  Resources:
+    projectsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_PROJECT_DATA_BUCKET}
+    hostsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_HOSTS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: hostId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: hostId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    projectsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_PROJECTS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: projectSlug
+            AttributeType: S
+          - AttributeName: ownerHostId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: projectSlug
+            KeyType: HASH
+          - AttributeName: ownerHostId
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+package:
+  individually: true
+
+plugins:
+  - serverless-esbuild
+  - serverless-finch
+  - serverless-dynamodb-local
+  - serverless-s3-local
+  - serverless-offline # serverless-offline needs to be last in the list
+
+custom:
+  authorizer:
+    name: auth
+    type: token
+    resultTtlInSeconds: 0
+    identitySource: method.request.header.Authorization
+    identityValidationExpression: Bearer (.*)
+  esbuild:
+    bundle: true
+    minify: false
+  client:
+    bucketName: proma-frontend
+    distributionFolder: frontend/public
+    indexDocument: index.html
+    errorDocument: index.html
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+    seed:
+      hosts:
+        sources:
+          - table: ${self:provider.environment.DYNAMODB_HOSTS_TABLE}
+            sources: [./seeds/hosts.json]
+          - table: ${self:provider.environment.DYNAMODB_PROJECTS_TABLE}
+            sources: [./seeds/projects.json]
+  s3:
+    host: localhost
+    directory: ./buckets
+    port: 4569

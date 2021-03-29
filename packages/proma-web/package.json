@@ -1,0 +1,32 @@
+{
+  "name": "@proma/web",
+  "version": "0.1.0",
+  "description": "Web hosting for Proma projects",
+  "license": "unlicensed",
+  "scripts": {
+    "setup": "serverless dynamodb install",
+    "serve": "serve frontend/public -s",
+    "dev:frontend": "node frontend/esbuild.js -w",
+    "dev:backend": "serverless offline start",
+    "dev": "yarn dev:frontend | yarn dev:backend",
+    "build": "node frontend/esbuild.js && serverless package",
+    "deploy": "node frontend/esbuild.js && serverless deploy"
+  },
+  "author": "Nicola Peduzzi <thenikso@gmail.com>",
+  "devDependencies": {
+    "chokidar": "3.5.1",
+    "esbuild-svelte": "0.4.3",
+    "serve": "11.3.2",
+    "serverless": "2.29.0",
+    "serverless-dynamodb-local": "0.2.39",
+    "serverless-esbuild": "1.9.0",
+    "serverless-finch": "2.6.0",
+    "serverless-offline": "6.8.0",
+    "serverless-s3-local": "0.6.7",
+    "svelte": "3.35.0"
+  },
+  "dependencies": {
+    "aws-sdk": "2.863.0",
+    "esbuild": "0.11.0"
+  }
+}
