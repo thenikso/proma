@@ -1,6 +1,6 @@
 <script context="module">
   import { browser } from '$app/env';
-  import { action } from '@proma/svelte-components';
+  import { action } from '$lib/components';
 
   export async function load({ page, fetch, session, context }) {
     const { hostId, projectSlug } = page.params;
@@ -14,7 +14,7 @@
       },
     ).then((res) => res.json());
 
-    const selectedFilePath = page.query.get('file');
+    let selectedFilePath = page.query.get('file');
     if (!selectedFilePath) {
       selectedFilePath = Object.keys(project.files)[0];
     }

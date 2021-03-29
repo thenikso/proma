@@ -3868,9 +3868,9 @@
     store2 "^2.12.0"
 
 "@sveltejs/kit@next":
-  version "1.0.0-next.60"
-  resolved "https://registry.yarnpkg.com/@sveltejs/kit/-/kit-1.0.0-next.60.tgz#bd7dea4f26012648254ca05b8a17f669deedecfe"
-  integrity sha512-1dpec/fm6bMSOnMyJacboxiK3jLFF7h8pHp8xi+KXb7V4UAGtnjCvRPpk6fggmXQ40mCdrxf/my0fS+0Ci6x+g==
+  version "1.0.0-next.62"
+  resolved "https://registry.yarnpkg.com/@sveltejs/kit/-/kit-1.0.0-next.62.tgz#6db60b68cf53f161d011af78d750bc17f5601309"
+  integrity sha512-VAzw/XY30S9pGoCfUFqvJXp5zATrPWvAVWtDs23IyEzOT7DHtsjg1LrnazXpChk3XuaxOLwDHYUT1uSXQxLE2w==
   dependencies:
     "@sveltejs/vite-plugin-svelte" "^1.0.0-next.5"
     cheap-watch "^1.0.3"

@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { StringInput } from '@proma/svelte-components';
+  import { StringInput } from '$lib/components';
 
   export let url;
   export let results;

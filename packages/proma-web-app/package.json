@@ -7,7 +7,6 @@
     "start": "svelte-kit build && serverless offline"
   },
   "devDependencies": {
-    "@proma/svelte-components": "^0.1.0",
     "@nikso/adapter-serverless": "0.1.0",
     "@sveltejs/kit": "next",
     "fast-deep-equal": "3.1.3",

@@ -1,6 +1,6 @@
 <script context="module">
   import { browser } from '$app/env';
-  import { action } from '@proma/svelte-components';
+  import { action } from '$lib/components';
 
   if (browser) {
     action.provide('PromaFile.runRemote', ({ target: promaFile }) => {
@@ -24,7 +24,7 @@
     ChipBoardView,
     Overlay,
     createShortcutDispatcher,
-  } from '@proma/svelte-components';
+  } from '$lib/components';
 
   export let id = 'PromaFile';
   export let source;
@@ -71,7 +71,7 @@
           if (/fast-deep-equal/.test(url)) {
             return eq;
           }
-          return import(url);
+          return import(/* @vite-ignore */url);
         });
       } else {
         console.log(sourceChip.toJSON());
