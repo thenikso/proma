@@ -5,11 +5,14 @@
   export async function load({ page, fetch, session, context }) {
     const { hostId, projectSlug } = page.params;
 
-    const project = await fetch(`/edit/${hostId}/${projectSlug}`, {
-      headers: {
-        accept: 'application/json',
+    const project = await fetch(
+      `http://localhost:4000/dev/project/${hostId}/${projectSlug}`,
+      {
+        headers: {
+          accept: 'application/json',
+        },
       },
-    }).then((res) => res.json());
+    ).then((res) => res.json());
 
     const selectedFilePath = page.query.get('file');
     if (!selectedFilePath) {
@@ -35,7 +38,7 @@
       const projectToSave = getCurrentProjectToSave();
       if (!projectToSave) return;
       savingPromise = await fetch(
-        `/edit/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
+        `http://localhost:4000/dev/project/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
         {
           method: 'post',
           headers: {
@@ -64,15 +67,18 @@
     browser && ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
   $: selectedFileSource =
     browser && atob(project?.files?.[selectedFilePath] ?? '');
-  $: selectedFileRunUrl = `http://localhost:3000/run/${project.ownerHostId}/${project.projectSlug}/${selectedFileName}`;
+  $: selectedFileRunUrl = `http://localhost:4000/dev/run/${project.ownerHostId}/${project.projectSlug}/${selectedFileName}`;
 
-  // Will be initalized as a function to save the selected file source
-  let getFileEditedSource;
+  let editor;
+
+  //
+  // Saving
+  //
 
   $: getCurrentProjectToSave =
-    getFileEditedSource &&
+    editor &&
     function projectToSave() {
-      const selectedFileContent = btoa(getFileEditedSource());
+      const selectedFileContent = btoa(editor.getEditedSource());
       project.files[selectedFilePath] = selectedFileContent;
       return project;
     };
@@ -88,22 +94,38 @@
       }, 1000),
     );
   }
+
+  //
+  // Running
+  //
+
+  function handleRun(e) {
+    if (e.metaKey && e.shiftKey && e.altKey) {
+      editor.runLocal(true);
+    } else if (e.metaKey && e.shiftKey) {
+      editor.runLocal();
+    } else {
+      editor.runRemote();
+    }
+  }
 </script>
 
 <div class="Editor Editor-fileType-{selectedFileExt}">
   {#if typeof window !== 'undefined'}
     {#if selectedFileExt === 'proma'}
       <PromaFileEditor
+        bind:this={editor}
         source={selectedFileSource}
         remoteRunUrl={selectedFileRunUrl}
-        bind:getEditedSource={getFileEditedSource}
         let:runPromise
         let:clearRun
+        let:runUrl
+        let:actionTarget
       >
         {#if runPromise}
           <div class="RunPanel">
             <PromaRunView
-              url={selectedFileRunUrl}
+              url={runUrl}
               results={runPromise}
               on:close={clearRun}
             />
@@ -122,7 +144,7 @@
     <div class="Spacer" />
     <div class="Tools">
       <!-- TODO switch by selectedFileExt -->
-      <button type="button" class="Tools-Run">
+      <button type="button" class="Tools-Run" on:click={handleRun}>
         {#if $keyMods.metaKey && $keyMods.shiftKey && $keyMods.altKey}
           <span>Test</span> <small>compiled</small>
         {:else if $keyMods.metaKey && $keyMods.shiftKey}

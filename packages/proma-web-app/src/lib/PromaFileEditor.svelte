@@ -28,7 +28,6 @@
 
   export let id = 'PromaFile';
   export let source;
-  export let getEditedSource = undefined;
   export let remoteRunUrl = '';
 
   //
@@ -48,15 +47,9 @@
     });
   $: chipEditor = sourceChip && proma.edit(sourceChip);
 
-  function getSource() {
+  export function getEditedSource() {
     return JSON.stringify(chipEditor.Chip.toJSON());
   }
-  $: if (chipEditor) {
-    getEditedSource = getSource;
-  }
-
-  // TODO build with local test payload
-  $: runUrl = remoteRunUrl + '?name=nico';
 
   //
   // Running
@@ -64,7 +57,10 @@
 
   let runPromise;
 
-  function runLocal(compiled) {
+  // TODO build with local test payload
+  $: runUrl = remoteRunUrl + '?name=nico';
+
+  export function runLocal(compiled) {
     if (!sourceChip) return;
 
     runPromise = new Promise(async (resolve) => {
@@ -98,17 +94,17 @@
     });
   }
 
-  function runRemote() {
+  export function runRemote() {
     if (!remoteRunUrl) return;
 
-    let url = remoteRunUrl;
+    let url = runUrl;
 
     // TODO method, body from local test payload
     runPromise = fetch(url).then((res) => res.json());
     return runPromise;
   }
 
-  function clearRun() {
+  export function clearRun() {
     runPromise = null;
   }
 
@@ -116,17 +112,19 @@
   // Shortcuts
   //
 
+  const actionTarget = {
+    getSource: getEditedSource,
+    runLocal,
+    runRemote,
+  };
+
   const dispatchShortcut = createShortcutDispatcher([
     {
       id,
       select: (e) => {
         return !!e.path.find((el) => el.id === id);
       },
-      present: {
-        getSource,
-        runLocal,
-        runRemote,
-      },
+      present: actionTarget,
     },
   ]);
 
@@ -221,7 +219,7 @@
     </Overlay>
   {/if}
 
-  <slot {sourceChip} {runLocal} {runPromise} {clearRun} />
+  <slot {sourceChip} {runLocal} {runPromise} {runUrl} {clearRun} />
 </div>
 
 <style>
