@@ -1,4 +1,5 @@
 <script context="module">
+  import { browser } from '$app/env';
   import { action } from '@proma/svelte-components';
 
   export async function load({ page, fetch, session, context }) {
@@ -28,26 +29,27 @@
   let getCurrentProjectToSave;
   let savingPromise;
 
-  action.provide('CurrentProject.save', async () => {
-    if (!getCurrentProjectToSave) return;
-    const projectToSave = getCurrentProjectToSave();
-    if (!projectToSave) return;
-    savingPromise = await fetch(
-      `/edit/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
-      {
-        method: 'post',
-        headers: {
-          accept: 'application/json',
+  if (browser) {
+    action.provide('CurrentProject.save', async () => {
+      if (!getCurrentProjectToSave) return;
+      const projectToSave = getCurrentProjectToSave();
+      if (!projectToSave) return;
+      savingPromise = await fetch(
+        `/edit/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
+        {
+          method: 'post',
+          headers: {
+            accept: 'application/json',
+          },
+          body: JSON.stringify(projectToSave),
         },
-        body: JSON.stringify(projectToSave),
-      },
-    ).then((res) => res.json());
-    return savingPromise;
-  });
+      ).then((res) => res.json());
+      return savingPromise;
+    });
+  }
 </script>
 
 <script>
-  import { browser } from '$app/env';
   import { keyMods } from '$lib/stores/keyMods';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
   import PromaRunView from '$lib/PromaRunView.svelte';
@@ -55,10 +57,14 @@
   export let project;
   export let selectedFilePath;
 
-  $: selectedFileType =
+  $: selectedFileName =
+    browser &&
+    ((selectedFilePath || '').match(/(?<=\/|^)([^.\/]+)\..+$/) || [])[1];
+  $: selectedFileExt =
     browser && ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
   $: selectedFileSource =
     browser && atob(project?.files?.[selectedFilePath] ?? '');
+  $: selectedFileRunUrl = `http://localhost:3000/run/${project.ownerHostId}/${project.projectSlug}/${selectedFileName}`;
 
   // Will be initalized as a function to save the selected file source
   let getFileEditedSource;
@@ -71,7 +77,7 @@
       return project;
     };
 
-  const save = action('CurrentProject.save');
+  const save = browser && action('CurrentProject.save');
   let isSaving;
 
   function handleSaveClick() {
@@ -84,23 +90,28 @@
   }
 </script>
 
-<div class="Editor Editor-fileType-{selectedFileType}">
+<div class="Editor Editor-fileType-{selectedFileExt}">
   {#if typeof window !== 'undefined'}
-    {#if selectedFileType === 'proma'}
+    {#if selectedFileExt === 'proma'}
       <PromaFileEditor
         source={selectedFileSource}
+        remoteRunUrl={selectedFileRunUrl}
         bind:getEditedSource={getFileEditedSource}
         let:runPromise
         let:clearRun
       >
         {#if runPromise}
           <div class="RunPanel">
-            <PromaRunView results={runPromise} on:close={clearRun} />
+            <PromaRunView
+              url={selectedFileRunUrl}
+              results={runPromise}
+              on:close={clearRun}
+            />
           </div>
         {/if}
       </PromaFileEditor>
     {:else}
-      <div>Unsupported file type "${selectedFileType}"</div>
+      <div>Unsupported file type "${selectedFileExt}"</div>
     {/if}
   {/if}
 
@@ -110,7 +121,7 @@
     </div>
     <div class="Spacer" />
     <div class="Tools">
-      <!-- TODO switch by selectedFileType -->
+      <!-- TODO switch by selectedFileExt -->
       <button type="button" class="Tools-Run">
         {#if $keyMods.metaKey && $keyMods.shiftKey && $keyMods.altKey}
           <span>Test</span> <small>compiled</small>

@@ -1,18 +1,20 @@
 <script context="module">
-  // TODO add run actions
+  import { browser } from '$app/env';
   import { action } from '@proma/svelte-components';
 
-  action.provide('PromaFile.runRemote', ({ target: promaFile }) => {
-    console.log('run remote', promaFile);
-  });
+  if (browser) {
+    action.provide('PromaFile.runRemote', ({ target: promaFile }) => {
+      promaFile.runRemote();
+    });
 
-  action.provide('PromaFile.runLocal', ({ target: promaFile }) => {
-    promaFile.runLocal();
-  });
+    action.provide('PromaFile.runLocal', ({ target: promaFile }) => {
+      promaFile.runLocal();
+    });
 
-  action.provide('PromaFile.runLocalCompiled', ({ target: promaFile }) => {
-    promaFile.runLocal(true);
-  });
+    action.provide('PromaFile.runLocalCompiled', ({ target: promaFile }) => {
+      promaFile.runLocal(true);
+    });
+  }
 </script>
 
 <script>
@@ -27,6 +29,7 @@
   export let id = 'PromaFile';
   export let source;
   export let getEditedSource = undefined;
+  export let remoteRunUrl = '';
 
   //
   // Data
@@ -51,6 +54,9 @@
   $: if (chipEditor) {
     getEditedSource = getSource;
   }
+
+  // TODO build with local test payload
+  $: runUrl = remoteRunUrl + '?name=nico';
 
   //
   // Running
@@ -92,6 +98,16 @@
     });
   }
 
+  function runRemote() {
+    if (!remoteRunUrl) return;
+
+    let url = remoteRunUrl;
+
+    // TODO method, body from local test payload
+    runPromise = fetch(url).then((res) => res.json());
+    return runPromise;
+  }
+
   function clearRun() {
     runPromise = null;
   }
@@ -109,6 +125,7 @@
       present: {
         getSource,
         runLocal,
+        runRemote,
       },
     },
   ]);
