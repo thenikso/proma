@@ -1,8 +1,7 @@
 const path = require('path');
 const esbuild = require('esbuild');
 const sveltePlugin = require('esbuild-svelte');
-const { watch } = require('chokidar');
-const envPlugin = require('./scripts/esbuild-env-plugin');
+const aliasPlugin = require('./scripts/esbuild-alias-plugin');
 
 const WATCH = process.argv.includes('-w') || process.argv.includes('--watch');
 const SERVE = process.argv.includes('-s') || process.argv.includes('--serve');
@@ -12,13 +11,27 @@ function build() {
     entryPoints: [path.resolve(__dirname, './src/main.js')],
     bundle: true,
     outfile: path.resolve(__dirname, './public/build/bundle.js'),
+    define: {
+      BACKEND_ENDPOINT: `'${
+        process.env.BACKEND_ENDPOINT || 'http://localhost:3000/dev'
+      }'`,
+    },
     plugins: [
-      sveltePlugin(),
-      envPlugin({
-        BACKEND_ENDPOINT: 'http://localhost:3000/dev',
+      aliasPlugin({
+        $lib: path.resolve(__dirname, './src/lib'),
+        '@proma/core': path.resolve(
+          __dirname,
+          '../../proma-core/core/index.mjs',
+        ),
+        '@proma/svelte-components': path.resolve(
+          __dirname,
+          '../../proma-svelte-components/src/index.js',
+        ),
       }),
+      sveltePlugin(),
     ],
     logLevel: 'info',
+    watch: WATCH,
   });
 }
 
@@ -39,17 +52,13 @@ function serve() {
   }
 }
 
-build().catch(() => process.exit(1));
-
-if (WATCH) {
-  console.log('Watching files...\n');
-  const watcher = watch([path.resolve(__dirname, './src/**/*')]);
-  watcher.on('change', () => {
-    console.log('Rebuilding...\n');
-    build().catch(() => {});
+build()
+  .then(() => {
+    if (SERVE) {
+      serve();
+    }
+  })
+  .catch(() => {
+    process.exit(1);
+    return false;
   });
-}
-
-if (SERVE) {
-  serve();
-}

@@ -102,7 +102,7 @@ custom:
     command: 'build:frontend'
     verbose: true
     environment:
-      BACKEND_ENDPOINT: ${cf:${self:service}.ServiceEndpoint}
+      BACKEND_ENDPOINT: ${cf:${self:service}.ServiceEndpoint, 'http://localhost:3000/${self.stage}'}
   client:
     bucketName: ${self:provider.stage}-proma-frontend
     distributionFolder: frontend/public
