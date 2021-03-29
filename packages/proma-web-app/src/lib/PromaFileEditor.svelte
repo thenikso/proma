@@ -1,7 +1,31 @@
+<script context="module">
+  // TODO add run actions
+  import { action } from '@proma/svelte-components';
+
+  action.provide('PromaFile.runRemote', ({ target: promaFile }) => {
+    console.log('run remote', promaFile);
+  });
+
+  action.provide('PromaFile.runLocal', ({ target: promaFile }) => {
+    promaFile.runLocal();
+  });
+
+  action.provide('PromaFile.runLocalCompiled', ({ target: promaFile }) => {
+    promaFile.runLocal(true);
+  });
+</script>
+
 <script>
   import * as proma from '@proma/core';
-  import { ChipBoardView, Overlay } from '@proma/svelte-components';
+  import eq from 'fast-deep-equal';
+  import {
+    ChipBoardView,
+    Overlay,
+    createShortcutDispatcher,
+  } from '@proma/svelte-components';
+  import PromaRunView from '$lib/PromaRunView.svelte';
 
+  export let id = 'PromaFile';
   export let source;
   export let getEditedSource = undefined;
 
@@ -22,11 +46,69 @@
     });
   $: chipEditor = sourceChip && proma.edit(sourceChip);
 
-  $: if (chipEditor) {
-    getEditedSource = function getSource() {
-      return JSON.stringify(chipEditor.Chip.toJSON());
-    };
+  function getSource() {
+    return JSON.stringify(chipEditor.Chip.toJSON());
   }
+  $: if (chipEditor) {
+    getEditedSource = getSource;
+  }
+
+  //
+  // Running
+  //
+
+  let runPromise;
+
+  function runLocal(compiled) {
+    if (!sourceChip) return;
+
+    runPromise = new Promise(async (resolve) => {
+      let chipClassToUse = sourceChip;
+      if (compiled) {
+        console.log(sourceChip.compile());
+        chipClassToUse = await sourceChip.compiledClass(null, (url) => {
+          if (/fast-deep-equal/.test(url)) {
+            return eq;
+          }
+          return import(url);
+        });
+      } else {
+        console.log(sourceChip.toJSON());
+      }
+
+      // TODO set parameters somewhere else
+      const chipInstance = new chipClassToUse({
+        httpMethod: 'GET',
+        queryStringParameters: {
+          name: 'test',
+        },
+      });
+
+      chipInstance.out.then(() => {
+        resolve({
+          result: chipInstance.out.result(),
+        });
+      });
+      chipInstance.in.exec();
+    });
+  }
+
+  //
+  // Shortcuts
+  //
+
+  const dispatchShortcut = createShortcutDispatcher([
+    {
+      id,
+      select: (e) => {
+        return !!e.path.find((el) => el.id === id);
+      },
+      present: {
+        getSource,
+        runLocal,
+      },
+    },
+  ]);
 
   //
   // Sub-chip request
@@ -57,64 +139,102 @@
   }
 </script>
 
-<ChipBoardView
-  id="PromaFile"
-  chip={sourceChip}
-  edit={chipEditor}
-  on:subChip:request={handleChipRequest}
-/>
+<div class="PromaFile" {id} on:keydown={dispatchShortcut}>
+  <ChipBoardView
+    chip={sourceChip}
+    edit={chipEditor}
+    on:subChip:request={handleChipRequest}
+  />
 
-{#if newSubChipRequest}
-  <Overlay
-    anchor={{
-      x: newSubChipRequest.clientX - 5,
-      y: newSubChipRequest.clientY - 5,
-    }}
-    on:dismiss={() => (newSubChipRequest = null)}
-  >
-    <div>
-      {#if newSubChipRequest.fromType && newSubChipRequest.fromType.definitionKind === 'function'}
-        <button
-          type="button"
-          on:click={() => {
-            newSubChipRequest.provideChipInstance(
-              newEventChipFromType(newSubChipRequest.fromType),
-              // TODO also send connection hint
-            );
-            newSubChipRequest = null;
-          }}
-        >
-          Create custom event
-        </button>
-      {/if}
-      <div><b>Context chips</b></div>
-      {#each Object.values(newSubChipRequest.chip.customChipClasses) as chipClass (chipClass.URI)}
-        <div>
+  {#if newSubChipRequest}
+    <Overlay
+      anchor={{
+        x: newSubChipRequest.clientX - 5,
+        y: newSubChipRequest.clientY - 5,
+      }}
+      on:dismiss={() => (newSubChipRequest = null)}
+    >
+      <div>
+        {#if newSubChipRequest.fromType && newSubChipRequest.fromType.definitionKind === 'function'}
           <button
             type="button"
             on:click={() => {
-              newSubChipRequest.provideChipInstance(new chipClass());
+              newSubChipRequest.provideChipInstance(
+                newEventChipFromType(newSubChipRequest.fromType),
+                // TODO also send connection hint
+              );
               newSubChipRequest = null;
             }}
           >
-            {chipClass.URI}
+            Create custom event
           </button>
-        </div>
-      {/each}
-      <div><b>All chips</b></div>
-      {#each registryListExcluding(newSubChipRequest.chip) as chipClass (chipClass.URI)}
-        <div>
-          <button
-            type="button"
-            on:click={() => {
-              newSubChipRequest.provideChipInstance(new chipClass());
-              newSubChipRequest = null;
-            }}
-          >
-            {chipClass.URI}
-          </button>
-        </div>
-      {/each}
+        {/if}
+        <div><b>Context chips</b></div>
+        {#each Object.values(newSubChipRequest.chip.customChipClasses) as chipClass (chipClass.URI)}
+          <div>
+            <button
+              type="button"
+              on:click={() => {
+                newSubChipRequest.provideChipInstance(new chipClass());
+                newSubChipRequest = null;
+              }}
+            >
+              {chipClass.URI}
+            </button>
+          </div>
+        {/each}
+        <div><b>All chips</b></div>
+        {#each registryListExcluding(newSubChipRequest.chip) as chipClass (chipClass.URI)}
+          <div>
+            <button
+              type="button"
+              on:click={() => {
+                newSubChipRequest.provideChipInstance(new chipClass());
+                newSubChipRequest = null;
+              }}
+            >
+              {chipClass.URI}
+            </button>
+          </div>
+        {/each}
+      </div>
+    </Overlay>
+  {/if}
+
+  {#if runPromise}
+    <div class="RunPanel">
+      <PromaRunView results={runPromise} on:close={() => (runPromise = null)} />
     </div>
-  </Overlay>
-{/if}
+  {/if}
+</div>
+
+<style>
+  .PromaFile {
+    height: 100%;
+  }
+  /* Run panel */
+
+  .RunPanel {
+    right: 30px;
+    top: 110px;
+    height: 100%;
+
+    box-sizing: border-box;
+    position: absolute;
+    width: 350px;
+    max-height: calc(100% - 140px);
+
+    background-color: var(
+      --proma-board--chip-selected--background-color,
+      #3e3e3e
+    );
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--proma-board--chip--border-color, #1d1d1d);
+    border-radius: 5px;
+    box-shadow: var(
+      --proma-board--chip--shadow,
+      0 2px 1px rgba(29, 29, 29, 0.8)
+    );
+  }
+</style>

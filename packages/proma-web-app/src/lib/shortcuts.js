@@ -11,15 +11,18 @@ import {
 //
 
 shortcuts.set('!cmd+S', action('CurrentProject.save'));
-shortcuts.set('[PromaFile:board] cmd+A', action('ChipBoard.selectAll'));
-shortcuts.set('[PromaFile:chip] backspace', action('ChipBoard.removeChip'));
+shortcuts.set('[ChipBoard:board] cmd+A', action('ChipBoard.selectAll'));
+shortcuts.set('[ChipBoard:chip] backspace', action('ChipBoard.removeChip'));
 shortcuts.set(
-  '[PromaFile:port] alt+click',
+  '[ChipBoard:port] alt+click',
   action('ChipBoard.removeConnection'),
 );
-// shortcuts.set('[PromaFile:board] cmd+enter', runRemote);
-// shortcuts.set('[PromaFile:board] cmd+shift+enter', () => runLocal());
-// shortcuts.set('[PromaFile:board] cmd+shift+alt+enter', () => runLocal(true));
+shortcuts.set('[PromaFile] cmd+enter', action('PromaFile.runRemote'));
+shortcuts.set('[PromaFile] cmd+shift+enter', action('PromaFile.runLocal'));
+shortcuts.set(
+  '[PromaFile] cmd+shift+alt+enter',
+  action('PromaFile.runLocalCompiled'),
+);
 
 let shortcutsInitialized = false;
 

@@ -1,22 +1,24 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
   import { StringInput } from '@proma/svelte-components';
 
-  export let runUrl;
-  export let runPromise;
+  export let url;
+  export let results;
+
+  const dispatch = createEventDispatcher();
+
+  function dispatchClose() {
+    dispatch('close');
+  }
 </script>
 
 <section class="PromaRunView">
   <header class="navigation">
-    <StringInput disabled value={runUrl} />
-    <button
-      type="button"
-      on:click={() => {
-        runPromise = null;
-      }}>X</button
-    >
+    <StringInput disabled value={url} />
+    <button type="button" on:click={dispatchClose}>X</button>
   </header>
-  {#if runPromise}
-    {#await runPromise}
+  {#if results}
+    {#await results}
       <div>loading...</div>
     {:then res}
       <pre
