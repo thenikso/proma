@@ -3,6 +3,7 @@ import aws from './lib/aws';
 import * as proma from '@proma/core';
 import fetch from 'node-fetch';
 import eq from 'fast-deep-equal';
+import { getCompiledClass } from './lib/buildCode';
 
 export const endpoint = async (event) => {
   // TODO the user id should be here or in some other authorizer prop
@@ -83,19 +84,9 @@ export const endpoint = async (event) => {
     );
     // TODO can not give access to `global`. Use something like `entrypointGlobal.ts`
     // to mask all global objects
-    const chipCompiledClass = await chipClass.compiledClass(
-      { fetch },
-      (importUrl) => {
-        const parts = importUrl.split('/');
-        const name = parts[parts.length - 1];
-        console.info(`[inform] attempt to import "${importUrl}" as "${name}"`);
-        switch (name) {
-          case 'fast-deep-equal':
-            return eq;
-          default:
-            throw new Error(`Can not import module '${importUrl}'`);
-        }
-      },
+    const chipCompiledClass = await getCompiledClass(
+      chipClass.compile(),
+      chipClass.imports,
     );
     chipInstance = new chipCompiledClass(event);
   } catch (e) {

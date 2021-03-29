@@ -16,7 +16,7 @@ export default function install({ registry, chip, inputData, outputData }) {
       },
       {
         imports: {
-          eq: 'https://esm.sh/fast-deep-equal',
+          eq: 'fast-deep-equal',
         },
       },
     ),

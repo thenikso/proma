@@ -131,6 +131,10 @@ custom:
   esbuild:
     bundle: true
     minify: false
+    external:
+      - esbuild
+      - fast-deep-equal
+      - node-fetch
   buildClient:
     packager: yarn
     command: 'build:frontend'
