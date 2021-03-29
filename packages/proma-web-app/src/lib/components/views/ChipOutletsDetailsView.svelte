@@ -1,6 +1,6 @@
 <script>
   import { onDestroy } from 'svelte';
-  import { StringInput } from '@proma/web-controls';
+  import StringInput from '../inputs/StringInput.svelte';
 
   export let chip;
   export let edit;
