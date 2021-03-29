@@ -50,6 +50,7 @@
   import { browser } from '$app/env';
   import { keyMods } from '$lib/stores/keyMods';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
+  import PromaRunView from '$lib/PromaRunView.svelte';
 
   export let project;
   export let selectedFilePath;
@@ -89,7 +90,15 @@
       <PromaFileEditor
         source={selectedFileSource}
         bind:getEditedSource={getFileEditedSource}
-      />
+        let:runPromise
+        let:clearRun
+      >
+        {#if runPromise}
+          <div class="RunPanel">
+            <PromaRunView results={runPromise} on:close={clearRun} />
+          </div>
+        {/if}
+      </PromaFileEditor>
     {:else}
       <div>Unsupported file type "${selectedFileType}"</div>
     {/if}
@@ -217,5 +226,31 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+  }
+
+  /* RunPanel */
+
+  .RunPanel {
+    right: 30px;
+    top: 110px;
+    height: 100%;
+
+    box-sizing: border-box;
+    position: absolute;
+    width: 350px;
+    max-height: calc(100% - 140px);
+
+    background-color: var(
+      --proma-board--chip-selected--background-color,
+      #3e3e3e
+    );
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--proma-board--chip--border-color, #1d1d1d);
+    border-radius: 5px;
+    box-shadow: var(
+      --proma-board--chip--shadow,
+      0 2px 1px rgba(29, 29, 29, 0.8)
+    );
   }
 </style>

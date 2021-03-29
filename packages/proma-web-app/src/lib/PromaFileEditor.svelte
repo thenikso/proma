@@ -23,7 +23,6 @@
     Overlay,
     createShortcutDispatcher,
   } from '@proma/svelte-components';
-  import PromaRunView from '$lib/PromaRunView.svelte';
 
   export let id = 'PromaFile';
   export let source;
@@ -91,6 +90,10 @@
       });
       chipInstance.in.exec();
     });
+  }
+
+  function clearRun() {
+    runPromise = null;
   }
 
   //
@@ -201,40 +204,11 @@
     </Overlay>
   {/if}
 
-  {#if runPromise}
-    <div class="RunPanel">
-      <PromaRunView results={runPromise} on:close={() => (runPromise = null)} />
-    </div>
-  {/if}
+  <slot {sourceChip} {runLocal} {runPromise} {clearRun} />
 </div>
 
 <style>
   .PromaFile {
     height: 100%;
-  }
-  /* Run panel */
-
-  .RunPanel {
-    right: 30px;
-    top: 110px;
-    height: 100%;
-
-    box-sizing: border-box;
-    position: absolute;
-    width: 350px;
-    max-height: calc(100% - 140px);
-
-    background-color: var(
-      --proma-board--chip-selected--background-color,
-      #3e3e3e
-    );
-    border-width: 2px;
-    border-style: solid;
-    border-color: var(--proma-board--chip--border-color, #1d1d1d);
-    border-radius: 5px;
-    box-shadow: var(
-      --proma-board--chip--shadow,
-      0 2px 1px rgba(29, 29, 29, 0.8)
-    );
   }
 </style>
