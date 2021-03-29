@@ -100,6 +100,7 @@ custom:
   buildClient:
     packager: yarn
     command: 'build:frontend'
+    verbose: true
     environment:
       BACKEND_ENDPOINT: ${cf:${self:service}.ServiceEndpoint}
   client:
