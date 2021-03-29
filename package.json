@@ -4,7 +4,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "bootstrap": "lerna bootstrap --use-workspaces"
+    "bootstrap": "lerna bootstrap --use-workspaces",
+    "lint": "prettier --check packages",
+    "format": "prettier --write packages"
   },
   "devDependencies": {
     "lerna": "^3.22.1",

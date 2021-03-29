@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Serverless backend for Proma public service",
   "scripts": {
-    "dev": "serverless offline start",
+    "dev": "serverless offline start --httpPort 4000",
     "test": "serverless invoke test"
   },
   "author": "Nicola Peduzzi <thenikso@gmail.com>",
