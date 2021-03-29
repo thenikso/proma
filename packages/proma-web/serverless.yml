@@ -32,12 +32,46 @@ provider:
             - 'arn:aws:s3:::${self:provider.environment.S3_PROJECT_DATA_BUCKET}/*'
 
 functions:
-  test1:
-    handler: backend/test1.handler
+  auth:
+    handler: backend/src/authorizer.handler
+  getProject:
+    handler: backend/src/project.get
     events:
       - http:
           method: get
-          path: /test
+          path: /project/{hostId}/{projectSlug}
+          # authorizer: ${self:custom.authorizer}
+          request:
+            parameters:
+              paths:
+                hostId: true
+                projectSlug: true
+  postProject:
+    handler: backend/src/project.post
+    events:
+      - http:
+          method: post
+          path: /project/{hostId}/{projectSlug}
+          cors: true
+          # authorizer: ${self:custom.authorizer}
+          request:
+            parameters:
+              paths:
+                hostId: true
+                projectSlug: true
+  runEndpoint:
+    handler: backend/src/run.endpoint
+    events:
+      - http:
+          method: any
+          path: /run/{hostId}/{projectSlug}/{endpoint}
+          cors: true
+          request:
+            parameters:
+              paths:
+                hostId: true
+                projectSlug: true
+                endpoint: true
 
 resources:
   Resources:

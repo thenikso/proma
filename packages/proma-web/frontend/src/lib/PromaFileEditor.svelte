@@ -68,7 +68,7 @@
           if (/fast-deep-equal/.test(url)) {
             return eq;
           }
-          return import(/* @vite-ignore */ url).catch((e) => {
+          return import(url).catch((e) => {
             console.warn(`Could not load module: ${url}`);
             return Promise.reject(e);
           });

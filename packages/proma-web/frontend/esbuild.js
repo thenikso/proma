@@ -3,6 +3,7 @@ const esbuild = require('esbuild');
 const sveltePlugin = require('esbuild-svelte');
 const aliasPlugin = require('./scripts/esbuild-alias-plugin');
 
+const PROD = process.env.NODE_ENV === 'production';
 const WATCH = process.argv.includes('-w') || process.argv.includes('--watch');
 const SERVE = process.argv.includes('-s') || process.argv.includes('--serve');
 
@@ -31,6 +32,7 @@ function build() {
       sveltePlugin(),
     ],
     logLevel: 'info',
+    sourcemap: !PROD,
     watch: WATCH,
   });
 }

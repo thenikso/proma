@@ -11,7 +11,7 @@
     const projectToSave = getCurrentProjectToSave();
     if (!projectToSave) return;
     savingPromise = await fetch(
-      `http://localhost:4000/dev/project/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
+      `${BACKEND_ENDPOINT}/project/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
       {
         method: 'post',
         headers: {
@@ -44,7 +44,7 @@
     project = null;
     selectedFilePath = '';
     projectPromise = fetch(
-      BACKEND_ENDPOINT + `/project/${hostId}/${projectSlug}`,
+      `${BACKEND_ENDPOINT}/project/${hostId}/${projectSlug}`,
     )
       .then((res) => res.json())
       .then((res) => {
@@ -62,7 +62,7 @@
   $: selectedFileSource = atob(project?.files?.[selectedFilePath] ?? '');
   $: selectedFileRunUrl =
     project &&
-    `http://localhost:4000/dev/run/${project.ownerHostId}/${project.projectSlug}/${selectedFileName}`;
+    `${BACKEND_ENDPOINT}/run/${project.ownerHostId}/${project.projectSlug}/${selectedFileName}`;
 
   let editor;
 

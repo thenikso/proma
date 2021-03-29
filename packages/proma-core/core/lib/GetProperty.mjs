@@ -1,9 +1,4 @@
-export default function install({
-  registry,
-  chip,
-  inputData,
-  outputData,
-}) {
+export default function install({ registry, chip, inputData, outputData }) {
   return registry.add(
     chip('lib/GetProperty', () => {
       const target = inputData('target', { type: 'Object', canonical: true });
@@ -12,7 +7,9 @@ export default function install({
         canonical: true,
       });
 
-      const value = outputData('value', () => target()[property()]);
+      const compute = () => target()[property()];
+      compute.toString = () => '() => target()[property()]';
+      const value = outputData('value', compute);
     }),
   );
 }
