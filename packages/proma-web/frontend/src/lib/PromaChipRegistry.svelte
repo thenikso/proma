@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import GroupList from '$lib/components/GroupList.svelte';
   import { registry } from '@proma/core';
 
   let searchInputEl;
@@ -8,6 +9,69 @@
   onMount(() => {
     searchInputEl.focus();
   });
+
+  let registryMap;
+  let registryGroupList;
+  {
+    registryMap = {};
+    for (const chip of registry.list()) {
+      const URI = chip.URI.split('/');
+      const path = URI.slice(0, URI.length - 1);
+      const name = URI[URI.length - 1];
+      const entry = {
+        path,
+        label: chip.label,
+        description: chip.metadata?.description,
+        chip,
+      };
+      let cursor = registryMap;
+      for (const part of path) {
+        if (!cursor[part]) {
+          cursor[part] = {
+            $group: part,
+          };
+        }
+        cursor = cursor[part];
+      }
+      cursor[name] = entry;
+    }
+
+    const wordsRegExp = /[A-Z][^A-Z\d]+|\d+|[A-Z]+(?![a-z])/g;
+    function camelCaseToTitle(str) {
+      str = str[0].toUpperCase() + str.slice(1);
+      const words = [];
+      let wordMatch;
+      while ((wordMatch = wordsRegExp.exec(str))) {
+        words.push(wordMatch[0].replace(/_/g, '').trim());
+      }
+      return words.filter((x) => !!x).join(' ');
+    }
+
+    function sortedKeys(obj) {
+      return Array.from(Object.keys(obj))
+        .sort((a, b) => a - b)
+        .filter((k) => !k.startsWith('$'));
+    }
+
+    function itemsFromEntry(entries, key) {
+      const entry = entries[key];
+      if (entry.$group === key) {
+        return [
+          { groupStart: key, text: camelCaseToTitle(key) },
+          ...sortedKeys(entry).map((k) => itemsFromEntry(entry, k)),
+        ];
+      }
+      return { ...entry, text: key };
+    }
+
+    registryGroupList = sortedKeys(registryMap)
+      .map((k) => itemsFromEntry(registryMap, k))
+      .flat(1);
+    // TODO better select root of registry list
+    registryGroupList.shift();
+  }
+
+  $: console.log(registryGroupList);
 </script>
 
 <div class="PromaChipRegistry">
@@ -57,7 +121,36 @@
       </button>
     {/if}
   </div>
-  <div class="result-list">list</div>
+  <div class="result-list">
+    <GroupList items={registryGroupList}>
+      <button
+        class="library-path"
+        type="button"
+        slot="groupStart"
+        let:item
+        let:toggle
+        let:collapsed
+        on:click={toggle}
+      >
+        <span>{item.text}</span>
+        <svg
+          class="indicator"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="transform: rotate({collapsed ? '0' : '180deg'})"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+    </GroupList>
+  </div>
 </div>
 
 <style>
@@ -105,5 +198,31 @@
     background: transparent;
     cursor: pointer;
     outline: none;
+  }
+
+  .result-list {
+    position: relative;
+    overflow-y: auto;
+    max-height: 300px;
+  }
+
+  .library-path {
+    display: block;
+    position: relative;
+    border: none;
+    background: transparent;
+    color: #6f6f70;
+    text-align: left;
+    font-size: 1em;
+    padding: 10px;
+    width: 100%;
+    outline: none;
+  }
+
+  .library-path .indicator {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
   }
 </style>
