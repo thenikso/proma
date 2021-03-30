@@ -36,8 +36,8 @@
     align-items: center;
     padding: 20px;
 
-    background-color: #fbfdfe;
-    box-shadow: 1px 0 3px #eaedf0;
+    background-color: var(--proma-panel--background-color, #fbfdfe);
+    box-shadow: 1px 0 3px var(--proma-panel--shadow-color, #eaedf0);
     z-index: 1;
   }
 
