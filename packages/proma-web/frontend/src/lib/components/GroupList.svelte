@@ -41,51 +41,50 @@
   ).result;
 </script>
 
-<div class="GroupList">
-  {#each itemsStatus as { item, group }}
-    {#if item.groupStart}
-      <slot
-        name="groupStart"
-        {item}
-        toggle={() => (group.collapsed = !group.collapsed)}
-        collapsed={group.collapsed}
+{#each itemsStatus as { item, group }}
+  {#if item.groupStart}
+    <slot
+      name="groupStart"
+      {item}
+      toggle={() => (group.collapsed = !group.collapsed)}
+      collapsed={group.collapsed}
+    >
+      <div
+        on:click={() => (group.collapsed = !group.collapsed)}
+        style="background: white; position: sticky; top: 0;"
       >
-        <div
-          on:click={() => (group.collapsed = !group.collapsed)}
-          style="background: white; position: sticky; top: 0;"
-        >
-          <strong>{item.text}</strong>
-        </div>
+        <strong>{item.text}</strong>
+      </div>
+    </slot>
+  {:else if !group.collapsed}
+    {#if item.groupEnd}
+      <slot name="groupEnd" {item} />
+    {:else if Array.isArray(item)}
+      <svelte:self items={item}>
+        <svelte:fragment slot="groupStart" let:item let:toggle let:collapsed>
+          <slot name="groupStart" {item} {toggle} {collapsed}>
+            <div
+              on:click={() => (group.collapsed = !group.collapsed)}
+              style="background: white; position: sticky; top: 0;"
+            >
+              <strong>{item.text}</strong>
+            </div>
+          </slot>
+        </svelte:fragment>
+        <svelte:fragment slot="groupEnd" let:item>
+          <slot name="groupEnd" {item} />
+        </svelte:fragment>
+        <svelte:fragment slot="item" let:item>
+          <slot name="item" {item}>
+            <div>{item.text}</div>
+          </slot>
+        </svelte:fragment>
+      </svelte:self>
+    {:else}
+      <slot name="item" {item}>
+        <div>{item.text}</div>
       </slot>
-    {:else if !group.collapsed}
-      {#if item.groupEnd}
-        <slot name="groupEnd" {item} />
-      {:else if Array.isArray(item)}
-        <svelte:self items={item}>
-          <div slot="groupStart" let:item let:toggle let:collapsed>
-            <slot name="groupStart" {item} {toggle} {collapsed}>
-              <div
-                on:click={() => (group.collapsed = !group.collapsed)}
-                style="background: white; position: sticky; top: 0;"
-              >
-                <strong>{item.text}</strong>
-              </div>
-            </slot>
-          </div>
-          <div slot="groupEnd" let:item>
-            <slot name="groupEnd" {item} />
-          </div>
-          <div slot="item" let:item>
-            <slot name="item" {item}>
-              <div>{item.text}</div>
-            </slot>
-          </div>
-        </svelte:self>
-      {:else}
-        <slot name="item" {item}>
-          <div>{item.text}</div>
-        </slot>
-      {/if}
     {/if}
-  {/each}
-</div>
+  {/if}
+{/each}
+

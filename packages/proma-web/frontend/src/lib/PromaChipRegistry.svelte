@@ -149,6 +149,11 @@
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
+      <button class="library-item" type="button" slot="item" let:item>
+        <div class="library-item-bg">
+          {item.text}
+        </div>
+      </button>
     </GroupList>
   </div>
 </div>
@@ -204,16 +209,19 @@
     position: relative;
     overflow-y: auto;
     max-height: 300px;
+    border-radius: 4px;
   }
 
   .library-path {
     display: block;
-    position: relative;
+    position: sticky;
+    top: 0;
     border: none;
-    background: transparent;
+    background: #f6f8f8;
     color: #6f6f70;
     text-align: left;
     font-size: 1em;
+    font-family: inherit;
     padding: 10px;
     width: 100%;
     outline: none;
@@ -224,5 +232,29 @@
     right: 10px;
     top: 10px;
     cursor: pointer;
+  }
+
+  .library-item {
+    display: block;
+    border: none;
+    background: none;
+    width: 100%;
+    outline: none;
+    text-align: left;
+    font-size: 1em;
+    font-family: inherit;
+    font-weight: 500;
+    padding: 5px;
+    cursor: pointer;
+  }
+
+  .library-item-bg {
+    padding: 5px;
+  }
+
+  .library-item:focus .library-item-bg,
+  .library-item:hover .library-item-bg {
+    background: #fe9e2846;
+    border-radius: 4px;
   }
 </style>
