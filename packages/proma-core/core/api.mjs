@@ -337,6 +337,10 @@ function makeChipFactory($customChips, $hooks) {
         return chipInfo.URI;
       }
 
+      static get label() {
+        return chipInfo.makeChipLabel();
+      }
+
       static get imports() {
         return Object.assign(
           {},

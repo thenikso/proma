@@ -61,4 +61,7 @@ body {
   --proma-input--focus--border-color: #faa94d;
   --proma-input-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+
+  --proma-panel--background-color: #fbfdfe;
+  --proma-panel--shadow-color: #eaedf0;
 }

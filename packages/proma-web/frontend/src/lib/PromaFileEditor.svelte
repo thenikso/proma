@@ -22,6 +22,7 @@
     Overlay,
     createShortcutDispatcher,
   } from '@proma/svelte-components';
+  import PromaChipRegistry from './PromaChipRegistry.svelte';
 
   export let id = 'PromaFile';
   export let source;
@@ -133,11 +134,16 @@
   //
 
   let newSubChipRequest;
-  let registryList = proma.registry.list();
 
-  function registryListExcluding(chipToExclude) {
-    return registryList.filter((c) => c !== chipToExclude);
-  }
+  $: subChipContextList = newSubChipRequest
+    ? [
+        ...(newSubChipRequest.fromType &&
+        newSubChipRequest.fromType.definitionKind === 'function'
+          ? [newEventChipFromType(newSubChipRequest.fromType)]
+          : []),
+        ...Object.values(newSubChipRequest.chip.customChipClasses),
+      ]
+    : [];
 
   function newEventChipFromType(functionType) {
     const ports = functionType.argumentsTypes.map((t, i) => ({
@@ -145,7 +151,7 @@
       type: t.signature,
     }));
     const CustomEventChip = proma.event('CustomEvent', ...ports);
-    return new CustomEventChip();
+    return CustomEventChip;
   }
 
   //
@@ -172,50 +178,15 @@
       }}
       on:dismiss={() => (newSubChipRequest = null)}
     >
-      <div>
-        {#if newSubChipRequest.fromType && newSubChipRequest.fromType.definitionKind === 'function'}
-          <button
-            type="button"
-            on:click={() => {
-              newSubChipRequest.provideChipInstance(
-                newEventChipFromType(newSubChipRequest.fromType),
-                // TODO also send connection hint
-              );
-              newSubChipRequest = null;
-            }}
-          >
-            Create custom event
-          </button>
-        {/if}
-        <div><b>Context chips</b></div>
-        {#each Object.values(newSubChipRequest.chip.customChipClasses) as chipClass (chipClass.URI)}
-          <div>
-            <button
-              type="button"
-              on:click={() => {
-                newSubChipRequest.provideChipInstance(new chipClass());
-                newSubChipRequest = null;
-              }}
-            >
-              {chipClass.URI}
-            </button>
-          </div>
-        {/each}
-        <div><b>All chips</b></div>
-        {#each registryListExcluding(newSubChipRequest.chip) as chipClass (chipClass.URI)}
-          <div>
-            <button
-              type="button"
-              on:click={() => {
-                newSubChipRequest.provideChipInstance(new chipClass());
-                newSubChipRequest = null;
-              }}
-            >
-              {chipClass.URI}
-            </button>
-          </div>
-        {/each}
-      </div>
+      <PromaChipRegistry
+        contextChips={subChipContextList}
+        on:close={() => (newSubChipRequest = null)}
+        on:select={(e) => {
+          const chipClass = e.detail.chip;
+          newSubChipRequest.provideChipInstance(new chipClass());
+          newSubChipRequest = null;
+        }}
+      />
     </Overlay>
   {/if}
 

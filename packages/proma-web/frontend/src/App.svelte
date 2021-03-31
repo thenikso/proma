@@ -21,6 +21,12 @@
   ];
 
   initShortcuts();
+
+  function handleMousewheel(e) {
+    e.preventDefault();
+  }
 </script>
+
+<svelte:body on:mousewheel|nonpassive={handleMousewheel} />
 
 <Router {routes} />
