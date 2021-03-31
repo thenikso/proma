@@ -1,6 +1,8 @@
 <script>
+  import Fuse from 'fuse.js';
   import { onMount } from 'svelte';
   import GroupList from '$lib/components/GroupList.svelte';
+  import TextWithMatches from '$lib/components/TextWithMatches.svelte';
   import { registry } from '@proma/core';
 
   let searchInputEl;
@@ -10,8 +12,13 @@
     searchInputEl.focus();
   });
 
+  //
+  // Build registry list
+  //
+
   let registryMap;
   let registryGroupList;
+  let registryFuse;
   {
     registryMap = {};
     for (const chip of registry.list()) {
@@ -19,6 +26,7 @@
       const path = URI.slice(0, URI.length - 1);
       const name = URI[URI.length - 1];
       const entry = {
+        id: chip.URI,
         path,
         label: chip.label,
         description: chip.metadata?.description,
@@ -69,10 +77,85 @@
       .flat(1);
     // TODO better select root of registry list
     registryGroupList.shift();
+
+    registryFuse = new Fuse(registryGroupList, {
+      keys: ['text'],
+      includeMatches: true,
+    });
   }
 
-  $: console.log(registryGroupList);
+  $: groupListOptions = searchValue
+    ? {
+        items: registryFuse?.search(searchValue),
+        getItemOptions: (x) => x.item,
+      }
+    : { items: registryGroupList };
+
+  //
+  // Selection
+  //
+
+  let resultListEl;
+  let highlightedEl;
+  $: if (~searchValue && resultListEl) {
+    highlightedEl = resultListEl.children[0];
+  }
+
+  $: highlightedEl?.scrollIntoViewIfNeeded();
+
+  function highlightNext() {
+    if (highlightedEl) {
+      highlightedEl = highlightedEl.nextElementSibling;
+    }
+    if (!highlightedEl) {
+      highlightedEl = resultListEl.children[0];
+    }
+  }
+
+  function highlightPrev() {
+    if (highlightedEl) {
+      highlightedEl = highlightedEl.previousElementSibling;
+    }
+    if (!highlightedEl) {
+      highlightedEl = resultListEl.children[resultListEl.children.length - 1];
+    }
+  }
+
+  //
+  // Event handlers
+  //
+
+  function handleClearClick() {
+    searchValue = '';
+    searchInputEl.focus();
+  }
+
+  function handleKeyDown(e) {
+    // console.log(e);
+    if (e.key === 'Escape') {
+      if (searchValue) {
+        searchValue = '';
+      } else {
+        // TODO close
+      }
+      e.stopPropagation();
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      highlightNext();
+      e.stopPropagation();
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      highlightPrev();
+      e.stopPropagation();
+      e.preventDefault();
+    } else if (e.key === 'Tab') {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }
 </script>
+
+<svelte:window on:keydown|capture={handleKeyDown} />
 
 <div class="PromaChipRegistry">
   <div class="search-bar">
@@ -98,11 +181,7 @@
       bind:value={searchValue}
     />
     {#if searchValue}
-      <button
-        type="button"
-        class="search-clear-button"
-        on:click={() => (searchValue = '')}
-      >
+      <div class="search-clear-button" on:click={handleClearClick}>
         <svg
           class="clear-icon"
           xmlns="http://www.w3.org/2000/svg"
@@ -118,44 +197,70 @@
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
-      </button>
+      </div>
     {/if}
   </div>
-  <div class="result-list">
-    <GroupList items={registryGroupList}>
-      <button
-        class="library-path"
-        type="button"
-        slot="groupStart"
-        let:item
-        let:toggle
-        let:collapsed
-        on:click={toggle}
+  {#if groupListOptions.items.length === 0}
+    <div class="result-empty">Nothing found</div>
+  {:else}
+    <div class="result-list" bind:this={resultListEl}>
+      <GroupList
+        items={groupListOptions.items}
+        getItemOptions={groupListOptions.getItemOptions}
       >
-        <span>{item.text}</span>
-        <svg
-          class="indicator"
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          style="transform: rotate({collapsed ? '0' : '180deg'})"
+        <div
+          slot="groupStart"
+          id={options.text}
+          class="library-path"
+          class:highlighted={highlightedEl && highlightedEl.id === options.text}
+          let:item
+          let:options
+          let:toggle
+          let:collapsed
+          on:click={toggle}
         >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
-      <button class="library-item" type="button" slot="item" let:item>
-        <div class="library-item-bg">
-          {item.text}
+          <span>{options.text}</span>
+          <svg
+            class="indicator"
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            style="transform: rotate({collapsed ? '0' : '180deg'})"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </div>
-      </button>
-    </GroupList>
-  </div>
+        <div
+          slot="item"
+          id={options.id}
+          class="library-item"
+          class:highlighted={highlightedEl && highlightedEl.id === options.id}
+          let:item
+          let:options
+        >
+          <div class="library-item-bg">
+            <div class="library-item-title">
+              {#if item?.matches}
+                <TextWithMatches
+                  text={options.text}
+                  matches={item.matches}
+                  matchesKey="text"
+                />
+              {:else}
+                {options.text}
+              {/if}
+            </div>
+          </div>
+        </div>
+      </GroupList>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -165,6 +270,10 @@
     box-shadow: 0 0 3px #c2c3c4;
     min-width: 400px;
     font-size: 16px;
+  }
+
+  .PromaChipRegistry * {
+    box-sizing: border-box;
   }
 
   .search-bar {
@@ -199,10 +308,17 @@
     top: 3px;
     right: 3px;
     height: 30px;
+    padding: 5px;
     border: none;
     background: transparent;
     cursor: pointer;
     outline: none;
+  }
+
+  .result-empty {
+    text-align: center;
+    padding: 10px;
+    color: #6f6f70;
   }
 
   .result-list {
@@ -234,6 +350,11 @@
     cursor: pointer;
   }
 
+  .library-path.highlighted .indicator {
+    background: #fe9e2846;
+    border-radius: 4px;
+  }
+
   .library-item {
     display: block;
     border: none;
@@ -252,9 +373,14 @@
     padding: 5px;
   }
 
-  .library-item:focus .library-item-bg,
+  .library-item.highlighted .library-item-bg,
   .library-item:hover .library-item-bg {
     background: #fe9e2846;
     border-radius: 4px;
+  }
+
+  .library-item-title :global(em) {
+    font-style: normal;
+    color: #a847fa;
   }
 </style>
