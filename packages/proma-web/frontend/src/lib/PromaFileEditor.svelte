@@ -134,11 +134,20 @@
   //
 
   let newSubChipRequest;
-  let registryList = proma.registry.list();
 
-  function registryListExcluding(chipToExclude) {
-    return registryList.filter((c) => c !== chipToExclude);
-  }
+  $: subChipCustomActionsList = [
+    ...(newSubChipRequest &&
+    newSubChipRequest.fromType &&
+    newSubChipRequest.fromType.definitionKind === 'function'
+      ? [
+          {
+            action() {
+              return newEventChipFromType(newSubChipRequest.fromType);
+            },
+          },
+        ]
+      : []),
+  ];
 
   function newEventChipFromType(functionType) {
     const ports = functionType.argumentsTypes.map((t, i) => ({
@@ -173,7 +182,15 @@
       }}
       on:dismiss={() => (newSubChipRequest = null)}
     >
-      <PromaChipRegistry />
+      <PromaChipRegistry
+        contextChips={Object.values(newSubChipRequest.chip.customChipClasses)}
+        on:close={() => (newSubChipRequest = null)}
+        on:selection={(e) => {
+          const chipClass = e.detail.chip;
+          newSubChipRequest.provideChipInstance(new chipClass());
+          newSubChipRequest = null;
+        }}
+      />
     </Overlay>
   {/if}
 

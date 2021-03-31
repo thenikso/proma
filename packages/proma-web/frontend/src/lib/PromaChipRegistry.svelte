@@ -1,11 +1,20 @@
 <script>
   import Fuse from 'fuse.js';
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import GroupList from '$lib/components/GroupList.svelte';
   import TextWithMatches from '$lib/components/TextWithMatches.svelte';
   import { registry } from '@proma/core';
+  const dispatch = createEventDispatcher();
 
-  export let customChips = undefined;
+  export let contextChips = [];
+
+  function dispatchClose() {
+    dispatch('close');
+  }
+
+  function dispatchSelection(chip) {
+    dispatch('selection', { chip });
+  }
 
   //
   // Search box init
@@ -19,72 +28,34 @@
   });
 
   //
+  // Build context chip list
+  //
+
+  $: contextGroupList = contextChips &&
+    contextChips.length &&
+    chipListToGroupListOptions(contextChips);
+
+  //
   // Build registry list
   //
 
-  let registryMap;
   let registryGroupList;
   {
-    registryMap = {};
-    for (const chip of registry.list()) {
-      const URI = chip.URI.split('/');
-      const path = URI.slice(0, URI.length - 1);
-      const name = URI[URI.length - 1];
-      const entry = {
-        id: chip.URI,
-        path,
-        label: chip.label,
-        description: chip.metadata?.description,
-        chip,
-      };
-      let cursor = registryMap;
-      for (const part of path) {
-        if (!cursor[part]) {
-          cursor[part] = {
-            $group: part,
-          };
-        }
-        cursor = cursor[part];
-      }
-      cursor[name] = entry;
-    }
-
-    const wordsRegExp = /[A-Z][^A-Z\d]+|\d+|[A-Z]+(?![a-z])/g;
-    function camelCaseToTitle(str) {
-      str = str[0].toUpperCase() + str.slice(1);
-      const words = [];
-      let wordMatch;
-      while ((wordMatch = wordsRegExp.exec(str))) {
-        words.push(wordMatch[0].replace(/_/g, '').trim());
-      }
-      return words.filter((x) => !!x).join(' ');
-    }
-
-    function sortedKeys(obj) {
-      return Array.from(Object.keys(obj))
-        .sort((a, b) => a - b)
-        .filter((k) => !k.startsWith('$'));
-    }
-
-    function itemsFromEntry(entries, key) {
-      const entry = entries[key];
-      if (entry.$group === key) {
-        return [
-          { groupStart: key, text: camelCaseToTitle(key) },
-          ...sortedKeys(entry).map((k) => itemsFromEntry(entry, k)),
-        ];
-      }
-      return { ...entry, text: key };
-    }
-
-    registryGroupList = sortedKeys(registryMap)
-      .map((k) => itemsFromEntry(registryMap, k))
-      .flat(1);
+    registryGroupList = chipListToGroupListOptions(registry.list());
     // TODO better select root of registry list
     registryGroupList.shift();
   }
 
-  $: fullGroupList = [{ header: 'Imported chips' }, ...registryGroupList];
+  //
+  // Build list for display
+  //
+
+  $: fullGroupList = contextGroupList ? [
+    {header: 'Context'},
+    ...contextGroupList,
+    { header: 'Libraries' },
+    ...registryGroupList
+  ] : registryGroupList;
 
   $: registryFuse = new Fuse(
     fullGroupList.flat().filter((i) => !i.groupStart && !i.header),
@@ -163,7 +134,7 @@
         if (searchValue) {
           searchValue = '';
         } else {
-          // TODO close
+          dispatchClose();
         }
         break;
       case 'ArrowDown':
@@ -180,6 +151,78 @@
       e.stopPropagation();
       e.preventDefault();
     }
+  }
+
+  //
+  // Utils
+  //
+
+  const wordsRegExp = /[A-Z][^A-Z\d]+|\d+|[A-Z]+(?![a-z])/g;
+
+  function camelCaseToTitle(str) {
+    str = str[0].toUpperCase() + str.slice(1);
+    const words = [];
+    let wordMatch;
+    while ((wordMatch = wordsRegExp.exec(str))) {
+      words.push(wordMatch[0].replace(/_/g, '').trim());
+    }
+    return words.filter((x) => !!x).join(' ');
+  }
+
+  function sortedKeys(obj) {
+    return Array.from(Object.keys(obj))
+      .sort((a, b) => a - b)
+      .filter((k) => !k.startsWith('$'));
+  }
+
+  function itemsFromEntry(entries, key) {
+    const entry = entries[key];
+    if (entry.$group === key) {
+      return [
+        { groupStart: key, text: camelCaseToTitle(key) },
+        ...sortedKeys(entry).map((k) => itemsFromEntry(entry, k)),
+      ];
+    }
+    return { ...entry, text: key };
+  }
+
+  function makeChipEntry(chip) {
+    const URI = chip.URI.split('/');
+    const path = URI.slice(0, URI.length - 1);
+    const name = URI[URI.length - 1];
+    return {
+      id: chip.URI,
+      path,
+      name,
+      label: chip.label,
+      description: chip.metadata?.description,
+      chip,
+    };
+  }
+
+  function chipListToURITree(chipList) {
+    const res = {};
+    for (const chip of chipList) {
+      const entry = makeChipEntry(chip);
+      let cursor = res;
+      for (const part of entry.path) {
+        if (!cursor[part]) {
+          cursor[part] = {
+            $group: part,
+          };
+        }
+        cursor = cursor[part];
+      }
+      cursor[entry.name] = entry;
+    }
+    return res;
+  }
+
+  function chipListToGroupListOptions(chipList) {
+    const registryMap = chipListToURITree(chipList);
+    return sortedKeys(registryMap)
+      .map((k) => itemsFromEntry(registryMap, k))
+      .flat(1);
   }
 </script>
 
@@ -272,6 +315,7 @@
               id={options.id}
               class="library-item"
               class:highlighted={highlightedEl && highlightedEl.id === options.id}
+              on:click={() => dispatchSelection(options.chip)}
             >
               <div class="library-item-bg">
                 <div class="library-item-title">

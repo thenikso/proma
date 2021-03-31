@@ -24,7 +24,7 @@
 
 <div
   class="OverlayContainer"
-  on:mousewheel|stopPropagation={dispatchDismiss}
+  on:mousewheel|stopPropagation|preventDefault={dispatchDismiss}
   on:mousedown|stopPropagation={dispatchDismiss}
   on:mouseup|stopPropagation={dispatchDismiss}
   on:click|stopPropagation={dispatchDismiss}
@@ -49,6 +49,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
+    z-index: 999;
   }
 
   .Overlay {
