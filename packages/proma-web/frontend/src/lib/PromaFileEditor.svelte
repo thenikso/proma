@@ -135,19 +135,15 @@
 
   let newSubChipRequest;
 
-  $: subChipCustomActionsList = [
-    ...(newSubChipRequest &&
-    newSubChipRequest.fromType &&
-    newSubChipRequest.fromType.definitionKind === 'function'
-      ? [
-          {
-            action() {
-              return newEventChipFromType(newSubChipRequest.fromType);
-            },
-          },
-        ]
-      : []),
-  ];
+  $: subChipContextList = newSubChipRequest
+    ? [
+        ...(newSubChipRequest.fromType &&
+        newSubChipRequest.fromType.definitionKind === 'function'
+          ? [newEventChipFromType(newSubChipRequest.fromType)]
+          : []),
+        ...Object.values(newSubChipRequest.chip.customChipClasses),
+      ]
+    : [];
 
   function newEventChipFromType(functionType) {
     const ports = functionType.argumentsTypes.map((t, i) => ({
@@ -155,7 +151,7 @@
       type: t.signature,
     }));
     const CustomEventChip = proma.event('CustomEvent', ...ports);
-    return new CustomEventChip();
+    return CustomEventChip;
   }
 
   //
@@ -183,9 +179,9 @@
       on:dismiss={() => (newSubChipRequest = null)}
     >
       <PromaChipRegistry
-        contextChips={Object.values(newSubChipRequest.chip.customChipClasses)}
+        contextChips={subChipContextList}
         on:close={() => (newSubChipRequest = null)}
-        on:selection={(e) => {
+        on:select={(e) => {
           const chipClass = e.detail.chip;
           newSubChipRequest.provideChipInstance(new chipClass());
           newSubChipRequest = null;

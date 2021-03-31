@@ -12,8 +12,8 @@
     dispatch('close');
   }
 
-  function dispatchSelection(chip) {
-    dispatch('selection', { chip });
+  function dispatchSelect(chip) {
+    dispatch('select', { chip });
   }
 
   //
@@ -315,7 +315,7 @@
               id={options.id}
               class="library-item"
               class:highlighted={highlightedEl && highlightedEl.id === options.id}
-              on:click={() => dispatchSelection(options.chip)}
+              on:click={() => dispatchSelect(options.chip)}
             >
               <div class="library-item-bg">
                 <div class="library-item-title">
