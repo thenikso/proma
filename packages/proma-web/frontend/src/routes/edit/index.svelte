@@ -96,11 +96,11 @@
 
   function handleRun(e) {
     if (e.metaKey && e.shiftKey && e.altKey) {
-      editor.runLocal(true);
+      action('PromaFile.runLocalCompiled')({ target: editor });
     } else if (e.metaKey && e.shiftKey) {
-      editor.runLocal();
+      action('PromaFile.runLocal')({ target: editor });
     } else {
-      editor.runRemote();
+      action('PromaFile.runRemote')({ target: editor });
     }
   }
 </script>

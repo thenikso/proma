@@ -1,16 +1,17 @@
 <script context="module">
   import { action } from '@proma/svelte-components';
 
-  action.provide('PromaFile.runRemote', ({ target: promaFile }) => {
-    promaFile.runRemote();
+  action.provide('PromaFile.runRemote', async ({ target: promaFile }) => {
+    await action('CurrentProject.save')();
+    return promaFile.runRemote();
   });
 
   action.provide('PromaFile.runLocal', ({ target: promaFile }) => {
-    promaFile.runLocal();
+    return promaFile.runLocal();
   });
 
   action.provide('PromaFile.runLocalCompiled', ({ target: promaFile }) => {
-    promaFile.runLocal(true);
+    return promaFile.runLocal(true);
   });
 </script>
 
@@ -114,7 +115,7 @@
   //
 
   const actionTarget = {
-    getSource: getEditedSource,
+    getEditedSource,
     runLocal,
     runRemote,
   };
