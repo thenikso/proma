@@ -5,6 +5,12 @@
   import TextWithMatches from '$lib/components/TextWithMatches.svelte';
   import { registry } from '@proma/core';
 
+  export let customChips = undefined;
+
+  //
+  // Search box init
+  //
+
   let searchInputEl;
   let searchValue;
 
@@ -18,7 +24,6 @@
 
   let registryMap;
   let registryGroupList;
-  let registryFuse;
   {
     registryMap = {};
     for (const chip of registry.list()) {
@@ -77,19 +82,24 @@
       .flat(1);
     // TODO better select root of registry list
     registryGroupList.shift();
+  }
 
-    registryFuse = new Fuse(registryGroupList, {
+  $: fullGroupList = [{ header: 'Imported chips' }, ...registryGroupList];
+
+  $: registryFuse = new Fuse(
+    fullGroupList.flat().filter((i) => !i.groupStart && !i.header),
+    {
       keys: ['text'],
       includeMatches: true,
-    });
-  }
+    },
+  );
 
   $: groupListOptions = searchValue
     ? {
         items: registryFuse?.search(searchValue),
         getItemOptions: (x) => x.item,
       }
-    : { items: registryGroupList };
+    : { items: fullGroupList };
 
   //
   // Selection
@@ -97,24 +107,34 @@
 
   let resultListEl;
   let highlightedEl;
-  $: if (~searchValue && resultListEl) {
-    highlightedEl = resultListEl.children[0];
+  $: if (groupListOptions && resultListEl) {
+    setTimeout(() => {
+      highlightedEl = null;
+      highlightNext();
+    });
   }
 
   $: highlightedEl?.scrollIntoViewIfNeeded();
 
   function highlightNext() {
     if (highlightedEl) {
-      highlightedEl = highlightedEl.nextElementSibling;
+      do {
+        highlightedEl = highlightedEl.nextElementSibling;
+      } while (highlightedEl && !highlightedEl.id);
     }
-    if (!highlightedEl) {
+    if (!highlightedEl && resultListEl.children.length > 0) {
       highlightedEl = resultListEl.children[0];
+      if (!highlightedEl.id) {
+        highlightNext();
+      }
     }
   }
 
   function highlightPrev() {
     if (highlightedEl) {
-      highlightedEl = highlightedEl.previousElementSibling;
+      do {
+        highlightedEl = highlightedEl.previousElementSibling;
+      } while (highlightedEl && !highlightedEl.id);
     }
     if (!highlightedEl) {
       highlightedEl = resultListEl.children[resultListEl.children.length - 1];
@@ -131,24 +151,32 @@
   }
 
   function handleKeyDown(e) {
-    // console.log(e);
-    if (e.key === 'Escape') {
-      if (searchValue) {
-        searchValue = '';
-      } else {
-        // TODO close
-      }
-      e.stopPropagation();
-      e.preventDefault();
-    } else if (e.key === 'ArrowDown') {
-      highlightNext();
-      e.stopPropagation();
-      e.preventDefault();
-    } else if (e.key === 'ArrowUp') {
-      highlightPrev();
-      e.stopPropagation();
-      e.preventDefault();
-    } else if (e.key === 'Tab') {
+    let stopEvent = true;
+    switch (e.key) {
+      case 'Enter':
+      case 'Tab':
+        if (highlightedEl) {
+          highlightedEl.click();
+        }
+        break;
+      case 'Escape':
+        if (searchValue) {
+          searchValue = '';
+        } else {
+          // TODO close
+        }
+        break;
+      case 'ArrowDown':
+        highlightNext();
+        break;
+      case 'ArrowUp':
+        highlightPrev();
+        break;
+      default:
+        stopEvent = false;
+        break;
+    }
+    if (stopEvent) {
       e.stopPropagation();
       e.preventDefault();
     }
@@ -236,28 +264,31 @@
             <path d="M6 9l6 6 6-6" />
           </svg>
         </div>
-        <div
-          slot="item"
-          id={options.id}
-          class="library-item"
-          class:highlighted={highlightedEl && highlightedEl.id === options.id}
-          let:item
-          let:options
-        >
-          <div class="library-item-bg">
-            <div class="library-item-title">
-              {#if item?.matches}
-                <TextWithMatches
-                  text={options.text}
-                  matches={item.matches}
-                  matchesKey="text"
-                />
-              {:else}
-                {options.text}
-              {/if}
+        <svelte:fragment slot="item" let:item let:options>
+          {#if item.header}
+            <div class="library-header">{item.header}</div>
+          {:else}
+            <div
+              id={options.id}
+              class="library-item"
+              class:highlighted={highlightedEl && highlightedEl.id === options.id}
+            >
+              <div class="library-item-bg">
+                <div class="library-item-title">
+                  {#if item?.matches}
+                    <TextWithMatches
+                      text={options.text}
+                      matches={item.matches}
+                      matchesKey="text"
+                    />
+                  {:else}
+                    {options.text}
+                  {/if}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          {/if}
+        </svelte:fragment>
       </GroupList>
     </div>
   {/if}
@@ -326,6 +357,12 @@
     overflow-y: auto;
     max-height: 300px;
     border-radius: 4px;
+  }
+
+  .library-header {
+    padding: 5px 10px;
+    cursor: default;
+    color: #6f6f70;
   }
 
   .library-path {
