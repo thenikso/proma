@@ -51,9 +51,8 @@
   //
 
   $: fullGroupList = contextGroupList ? [
-    {header: 'Context'},
     ...contextGroupList,
-    { header: 'Libraries' },
+    { header: 'From Libraries' },
     ...registryGroupList
   ] : registryGroupList;
 
@@ -88,6 +87,7 @@
   $: highlightedEl?.scrollIntoViewIfNeeded();
 
   function highlightNext() {
+    if (!resultListEl) return;
     if (highlightedEl) {
       do {
         highlightedEl = highlightedEl.nextElementSibling;
@@ -102,6 +102,7 @@
   }
 
   function highlightPrev() {
+    if (!resultListEl) return;
     if (highlightedEl) {
       do {
         highlightedEl = highlightedEl.previousElementSibling;

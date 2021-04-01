@@ -348,6 +348,7 @@ function makeShortcutTokenMatcher(shortcutToken) {
   switch (shortcutToken) {
     case 'click':
     case 'doubleclick':
+    case 'positionclick':
     case 'mouseenter':
     case 'mousewheel':
     case 'mouseleave':

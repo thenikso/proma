@@ -376,31 +376,32 @@
       },
     ],
     {
-      '[port|chip|selection] mousedown': ({ target, sourceEvent }) => {
+      '[port|chip|selection|board] mousedown': ({ target, sourceEvent }) => {
         draggingStart = dragging = {
           x: sourceEvent.pageX,
           y: sourceEvent.pageY,
         };
-        if (target.type === 'port') {
-          if (
-            !sourceEvent.altKey &&
-            !sourceEvent.ctrlKey &&
-            !sourceEvent.metaKey &&
-            sourceEvent.button === 0
-          ) {
-            newWireWhenDraggingFromPort = target;
-            boardEl.addEventListener('mousemove', handleDragPort);
-          }
-        } else if (target.type === 'chip') {
-          board.selectChip(target, sourceEvent);
-          boardEl.addEventListener('mousemove', handleDragChip);
-        } else if (!grab) {
-          boardEl.addEventListener('mousemove', handleDragSelection);
-        } else {
-          boardEl.addEventListener('mousemove', handleDragBoard);
+        switch (target.type) {
+          case 'port':
+            if (sourceEvent.button === 0) {
+              newWireWhenDraggingFromPort = target;
+              boardEl.addEventListener('mousemove', handleDragPort);
+            }
+            break;
+          case 'chip':
+            board.selectChip(target, sourceEvent);
+            boardEl.addEventListener('mousemove', handleDragChip);
+            break;
+          case 'selection':
+            if (!grab) {
+              boardEl.addEventListener('mousemove', handleDragSelection);
+              break;
+            }
+          default:
+            boardEl.addEventListener('mousemove', handleDragBoard);
         }
       },
-      '[chip|selection] mouseup': ({ target }) => {
+      '[chip|selection|board] mouseup': ({ target }) => {
         if (!selectionRect && target.type === 'selection') {
           deselectAllChips();
           selectedChipsSet.clear();
@@ -462,9 +463,10 @@
           panY -= sourceEvent.deltaY;
         }
       },
-      '[port|chip|board] contextmenu': ({ target, sourceEvent }) => {
-        sourceEvent.preventDefault();
-        dispatchContextmenu(target.type, target.eventDetails, sourceEvent);
+      '[port|chip|board] positionclick': ({ target, sourceEvent }) => {
+        if (sourceEvent.button === 2) {
+          dispatchContextmenu(target.type, target.eventDetails, sourceEvent);
+        }
       },
     },
   );
@@ -535,6 +537,36 @@
   }
 
   //
+  // Special clickposition event
+  //
+
+  let positionclickStartEvent;
+
+  function handleMousedown(event) {
+    positionclickStartEvent = event;
+    dispatchShortcuts(event);
+  }
+
+  function handleMouseup(event) {
+    if (
+      positionclickStartEvent &&
+      positionclickStartEvent.clientX === event.clientX &&
+      positionclickStartEvent.clientY === event.clientY &&
+      positionclickStartEvent.button === event.button
+    ) {
+      const e = new Proxy(event, {
+        get(target, key) {
+          if (key === 'type') return 'positionclick';
+          return Reflect.get(target, key);
+        },
+      });
+      dispatchShortcuts(e);
+    }
+    positionclickStartEvent = null;
+    dispatchShortcuts(event);
+  }
+
+  //
   // Utils
   //
 
@@ -570,14 +602,14 @@
   bind:this={boardEl}
   bind:offsetWidth={boardWidth}
   bind:offsetHeight={boardHeight}
-  on:mousedown={dispatchShortcuts}
-  on:mouseup={dispatchShortcuts}
+  on:mousedown={handleMousedown}
+  on:mouseup={handleMouseup}
   on:mouseleave={dispatchShortcuts}
   on:mousewheel|preventDefault={dispatchShortcuts}
   on:dragstart|preventDefault
   on:keydown={dispatchShortcuts}
   on:keyup={dispatchShortcuts}
-  on:contextmenu={dispatchShortcuts}
+  on:contextmenu|preventDefault
   on:click={dispatchShortcuts}
 >
   <svg
