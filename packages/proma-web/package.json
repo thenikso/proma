@@ -2,7 +2,7 @@
   "version": "0.1.0",
   "name": "@proma/web",
   "description": "Web hosting for Proma projects",
-  "license": "PRIVATE",
+  "license": "UNLICENSED",
   "author": "Nicola Peduzzi <thenikso@gmail.com>",
   "type": "commonjs",
   "scripts": {
