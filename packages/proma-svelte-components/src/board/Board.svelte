@@ -381,7 +381,8 @@
           x: sourceEvent.pageX,
           y: sourceEvent.pageY,
         };
-        switch (target.type) {
+        let targetType = sourceEvent.button === 2 ? 'board' : target.type;
+        switch (targetType) {
           case 'port':
             if (sourceEvent.button === 0) {
               newWireWhenDraggingFromPort = target;
