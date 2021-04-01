@@ -1,3 +1,4 @@
+import './lib/stores/auth.js';
 import App from './App.svelte';
 
 const app = new App({

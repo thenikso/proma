@@ -16,9 +16,12 @@ function build() {
     bundle: true,
     outfile: path.resolve(__dirname, './public/build/bundle.js'),
     define: {
+      IS_PRODUCTION: PROD ? 'true' : 'false',
       BACKEND_ENDPOINT: `'${
         process.env.BACKEND_ENDPOINT || 'http://localhost:3000/dev'
       }'`,
+      AUTH0_DOMAIN: '"thenikso.eu.auth0.com"',
+      AUTH0_CLIENTID: '"I0Vdf3zf7yoUnuvqKxYydiihHstUPd2G"',
     },
     plugins: [
       aliasPlugin({

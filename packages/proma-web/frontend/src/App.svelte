@@ -1,5 +1,6 @@
 <script>
   import { initShortcuts } from '$lib/shortcuts';
+  import { login, logout, isAuthenticated } from '$lib/stores/auth.js';
   import { Router } from 'svelte-router-spa';
 
   import Dashboard from './routes/Dashboard.svelte';
@@ -25,6 +26,11 @@
   function handleMousewheel(e) {
     e.preventDefault();
   }
+
+  window.login = login;
+  window.logout = logout;
+
+  $: console.log('authenticated', $isAuthenticated);
 </script>
 
 <svelte:body on:mousewheel|nonpassive={handleMousewheel} />
