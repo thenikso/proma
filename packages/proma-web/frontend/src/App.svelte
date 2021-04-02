@@ -1,6 +1,6 @@
 <script>
   import { initShortcuts } from '$lib/shortcuts';
-  import { login, logout, isAuthenticated } from '$lib/stores/auth.js';
+  import { login, logout, isAuthenticated } from '$lib/stores';
   import Router from '$lib/Router.svelte';
 
   import Dashboard from './routes/Dashboard.svelte';

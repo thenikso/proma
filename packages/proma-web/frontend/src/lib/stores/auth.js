@@ -12,39 +12,33 @@ export const auth0Client = readable(null, (set) => {
   }
 });
 
+const authChanged = writable(0);
+
 if (AUTH0_DOMAIN && AUTH0_CLIENTID) {
-  const script = document.createElement('script');
-  script.onload = async function () {
+  async function initAuth() {
     _auth0Client = await createAuth0Client({
       domain: AUTH0_DOMAIN,
       client_id: AUTH0_CLIENTID,
     });
     setAuth0Client?.(_auth0Client);
-    initAuth(_auth0Client);
-  };
+    const query = window.location.search;
+    if (query.includes('code=') && query.includes('state=')) {
+      await _auth0Client.handleRedirectCallback();
+      authChanged.update((n) => n + 1);
+      history.replace(window.location.hash?.substr(1) || '/');
+    } else if (window.location.search === '?logout') {
+      history.replace(window.location.hash?.substr(1) || '/');
+    }
+  }
+
+  const script = document.createElement('script');
+  script.onload = initAuth;
   script.async = true;
   script.src = `https://cdn.auth0.com/js/auth0-spa-js/1.13/auth0-spa-js.${
     IS_PRODUCTION ? 'production' : 'development'
   }.js`;
   document.head.appendChild(script);
 }
-
-async function initAuth(client) {
-  const $auth0Client = client || get(auth0Client);
-  if (!$auth0Client) {
-    throw new Error('Auth0 client not initialized');
-  }
-  const query = window.location.search;
-  if (query.includes('code=') && query.includes('state=')) {
-    await $auth0Client.handleRedirectCallback();
-    authChanged.update((n) => n + 1);
-    history.replace(window.location.hash?.substr(1) || '/');
-  } else if (window.location.search === '?logout') {
-    history.replace(window.location.hash?.substr(1) || '/');
-  }
-}
-
-const authChanged = writable(0);
 
 export const isAuthenticated = derived(
   [auth0Client, authChanged],
@@ -80,7 +74,7 @@ export const user = derived(
   },
 );
 
-export const token = derived(
+export const authToken = derived(
   [auth0Client, isAuthenticated],
   ([$auth0Client, $isAuthenticated], set) => {
     if ($auth0Client && $isAuthenticated) {
@@ -102,12 +96,18 @@ function makeRedirectUri(extraQuery) {
   return `${origin}${extraQuery ? `?${extraQuery}` : ''}#${pathname}${search}`;
 }
 
-export async function login() {
+export async function login(popup = false) {
   const $auth0Client = get(auth0Client);
   if (!$auth0Client) return;
-  return $auth0Client.loginWithRedirect({
+  const res = await $auth0Client[
+    popup ? 'loginWithPopup' : 'loginWithRedirect'
+  ]({
     redirect_uri: makeRedirectUri(),
   });
+  if (popup) {
+    authChanged.update((n) => n + 1);
+  }
+  return res;
 }
 
 export function logout() {

@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 
+// Inspired by https://github.com/zyxd/svelte-store-router
 function makeHistory() {
   function toString() {
     const query = Object.entries(this.query || {})
