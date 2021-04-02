@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { authToken } from './stores/auth';
+import { authInitialized } from './stores/auth';
 
 /* gloabl: BACKEND_ENDPOINT */
 
@@ -9,15 +9,21 @@ export async function fetchApi(url, options) {
       mode: 'cors',
       cache: 'no-cache',
       headers: {
-        accept: 'application/json',
+        Accept: 'application/json',
         ...(options?.headers || {}),
       },
     },
     options,
   );
-  const token = get(authToken);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (!options?.noAuth) {
+    const authClient = await authInitialized;
+    const token = await authClient.getTokenSilently().catch(() => null);
+    if (options?.noAuth === false && !token) {
+      throw new Error('Not authenticated');
+    }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   if (options?.body && typeof options.body !== 'string') {
     config.body = JSON.stringify(options.body);

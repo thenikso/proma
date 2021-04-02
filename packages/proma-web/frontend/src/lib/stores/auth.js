@@ -3,6 +3,13 @@ import { history } from './history';
 
 /* global: AUTH0_DOMAIN, AUTH0_CLIENTID, createAuth0Client */
 
+let resolveAuth0Client;
+let rejectAuth0Client;
+export const authInitialized = new Promise((resolve, reject) => {
+  resolveAuth0Client = resolve;
+  rejectAuth0Client = reject;
+});
+
 let _auth0Client;
 let setAuth0Client;
 export const auth0Client = readable(null, (set) => {
@@ -19,8 +26,9 @@ if (AUTH0_DOMAIN && AUTH0_CLIENTID) {
     _auth0Client = await createAuth0Client({
       domain: AUTH0_DOMAIN,
       client_id: AUTH0_CLIENTID,
-      audience: typeof AUTH0_AUDIENCE === 'undefined' ? null : AUTH0_AUDIENCE,
+      audience: AUTH0_AUDIENCE,
     });
+    resolveAuth0Client(_auth0Client);
     setAuth0Client?.(_auth0Client);
     const query = window.location.search;
     if (query.includes('code=') && query.includes('state=')) {
