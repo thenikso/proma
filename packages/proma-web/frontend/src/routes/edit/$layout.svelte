@@ -1,16 +1,9 @@
-<script>
-  import { Route } from 'svelte-router-spa';
-
-  export let currentRoute;
-  const params = {};
-</script>
-
 <main>
   <nav>
     <img src="/images/logo.webp" alt="Proma" style="width: 60px" />
   </nav>
   <section class="content">
-    <Route {currentRoute} {params} />
+    <slot />
   </section>
 </main>
 

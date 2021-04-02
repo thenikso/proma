@@ -25,14 +25,12 @@
 </script>
 
 <script>
-  import { keyMods } from '$lib/stores/keyMods';
+  import { page, keyMods } from '$lib/stores';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
   import PromaRunView from '$lib/PromaRunView.svelte';
 
-  export let currentRoute;
-
-  $: hostId = currentRoute?.namedParams?.hostId;
-  $: projectSlug = currentRoute?.namedParams?.projectSlug;
+  $: hostId = $page.params.hostId;
+  $: projectSlug = $page.params.projectSlug;
 
   let projectPromise;
   let project;
@@ -49,8 +47,7 @@
       .then((res) => res.json())
       .then((res) => {
         project = res;
-        selectedFilePath =
-          currentRoute?.queryPrams?.file ?? Object.keys(project?.files)[0];
+        selectedFilePath = $page.query.file ?? Object.keys(project?.files)[0];
         return res;
       });
   }

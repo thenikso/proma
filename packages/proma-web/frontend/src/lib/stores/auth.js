@@ -1,4 +1,5 @@
 import { writable, readable, derived, get } from 'svelte/store';
+import { history } from './history';
 
 /* global: AUTH0_DOMAIN, AUTH0_CLIENTID, createAuth0Client */
 
@@ -35,10 +36,11 @@ async function initAuth(client) {
   }
   const query = window.location.search;
   if (query.includes('code=') && query.includes('state=')) {
-    debugger;
     await $auth0Client.handleRedirectCallback();
     authChanged.update((n) => n + 1);
-    window.history.replaceState({}, document.title, '/');
+    history.replace(window.location.hash?.substr(1) || '/');
+  } else if (window.location.search === '?logout') {
+    history.replace(window.location.hash?.substr(1) || '/');
   }
 }
 
@@ -95,11 +97,16 @@ export const token = derived(
   },
 );
 
+function makeRedirectUri(extraQuery) {
+  const { origin, pathname, search } = window.location;
+  return `${origin}${extraQuery ? `?${extraQuery}` : ''}#${pathname}${search}`;
+}
+
 export async function login() {
   const $auth0Client = get(auth0Client);
   if (!$auth0Client) return;
   return $auth0Client.loginWithRedirect({
-    redirect_uri: window.location.origin,
+    redirect_uri: makeRedirectUri(),
   });
 }
 
@@ -107,6 +114,6 @@ export function logout() {
   const $auth0Client = get(auth0Client);
   if (!$auth0Client) return;
   $auth0Client.logout({
-    returnTo: window.location.origin,
+    returnTo: makeRedirectUri('logout'),
   });
 }

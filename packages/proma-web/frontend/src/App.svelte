@@ -1,22 +1,22 @@
 <script>
   import { initShortcuts } from '$lib/shortcuts';
   import { login, logout, isAuthenticated } from '$lib/stores/auth.js';
-  import { Router } from 'svelte-router-spa';
+  import Router from '$lib/Router.svelte';
 
   import Dashboard from './routes/Dashboard.svelte';
-  import ProjectLayout from './routes/edit/_layout.svelte';
+  import ProjectLayout from './routes/edit/$layout.svelte';
   import ProjectIndex from './routes/edit/index.svelte';
-  import NotFound from './routes/_error.svelte';
+  import NotFound from './routes/$error.svelte';
 
   const routes = [
-    { name: '/', component: Dashboard },
+    { path: '/', component: Dashboard },
     {
-      name: 'edit/:hostId/:projectSlug',
+      path: 'edit/:hostId/:projectSlug',
       layout: ProjectLayout,
       component: ProjectIndex,
     },
     {
-      name: '404',
+      path: '*',
       component: NotFound,
     },
   ];
