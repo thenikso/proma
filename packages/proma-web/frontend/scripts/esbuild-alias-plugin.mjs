@@ -1,4 +1,5 @@
 import { resolve } from 'path';
+import { existsSync } from 'fs';
 
 export default function envPlugin(aliases) {
   return {
@@ -15,7 +16,11 @@ export default function envPlugin(aliases) {
             path = resolve(process.cwd(), path);
           }
           if (!/\.[a-z]+$/i.test(path)) {
-            path += '.js';
+            if (existsSync(path + '.js')) {
+              path += '.js';
+            } else if (existsSync(path + '/index.js')) {
+              path += '/index.js';
+            }
           }
           return {
             path,
@@ -24,4 +29,4 @@ export default function envPlugin(aliases) {
       }
     },
   };
-};
+}
