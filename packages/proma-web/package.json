@@ -31,8 +31,7 @@
     "serverless-finch": "2.6.0",
     "serverless-offline": "6.9.0",
     "serverless-s3-local": "0.6.7",
-    "svelte": "3.35.0",
-    "svelte-router-spa": "6.0.1"
+    "svelte": "3.35.0"
   },
   "dependencies": {
     "esbuild": "0.11.0",
