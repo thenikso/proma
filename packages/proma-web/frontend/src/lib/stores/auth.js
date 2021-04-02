@@ -19,6 +19,7 @@ if (AUTH0_DOMAIN && AUTH0_CLIENTID) {
     _auth0Client = await createAuth0Client({
       domain: AUTH0_DOMAIN,
       client_id: AUTH0_CLIENTID,
+      audience: typeof AUTH0_AUDIENCE === 'undefined' ? null : AUTH0_AUDIENCE,
     });
     setAuth0Client?.(_auth0Client);
     const query = window.location.search;

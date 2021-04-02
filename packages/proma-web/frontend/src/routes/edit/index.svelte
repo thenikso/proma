@@ -1,5 +1,6 @@
 <script context="module">
   import { action } from '@proma/svelte-components';
+  import { fetchApi } from '$lib/api';
 
   // TODO this should probably be in a store
 
@@ -10,16 +11,13 @@
     if (!getCurrentProjectToSave) return;
     const projectToSave = getCurrentProjectToSave();
     if (!projectToSave) return;
-    savingPromise = await fetch(
-      `${BACKEND_ENDPOINT}/project/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
+    savingPromise = await fetchApi(
+      `/project/${projectToSave.ownerHostId}/${projectToSave.projectSlug}`,
       {
         method: 'post',
-        headers: {
-          accept: 'application/json',
-        },
-        body: JSON.stringify(projectToSave),
+        body: projectToSave,
       },
-    ).then((res) => res.json());
+    );
     return savingPromise;
   });
 </script>
@@ -41,15 +39,13 @@
   function loadProject(hostId, projectSlug) {
     project = null;
     selectedFilePath = '';
-    projectPromise = fetch(
-      `${BACKEND_ENDPOINT}/project/${hostId}/${projectSlug}`,
-    )
-      .then((res) => res.json())
-      .then((res) => {
+    projectPromise = fetchApi(`/project/${hostId}/${projectSlug}`).then(
+      (res) => {
         project = res;
         selectedFilePath = $page.query.file ?? Object.keys(project?.files)[0];
         return res;
-      });
+      },
+    );
   }
 
   $: selectedFileName = ((selectedFilePath || '').match(

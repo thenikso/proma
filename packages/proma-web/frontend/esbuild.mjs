@@ -22,6 +22,7 @@ function build() {
       }'`,
       AUTH0_DOMAIN: '"thenikso.eu.auth0.com"',
       AUTH0_CLIENTID: '"I0Vdf3zf7yoUnuvqKxYydiihHstUPd2G"',
+      AUTH0_AUDIENCE: `"${process.env.SERVICE || 'dev-proma-web'}"`,
     },
     plugins: [
       aliasPlugin({

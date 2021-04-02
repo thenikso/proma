@@ -14,6 +14,7 @@ provider:
   apiGateway:
     shouldStartNameWithService: true
   environment:
+    SERVICE: ${self:provider.stage}-${self:service}
     S3_PROJECT_DATA_BUCKET: ${self:provider.stage}-proma-projects-data
     DYNAMODB_HOSTS_TABLE: ${self:provider.stage}-hosts
     DYNAMODB_PROJECTS_TABLE: ${self:provider.stage}-projects
