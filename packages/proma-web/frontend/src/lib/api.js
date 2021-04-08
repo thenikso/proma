@@ -33,5 +33,8 @@ export async function fetchApi(url, options) {
   }
   const response = await fetch(url, config);
   const res = await response.json();
+  if (!response.ok) {
+    throw new Error(res.error);
+  }
   return res;
 }

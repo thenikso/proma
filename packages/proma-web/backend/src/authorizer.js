@@ -20,7 +20,7 @@ export const handler = async (event) => {
   const token = event.authorizationToken.substr('Bearer '.length);
   const decodedJwt = jwt.decode(token, { complete: true });
   if (!decodedJwt) {
-    throw new Error('Missing authorization token');
+    throw new Error('Invalid authorization token');
   }
 
   const key = await client.getSigningKey(decodedJwt.header.kid);
@@ -36,11 +36,11 @@ export const handler = async (event) => {
     return denyAllPolicy();
   }
 
-  // TODO decide how to handle permissions
-  console.log(decodedJwt);
-  console.log(stage, httpMethod, route);
-
-  return allowPolicy(event.methodArn, token);
+  return allowPolicy(
+    event.methodArn,
+    decodedJwt.payload.sub,
+    decodedJwt.payload.permissions,
+  );
 };
 
 function getJwtClaims(token, key) {

@@ -56,7 +56,7 @@ functions:
           method: post
           path: /project/{hostId}/{projectSlug}
           cors: true
-          # authorizer: ${self:custom.authorizer}
+          authorizer: ${self:custom.authorizer}
           request:
             parameters:
               paths:

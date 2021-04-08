@@ -7,6 +7,8 @@ export const get = async (event) => {
     projectSlug = 'default';
   }
 
+  console.log(event.requestContext.authorizer);
+
   // TODO check that user has read access to host/project
 
   // Read project info from databast
