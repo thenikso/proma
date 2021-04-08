@@ -23,6 +23,8 @@
     "aws-sdk": "2.863.0",
     "esbuild-svelte": "0.4.3",
     "fuse.js": "6.4.6",
+    "jsonwebtoken": "8.5.1",
+    "jwks-rsa": "2.0.2",
     "serve": "11.3.2",
     "serverless": "2.29.0",
     "serverless-build-client": "2.5.0",
