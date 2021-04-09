@@ -18,3 +18,7 @@ aws --endpoint http://localhost:4569 --profile s3local s3 cp <local_file> s3://<
 ```
 aws --endpoint http://localhost:4569 --profile s3local s3 cp seeds/greet.json s3://dev-proma-projects-data/nikso/default/greet.json
 ```
+or
+```
+aws --endpoint http://localhost:4569 --profile s3local s3 cp --recursive seeds/s3rver s3://dev-proma-projects
+```

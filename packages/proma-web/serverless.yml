@@ -16,7 +16,7 @@ provider:
   environment:
     AUTH0_DOMAIN: 'thenikso.eu.auth0.com'
     SERVICE: ${self:provider.stage}-${self:service}
-    S3_PROJECT_DATA_BUCKET: ${self:provider.stage}-proma-projects-data
+    S3_PROJECT_DATA_BUCKET: ${self:provider.stage}-proma-projects
     DYNAMODB_HOSTS_TABLE: ${self:provider.stage}-hosts
     DYNAMODB_PROJECTS_TABLE: ${self:provider.stage}-projects
   iam:
@@ -36,24 +36,11 @@ provider:
 functions:
   auth:
     handler: backend/src/authorizer.handler
-  getProject:
-    handler: backend/src/project.get
+  project:
+    handler: backend/src/project.handler
     events:
       - http:
-          method: get
-          path: /project/{hostId}/{projectSlug}
-          cors: true
-          authorizer: ${self:custom.authorizer}
-          request:
-            parameters:
-              paths:
-                hostId: true
-                projectSlug: true
-  postProject:
-    handler: backend/src/project.post
-    events:
-      - http:
-          method: post
+          method: any
           path: /project/{hostId}/{projectSlug}
           cors: true
           authorizer: ${self:custom.authorizer}
