@@ -1,12 +1,17 @@
 <script>
+  import jszip from 'jszip';
+  import { saveAs } from 'file-saver';
   import FileTree from '$lib/components/FileTree.svelte';
 
-  const files = [
-    'www/intex.html',
-    'readme.md',
-    'endpoints/greet.proma',
-    'www/imgs/image.png',
-  ];
+  const files = {
+    'readme.md': 'Hello world!',
+  };
+
+  //
+  // File explorer
+  //
+
+  $: fileNames = Object.keys(files);
 
   let selectedFile;
   let expandedFolders = [];
@@ -25,6 +30,32 @@
       }
     }
   }
+
+  //
+  // Download project
+  //
+
+  let currentDownload;
+
+  function download(files) {
+    // TODO loading
+    const zip = new jszip();
+    // TODO use folder for all with project name
+    for (const [fileName, fileContent] of Object.entries(files)) {
+      zip.file(fileName, fileContent);
+    }
+    return zip.generateAsync({ type: 'blob' }).then((blob) => {
+      // TODO use project name
+      return saveAs(blob, 'project.zip');
+    });
+  }
+
+  function handleDownloadClick() {
+    if (currentDownload) return;
+    currentDownload = download(files).then(() => {
+      currentDownload = null;
+    });
+  }
 </script>
 
 <main>
@@ -35,14 +66,21 @@
     </div>
     <div class="FileExplorer">
       <FileTree
-        {files}
+        files={fileNames}
         expand={expandedFolders}
         select={selectedFile}
         on:click={handleFileClick}
       />
     </div>
     <div class="ProjectTools">
-      <button type="button" class="button">Download</button>
+      <button
+        type="button"
+        class="button"
+        on:click={handleDownloadClick}
+        disabled={!!currentDownload}
+      >
+        Download
+      </button>
       <button type="button" class="button primary">Take survey</button>
     </div>
   </div>

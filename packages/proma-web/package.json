@@ -22,8 +22,10 @@
     "@proma/svelte-components": "^0.1.0",
     "aws-sdk": "2.863.0",
     "esbuild-svelte": "0.4.3",
+    "file-saver": "2.0.5",
     "fuse.js": "6.4.6",
     "jsonwebtoken": "8.5.1",
+    "jszip": "3.6.0",
     "jwks-rsa": "2.0.2",
     "lz-string": "1.4.4",
     "serve": "11.3.2",
@@ -34,6 +36,7 @@
     "serverless-finch": "2.6.0",
     "serverless-offline": "6.9.0",
     "serverless-s3-local": "0.6.7",
+    "stream-browserify": "3.0.0",
     "svelte": "3.35.0"
   },
   "dependencies": {

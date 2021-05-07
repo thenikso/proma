@@ -90,9 +90,14 @@ body {
 }
 
 .button.primary {
-  background: #A04BF6;
+  background: #a04bf6;
 }
 
 .button.primary:hover {
   background: #9940f3;
+}
+
+.button[disabled] {
+  opacity: 0.5;
+  cursor: wait;
 }

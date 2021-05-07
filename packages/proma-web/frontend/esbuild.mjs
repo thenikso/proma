@@ -5,6 +5,7 @@ import aliasPlugin from './scripts/esbuild-alias-plugin.mjs';
 import childProcess from 'child_process';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const NODE_MODULES = path.resolve(__dirname, '../../../node_modules');
 
 const PROD = process.env.NODE_ENV === 'production';
 const WATCH = process.argv.includes('-w') || process.argv.includes('--watch');
@@ -35,6 +36,7 @@ function build() {
           __dirname,
           '../../proma-svelte-components/src/index.js',
         ),
+        stream: path.resolve(NODE_MODULES, 'stream-browserify/index.js'),
       }),
       sveltePlugin(),
     ],

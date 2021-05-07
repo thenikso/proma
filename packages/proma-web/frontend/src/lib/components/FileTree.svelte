@@ -189,7 +189,7 @@
   }
 
   .item-name.selected {
-    background: #e7e7e7;
+    background: #ecdff8;
   }
 
   .item-name:hover {
