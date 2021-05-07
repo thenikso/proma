@@ -1,5 +1,3 @@
-// TODO onMount add document watchers, remove on destroy if no one else has makeShortcutDispatcher
-
 import { setContext, getContext, onMount } from 'svelte';
 import { readable, derived } from 'svelte/store';
 
@@ -114,7 +112,7 @@ function dispatchShortcuts(
   // Prepare event path (for firefox)
   if (!event.path) {
     event.path = [];
-    let t = e.target;
+    let t = event.target;
     while (t) {
       event.path.unshift(t);
       t = t.parentElement;
