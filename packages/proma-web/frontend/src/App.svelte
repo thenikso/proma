@@ -3,13 +3,15 @@
   import { login, logout, user } from '$lib/stores';
   import Router from '$lib/Router.svelte';
 
-  import Dashboard from './routes/Dashboard.svelte';
+  import Index from './routes/index.svelte';
+  import Playground from './routes/Playground.svelte';
   import ProjectLayout from './routes/edit/$layout.svelte';
   import ProjectIndex from './routes/edit/index.svelte';
   import NotFound from './routes/$error.svelte';
 
   const routes = [
-    { path: '/', component: Dashboard },
+    { path: '/', component: Index },
+    { path: '/playground', component: Playground },
     {
       path: 'edit/:hostId/:projectSlug',
       layout: ProjectLayout,
