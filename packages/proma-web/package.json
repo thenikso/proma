@@ -25,6 +25,7 @@
     "fuse.js": "6.4.6",
     "jsonwebtoken": "8.5.1",
     "jwks-rsa": "2.0.2",
+    "lz-string": "1.4.4",
     "serve": "11.3.2",
     "serverless": "2.29.0",
     "serverless-build-client": "2.5.0",
