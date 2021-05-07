@@ -42,7 +42,8 @@
       />
     </div>
     <div class="ProjectTools">
-      tools
+      <button type="button" class="button">Download</button>
+      <button type="button" class="button primary">Take survey</button>
     </div>
   </div>
   <div class="Logo">
@@ -120,6 +121,9 @@
 
   .ProjectTools {
     width: 100%;
-    padding: 8px;
+    padding: 8px 8px 0 8px;
+
+    display: flex;
+    flex-direction: column;
   }
 </style>
