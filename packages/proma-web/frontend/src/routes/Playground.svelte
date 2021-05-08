@@ -1,11 +1,21 @@
 <script>
   import jszip from 'jszip';
   import { saveAs } from 'file-saver';
+  import { page } from '$lib/stores/routing';
   import FileTree from '$lib/components/FileTree.svelte';
+  import PromaFileEditor from '$lib/PromaFileEditor.svelte';
+  import makeProject from '$lib/playground-projects/base';
 
-  const files = {
-    'readme.md': 'Hello world!',
-  };
+  const files = makeProject();
+
+  //
+  // File Selection
+  //
+
+  let selectedFilePath = $page.query.file;
+
+  $: selectedFileExt = ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
+  $: selectedFileContent = selectedFilePath && files[selectedFilePath];
 
   //
   // File explorer
@@ -13,13 +23,12 @@
 
   $: fileNames = Object.keys(files);
 
-  let selectedFile;
-  let expandedFolders = [];
+  let expandedFolders = [$page.query.file];
 
   function handleFileClick(e) {
     const { file, folder } = e.detail;
     if (file) {
-      selectedFile = file;
+      selectedFilePath = file;
     } else {
       if (expandedFolders.some((s) => s.startsWith(folder))) {
         expandedFolders = expandedFolders.filter(
@@ -38,7 +47,6 @@
   let currentDownload;
 
   function download(files) {
-    // TODO loading
     const zip = new jszip();
     // TODO use folder for all with project name
     for (const [fileName, fileContent] of Object.entries(files)) {
@@ -59,7 +67,7 @@
 </script>
 
 <main>
-  <div class="sidebar">
+  <div class="Sidebar">
     <div class="PreviewTitle">
       <div class="spacer" />
       <h1>Proma <span class="sub">Preview</span></h1>
@@ -68,7 +76,7 @@
       <FileTree
         files={fileNames}
         expand={expandedFolders}
-        select={selectedFile}
+        select={selectedFilePath}
         on:click={handleFileClick}
       />
     </div>
@@ -83,6 +91,13 @@
       </button>
       <button type="button" class="button primary">Take survey</button>
     </div>
+  </div>
+  <div class="Editor">
+    {#if selectedFileExt === 'proma'}
+      <PromaFileEditor source={selectedFileContent} />
+    {:else}
+      <div>Unsupported file type "{selectedFileExt}"</div>
+    {/if}
   </div>
   <div class="Logo">
     <img src="/images/logo.webp" alt="Proma" style="height: 100%" />
@@ -110,7 +125,7 @@
     height: 60px;
   }
 
-  .sidebar {
+  .Sidebar {
     flex: 0 0 256px;
 
     width: 256px;
@@ -121,6 +136,10 @@
     background-color: var(--proma-panel--background-color, #fbfdfe);
     box-shadow: 1px 0 3px var(--proma-panel--shadow-color, #eaedf0);
     z-index: 1;
+  }
+
+  .Editor {
+    flex-grow: 1;
   }
 
   .PreviewTitle {

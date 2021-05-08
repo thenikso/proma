@@ -31,8 +31,6 @@
 
   window.login = login;
   window.logout = logout;
-
-  $: console.log('authenticated', $user);
 </script>
 
 <svelte:body on:mousewheel|nonpassive={handleMousewheel} />
