@@ -2,6 +2,9 @@ import { INPUT, OUTPUT } from './ports.mjs';
 import { edit } from './edit.mjs';
 
 export function fromJSON(chip, data, withErrors) {
+  if (typeof data === 'string') {
+    data = JSON.parse(data);
+  }
   const ChipClass = deserializeChip(chip, data, withErrors);
   ChipClass.metadata = data.metadata;
   return ChipClass;

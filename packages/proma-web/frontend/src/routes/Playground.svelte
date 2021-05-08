@@ -1,4 +1,5 @@
 <script>
+  import * as proma from '@proma/core';
   import jszip from 'jszip';
   import { saveAs } from 'file-saver';
   import { page } from '$lib/stores/routing';
@@ -14,8 +15,12 @@
 
   let selectedFilePath = $page.query.file;
 
-  $: selectedFileExt = ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
+  $: selectedFileExt = getFileExt(selectedFilePath);
   $: selectedFileContent = selectedFilePath && files[selectedFilePath];
+
+  function getFileExt(fileName = '') {
+    return (fileName.match(/\.(.+)$/) || [])[1];
+  }
 
   //
   // File explorer
@@ -49,9 +54,44 @@
   function download(files) {
     const zip = new jszip();
     // TODO use folder for all with project name
+    const dependencies = new Set();
     for (const [fileName, fileContent] of Object.entries(files)) {
+      const ext = getFileExt(fileName);
       zip.file(fileName, fileContent);
+      if (ext === 'proma') {
+        const chip = proma.fromJSON(proma.chip, fileContent);
+        const classSource = chip.compile();
+        let source = '';
+        for (const [impVar, impName] of Object.entries(chip.imports)) {
+          source += `const ${impVar} = require('${impName}');\n`;
+          dependencies.add(impName);
+        }
+        source += `module.exports = ${classSource}`;
+        zip.file(
+          fileName.substr(0, fileName.length - ext.length) + 'js',
+          source,
+        );
+      }
     }
+
+    const pkg = {
+      name: 'proma-project',
+      version: '1.0.0',
+      description: 'Proma preview project',
+      main: 'index.js',
+      scripts: {
+        start: 'node index.js',
+      },
+      license: 'MIT',
+      dependencies: {
+        express: '4.17.1',
+      },
+    };
+    for (const dep of dependencies) {
+      pkg.dependencies[dep] = '*';
+    }
+    zip.file('package.json', JSON.stringify(pkg, null, 2));
+
     return zip.generateAsync({ type: 'blob' }).then((blob) => {
       // TODO use project name
       return saveAs(blob, 'project.zip');
@@ -142,6 +182,8 @@
     flex-grow: 1;
   }
 
+  /* Sidebar contents */
+
   .PreviewTitle {
     display: flex;
     align-items: center;
@@ -168,6 +210,7 @@
 
   .FileExplorer {
     flex-grow: 1;
+    overflow: hidden;
 
     box-sizing: border-box;
     width: calc(100% - 16px);
