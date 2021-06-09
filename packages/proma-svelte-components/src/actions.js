@@ -17,3 +17,11 @@ export function action(actionId) {
 action.provide = function provideAction(actionId, handler) {
   actions.set(actionId, handler);
 };
+
+action.all = function allActions(...actions) {
+  return (...args) => {
+    for (const a of actions) {
+      a(...args);
+    }
+  };
+};

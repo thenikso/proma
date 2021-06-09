@@ -3,11 +3,11 @@ export default () => ({
   "URI": "Main",
   "in": [
     { "name": "exec", "kind": "flow" },
-    { "name": "query", "kind": "data", "canonical": true }
+    { "name": "request", "kind": "data", "canonical": true }
   ],
   "out": [
     { "name": "then", "kind": "flow" },
-    { "name": "result", "kind": "data", "computeOn": ["then"] }
+    { "name": "body", "kind": "data", "computeOn": ["then"] }
   ],
   "chips": [
     { "id": "OnCreate_1", "chipURI": "OnCreate:event" },
@@ -52,8 +52,8 @@ export default () => ({
   "connections": [
     { "source": "lib_debug_Log_1.in.exec", "sink": "OnCreate_1.out.then" },
     { "source": "in.exec", "sink": "lib_flowControl_Sequence_1.in.exec" },
-    { "source": "lib_string_Append_1.out.value", "sink": "out.result" },
-    { "source": "in.query", "sink": "lib_GetPropertyAtPath_1.in.target" },
+    { "source": "lib_string_Append_1.out.value", "sink": "out.body" },
+    { "source": "in.request", "sink": "lib_GetPropertyAtPath_1.in.target" },
     {
       "source": "lib_GetPropertyAtPath_1.out.value",
       "sink": "lib_string_Append_1.in.B"
@@ -73,7 +73,7 @@ export default () => ({
       "source": "lib_debug_Log_2.in.exec",
       "sink": "lib_flowControl_Sequence_1.out.then1"
     },
-    { "source": "in.query", "sink": "lib_GetProperty_1.in.target" }
+    { "source": "in.request", "sink": "lib_GetProperty_1.in.target" }
   ],
   "metadata": {
     "$": { "panX": -228, "panY": -203, "zoom": 1, "selected": [] },
@@ -117,10 +117,10 @@ for (let i = 0, l = endpoints.length; i < l; i++) {
   const endpointInstance = new endpointClass();
   app.get('/' + endpointName, (req, res) => {
     endpointInstance.out.then(() => {
-      const body = endpointInstance.out.result();
+      const body = endpointInstance.out.body();
       res.send(body);
     });
-    endpointInstance.in.query = req;
+    endpointInstance.in.request = req;
     endpointInstance.in.exec();
   });
 }

@@ -1,3 +1,14 @@
+<script context="module">
+  import { action } from '@proma/svelte-components';
+
+  let saveCurrentPlayground;
+
+  action.provide('Playground.save', () => {
+    if (!saveCurrentPlayground) return;
+    saveCurrentPlayground();
+  });
+</script>
+
 <script>
   import * as proma from '@proma/core';
   import jszip from 'jszip';
@@ -7,6 +18,7 @@
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
   import makeProject from '$lib/playground-projects/base';
 
+  // TODO load from localStorage
   const files = makeProject();
 
   //
@@ -23,6 +35,19 @@
   }
 
   //
+  // File saving
+  //
+
+  let selectedEditor;
+
+  saveCurrentPlayground = function savePlayground() {
+    if (selectedEditor) {
+      files[selectedFilePath] = selectedEditor.getEditedSource();
+    }
+    console.log(' TODO save to localStorage', files);
+  };
+
+  //
   // File explorer
   //
 
@@ -31,6 +56,8 @@
   let expandedFolders = [$page.query.file];
 
   function handleFileClick(e) {
+    action('Playground.save')();
+
     const { file, folder } = e.detail;
     if (file) {
       selectedFilePath = file;
@@ -52,6 +79,8 @@
   let currentDownload;
 
   function download(files) {
+    action('Playground.save')();
+
     const zip = new jszip();
     // TODO use folder for all with project name
     const dependencies = new Set();
@@ -134,7 +163,10 @@
   </div>
   <div class="Editor">
     {#if selectedFileExt === 'proma'}
-      <PromaFileEditor source={selectedFileContent} />
+      <PromaFileEditor
+        bind:this={selectedEditor}
+        source={selectedFileContent}
+      />
     {:else}
       <div>Unsupported file type "{selectedFileExt}"</div>
     {/if}

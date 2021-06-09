@@ -33,18 +33,23 @@
   // Data
   //
 
-  let expectedSource;
-  if (expectedSource !== source) {
-    expectedSource = source;
+  $: sourceJson = source && JSON.parse(source);
+
+  let sourceChip;
+  let chipEditor;
+
+  $: if (!chipEditor || !eq(chipEditor.Chip.toJSON(), sourceJson)) {
+    updateChipEditor();
   }
 
-  $: sourceJson = expectedSource && JSON.parse(expectedSource);
-  $: sourceChip =
-    sourceJson &&
-    proma.fromJSON(proma.chip, sourceJson, (errors) => {
-      console.error(errors);
-    });
-  $: chipEditor = sourceChip && proma.edit(sourceChip);
+  function updateChipEditor() {
+    sourceChip =
+      sourceJson &&
+      proma.fromJSON(proma.chip, sourceJson, (errors) => {
+        console.error(errors);
+      });
+    chipEditor = sourceChip && proma.edit(sourceChip);
+  }
 
   export function getEditedSource() {
     return JSON.stringify(chipEditor.Chip.toJSON());
