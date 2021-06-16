@@ -94,7 +94,10 @@
         // TODO should use some kind of chip.target or similar
         const isWeb = fileName.startsWith('www/');
         if (isWeb) {
-          // TODO imports
+          for (const [impVar, impName] of Object.entries(chip.imports)) {
+            source += `import ${impVar} from 'https://esm.sh/${impName}';\n`;
+            dependencies.add(impName);
+          }
           source += `export default ${classSource}`;
         } else {
           for (const [impVar, impName] of Object.entries(chip.imports)) {
