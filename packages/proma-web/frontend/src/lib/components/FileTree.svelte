@@ -36,10 +36,10 @@
     } else {
       const folder = acc[acc.length - 1];
       if (!folder || folder.folder !== firstPath) {
-        const expandFolder = expand
-          .filter((s) => s.startsWith(firstPath + '/'))
+        const expandFolder = (expand || [])
+          .filter((s) => s && s.startsWith(firstPath + '/'))
           .map((s) => s.substr(firstPath.length + 1));
-        if (expand.some((s) => s.startsWith(firstPath))) {
+        if (expand.some((s) => s && s.startsWith(firstPath))) {
           expandFolder.unshift('.');
         }
         acc.push({

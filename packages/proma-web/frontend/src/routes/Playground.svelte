@@ -27,8 +27,8 @@
 
   let selectedFilePath = $page.query.file;
 
-  $: selectedFileExt = getFileExt(selectedFilePath);
   $: selectedFileContent = selectedFilePath && files[selectedFilePath];
+  $: selectedFileExt = selectedFileContent && getFileExt(selectedFilePath);
 
   function getFileExt(fileName = '') {
     return (fileName.match(/\.(.+)$/) || [])[1];
@@ -85,17 +85,24 @@
     // TODO use folder for all with project name
     const dependencies = new Set();
     for (const [fileName, fileContent] of Object.entries(files)) {
-      const ext = getFileExt(fileName);
       zip.file(fileName, fileContent);
+      const ext = getFileExt(fileName);
       if (ext === 'proma') {
         const chip = proma.fromJSON(proma.chip, fileContent);
         const classSource = chip.compile();
         let source = '';
-        for (const [impVar, impName] of Object.entries(chip.imports)) {
-          source += `const ${impVar} = require('${impName}');\n`;
-          dependencies.add(impName);
+        // TODO should use some kind of chip.target or similar
+        const isWeb = fileName.startsWith('www/');
+        if (isWeb) {
+          // TODO imports
+          source += `export default ${classSource}`;
+        } else {
+          for (const [impVar, impName] of Object.entries(chip.imports)) {
+            source += `const ${impVar} = require('${impName}');\n`;
+            dependencies.add(impName);
+          }
+          source += `module.exports = ${classSource}`;
         }
-        source += `module.exports = ${classSource}`;
         zip.file(
           fileName.substr(0, fileName.length - ext.length) + 'js',
           source,

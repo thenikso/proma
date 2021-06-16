@@ -1,6 +1,7 @@
 export default () => ({
   'endpoints/greet.proma': `{
-  "URI": "Main",
+  "URI": "backend/Greet",
+  "target": "node",
   "in": [
     { "name": "exec", "kind": "flow" },
     { "name": "request", "kind": "data", "canonical": true }
@@ -96,6 +97,69 @@ export default () => ({
     }
   }
 }
+`,
+  'www/index.html': `<html lang="en">
+<head>
+  <title>Proma Program</title>
+</head>
+<body>
+  <div id="app">
+    <input type="text" id="name" />
+    <button type="button" id="button">Greet</button>
+    <h2 id="greet">Hello!</h2>
+  </div>
+  <script type="module">
+    import App from '/app.js';
+    new App(window, document.getElementById('app'));
+  </script>
+</body>
+</html>`,
+  'www/app.proma': `{
+    "URI": "frontend/App",
+    "target": "web",
+    "in": [
+      { "name": "window", "kind": "data", "canonical": true },
+      { "name": "target", "kind": "data", "canonical": true }
+    ],
+    "chips": [
+      {
+        "id": "lib_html_QuerySelector_1",
+        "chipURI": "lib/html/QuerySelector",
+        "args": [null, "button"]
+      },
+      {
+        "id": "lib_html_BindEvent_1",
+        "chipURI": "lib/html/BindEvent",
+        "args": [null, "click"]
+      },
+      { "id": "CustomEvent_1", "chipURI": "CustomEvent:event(event:Event)" },
+      { "id": "OnCreate_3", "chipURI": "OnCreate:event" },
+      { "id": "lib_debug_Log_5", "chipURI": "lib/debug/Log", "args": ["clicked"] }
+    ],
+    "connections": [
+      { "source": "in.target", "sink": "lib_html_QuerySelector_1.in.target" },
+      {
+        "source": "lib_html_QuerySelector_1.out.element",
+        "sink": "lib_html_BindEvent_1.in.target"
+      },
+      {
+        "source": "CustomEvent_1.out.handle",
+        "sink": "lib_html_BindEvent_1.in.event"
+      },
+      { "source": "lib_html_BindEvent_1.in.bind", "sink": "OnCreate_3.out.then" },
+      { "source": "lib_debug_Log_5.in.exec", "sink": "CustomEvent_1.out.then" }
+    ],
+    "metadata": {
+      "$": { "panX": -154, "panY": -273, "zoom": 1, "selected": [] },
+      "$in": { "x": -755, "y": 5 },
+      "$out": { "x": -400, "y": 0 },
+      "lib_html_QuerySelector_1": { "x": -495, "y": 105 },
+      "lib_html_BindEvent_1": { "x": -33.5, "y": 55 },
+      "CustomEvent_1": { "x": -265, "y": 355 },
+      "OnCreate_3": { "x": -260.5, "y": -87 },
+      "lib_debug_Log_5": { "x": 16.5, "y": 416 }
+    }
+  }
 `,
   'index.js': `const fs = require('fs');
 const express = require('express');
