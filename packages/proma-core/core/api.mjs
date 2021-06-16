@@ -228,6 +228,11 @@ const ExternalGetInt = plainChip('ExternalGet', () => {
 });
 
 export function externalGet(externalReferenceObj) {
+  if (typeof externalReferenceObj === 'string') {
+    externalReferenceObj = {
+      [externalReferenceObj]: undefined,
+    };
+  }
   return class ExternalGet extends ExternalGetInt {
     constructor() {
       super(externalRef(externalReferenceObj));

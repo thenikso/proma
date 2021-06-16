@@ -3,9 +3,13 @@ import { Chip, isChipClass } from './chip.mjs';
 import { PortOutlet } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
 import { registry } from './registry.mjs';
-import { event, switchChip } from './api.mjs';
+import { event, switchChip, externalGet } from './api.mjs';
 
-const VALID_CUSTOM_CHIPS = { event, switch: switchChip };
+const VALID_CUSTOM_CHIPS = {
+  event,
+  switch: switchChip,
+  external: (_, ext) => externalGet(ext),
+};
 const CUSTOM_CHIP_REGEXP = new RegExp(
   `^(.+?):(${Object.keys(VALID_CUSTOM_CHIPS).join('|')})(?:\\((.+)\\))?$`,
   'i',
