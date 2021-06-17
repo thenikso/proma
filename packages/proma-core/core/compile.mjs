@@ -322,7 +322,6 @@ function executeCompiler(
         return compile(port, [chip, ...scope], codeWrapper);
       },
       compileOutputFlow(portName) {
-        // Follow port connections until an exec port it found
         const port = chip.out[portName];
         return compile(port, [chip, ...scope], codeWrapper);
       },

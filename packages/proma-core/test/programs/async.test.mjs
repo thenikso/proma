@@ -63,10 +63,12 @@ describe('[programs/async] async executions', async (assert) => {
             },
 
             exec: {
-              value: async () => {
-                await Promise.resolve();
-                console.log($in.message);
-                this.out.then();
+              value: () => {
+                (async () => {
+                  await Promise.resolve();
+                  console.log($in.message);
+                  this.out.then();
+                })();
               }
             }
           });

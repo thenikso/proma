@@ -136,15 +136,17 @@ describe('[core/compile] compilation regression checks', async (assert) => {
 
         Object.defineProperties(this.in = {}, {
           exec: {
-            value: async () => {
-              try {
-                const data = await Promise.resolve("test");
-                $out.res = data;
-              } catch (e) {
-                $out.res = null;
-              }
+            value: () => {
+              (async () => {
+                try {
+                  const data = await Promise.resolve("test");
+                  $out.res = data;
+                } catch (e) {
+                  $out.res = null;
+                }
 
-              this.out.then();
+                this.out.then();
+              })();
             }
           }
         });

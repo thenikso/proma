@@ -271,15 +271,9 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
 
     ast = cleanAst(ast);
     if (async) {
-      // TODO we are returning an arrow function expression where we might
-      // actually want to return an execution of it? if using this as a hook
-      // of onCreate we would not execute anything.. perhaps the hook itself
-      // should be aware of this possibility.
-      // TODO in fact we should always return the execution of a function so
-      // that we are consistent and the user of this value would know how to
-      // unpack it if neccessary
       ast = builders.arrowFunctionExpression([], ast);
       ast.async = true;
+      ast = builders.callExpression(ast, []);
     }
     return ast;
   };
