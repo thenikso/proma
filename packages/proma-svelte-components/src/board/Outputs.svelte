@@ -13,8 +13,6 @@
     chip.addPortExtras(OUTPUT, containerEl);
     return () => {
       chip.removePortExtras(OUTPUT, containerEl);
-      containerEl.style.display = 'none';
-      document.body.appendChild(containerEl);
     };
   });
 </script>

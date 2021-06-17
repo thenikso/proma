@@ -52,8 +52,6 @@
     chip.addPort(side, portEl, showOnHeader);
     return () => {
       chip.removePort(side, portEl);
-      portEl.style.display = 'none';
-      document.body.appendChild(portEl);
     };
   });
 </script>

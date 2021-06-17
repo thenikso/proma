@@ -17,6 +17,7 @@
   import FileTree from '$lib/components/FileTree.svelte';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
   import makeProject from '$lib/playground-projects/base';
+  import CodeMirror from '$lib/components/CodeMirror.svelte';
 
   // TODO load from localStorage
   const files = makeProject();
@@ -178,7 +179,13 @@
         source={selectedFileContent}
       />
     {:else}
-      <div>Unsupported file type "{selectedFileExt}"</div>
+      <CodeMirror
+        bind:this={selectedEditor}
+        options={{
+          value: selectedFileContent,
+          mode: selectedFileExt,
+        }}
+      />
     {/if}
   </div>
   <div class="Logo">
