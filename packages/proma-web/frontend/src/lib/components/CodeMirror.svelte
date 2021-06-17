@@ -4,7 +4,10 @@
   import 'codemirror/lib/codemirror.css';
 
   import 'codemirror/mode/javascript/javascript.js';
+  import 'codemirror/mode/xml/xml.js';
+  import 'codemirror/mode/css/css.js';
   import 'codemirror/mode/htmlmixed/htmlmixed.js';
+  import 'codemirror/mode/markdown/markdown.js';
 
   const dispatch = createEventDispatcher();
   export let value = '';
@@ -44,8 +47,17 @@
 
   export let options;
 
+  const MODE_MAP = {
+    html: 'htmlmixed',
+    md: 'markdown',
+  };
+
   $: if (options) {
-    set(options.value || '', options.mode, options.theme);
+    set(
+      options.value || '',
+      MODE_MAP[options.mode] || options.mode,
+      options.theme,
+    );
   }
 
   export function getEditedSource() {
