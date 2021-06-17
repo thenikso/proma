@@ -116,7 +116,6 @@ export default () => ({
 </html>`,
   'www/app.proma': `{
     "URI": "frontend/App",
-    "target": "web",
     "in": [
       { "name": "window", "kind": "data", "canonical": true },
       { "name": "target", "kind": "data", "canonical": true }
@@ -134,7 +133,17 @@ export default () => ({
       },
       { "id": "CustomEvent_1", "chipURI": "CustomEvent:event(event:Event)" },
       { "id": "OnCreate_3", "chipURI": "OnCreate:event" },
-      { "id": "lib_debug_Log_5", "chipURI": "lib/debug/Log", "args": ["clicked"] }
+      {
+        "id": "lib_debug_Log_5",
+        "chipURI": "lib/debug/Log",
+        "args": ["clicked"]
+      },
+      {
+        "id": "lib_network_FetchJson_3",
+        "chipURI": "lib/network/FetchJson",
+        "args": ["/greet?name=nico"]
+      },
+      { "id": "lib_debug_Log_6", "chipURI": "lib/debug/Log" }
     ],
     "connections": [
       { "source": "in.target", "sink": "lib_html_QuerySelector_1.in.target" },
@@ -147,20 +156,33 @@ export default () => ({
         "sink": "lib_html_BindEvent_1.in.event"
       },
       { "source": "lib_html_BindEvent_1.in.bind", "sink": "OnCreate_3.out.then" },
-      { "source": "lib_debug_Log_5.in.exec", "sink": "CustomEvent_1.out.then" }
+      { "source": "lib_debug_Log_5.in.exec", "sink": "CustomEvent_1.out.then" },
+      {
+        "source": "lib_network_FetchJson_3.in.exec",
+        "sink": "lib_debug_Log_5.out.then"
+      },
+      {
+        "source": "lib_debug_Log_6.in.exec",
+        "sink": "lib_network_FetchJson_3.out.then"
+      },
+      {
+        "source": "lib_network_FetchJson_3.out.json",
+        "sink": "lib_debug_Log_6.in.message"
+      }
     ],
     "metadata": {
-      "$": { "panX": -154, "panY": -273, "zoom": 1, "selected": [] },
+      "$": { "panX": -763, "panY": -391, "zoom": 1, "selected": [] },
       "$in": { "x": -755, "y": 5 },
       "$out": { "x": -400, "y": 0 },
       "lib_html_QuerySelector_1": { "x": -495, "y": 105 },
       "lib_html_BindEvent_1": { "x": -33.5, "y": 55 },
       "CustomEvent_1": { "x": -265, "y": 355 },
       "OnCreate_3": { "x": -260.5, "y": -87 },
-      "lib_debug_Log_5": { "x": 16.5, "y": 416 }
+      "lib_debug_Log_5": { "x": 16.5, "y": 416 },
+      "lib_network_FetchJson_3": { "x": 380, "y": 420 },
+      "lib_debug_Log_6": { "x": 764, "y": 473.5 }
     }
-  }
-`,
+  }`,
   'index.js': `const fs = require('fs');
 const express = require('express');
 const app = express();
@@ -181,7 +203,10 @@ for (let i = 0, l = endpoints.length; i < l; i++) {
   const endpointInstance = new endpointClass();
   app.get('/' + endpointName, (req, res) => {
     endpointInstance.out.then(() => {
-      const body = endpointInstance.out.body();
+      let body = endpointInstance.out.body();
+      if (typeof body !== 'object') {
+        body = { value: body };
+      }
       res.send(body);
     });
     endpointInstance.in.request = req;
