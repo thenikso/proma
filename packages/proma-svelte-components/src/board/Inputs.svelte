@@ -9,10 +9,14 @@
   let containerEl;
 
   onMount(() => {
+    const parentEl = containerEl.parentElement;
     containerEl.remove();
     chip.addPortExtras(INPUT, containerEl);
     return () => {
       chip.removePortExtras(INPUT, containerEl);
+      if (parentEl) {
+        parentEl.appendChild(containerEl);
+      }
     };
   });
 </script>

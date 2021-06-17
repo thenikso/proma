@@ -47,11 +47,15 @@
   $: port.dataType = type;
 
   onMount(() => {
+    const parentEl = portEl.parentElement;
     portEl.$promaPort = port;
     portEl.remove();
     chip.addPort(side, portEl, showOnHeader);
     return () => {
       chip.removePort(side, portEl);
+      if (parentEl) {
+        parentEl.appendChild(portEl);
+      }
     };
   });
 </script>
