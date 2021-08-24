@@ -110,29 +110,25 @@ export default () => ({
   </div>
   <script type="module">
     import App from '/app.js';
-    new App(window, document.getElementById('app'));
+    const app = new App(window, document.getElementById('app'));
+    document.addEventListener('DOMContentLoaded', app.in.ready);
   </script>
 </body>
 </html>`,
   'www/app.proma': `{
     "URI": "frontend/App",
     "in": [
-      { "name": "window", "kind": "data", "canonical": true },
-      { "name": "target", "kind": "data", "canonical": true }
+      { "name": "ready", "kind": "flow" },
+      { "name": "window", "kind": "data", "canonical": true, "type": "Window" },
+      { "name": "target", "kind": "data", "canonical": true, "type": "Element" }
     ],
     "chips": [
-      {
-        "id": "lib_html_QuerySelector_1",
-        "chipURI": "lib/html/QuerySelector",
-        "args": [null, "button"]
-      },
       {
         "id": "lib_html_BindEvent_1",
         "chipURI": "lib/html/BindEvent",
         "args": [null, "click"]
       },
       { "id": "CustomEvent_1", "chipURI": "CustomEvent:event(event:Event)" },
-      { "id": "OnCreate_3", "chipURI": "OnCreate:event" },
       {
         "id": "lib_debug_Log_5",
         "chipURI": "lib/debug/Log",
@@ -143,19 +139,18 @@ export default () => ({
         "chipURI": "lib/network/FetchJson",
         "args": ["/greet?name=nico"]
       },
-      { "id": "lib_debug_Log_6", "chipURI": "lib/debug/Log" }
+      { "id": "lib_debug_Log_6", "chipURI": "lib/debug/Log" },
+      {
+        "id": "lib_html_QuerySelector_2",
+        "chipURI": "lib/html/QuerySelector",
+        "args": [null, "button"]
+      }
     ],
     "connections": [
-      { "source": "in.target", "sink": "lib_html_QuerySelector_1.in.target" },
-      {
-        "source": "lib_html_QuerySelector_1.out.element",
-        "sink": "lib_html_BindEvent_1.in.target"
-      },
       {
         "source": "CustomEvent_1.out.handle",
         "sink": "lib_html_BindEvent_1.in.event"
       },
-      { "source": "lib_html_BindEvent_1.in.bind", "sink": "OnCreate_3.out.then" },
       { "source": "lib_debug_Log_5.in.exec", "sink": "CustomEvent_1.out.then" },
       {
         "source": "lib_network_FetchJson_3.in.exec",
@@ -168,11 +163,17 @@ export default () => ({
       {
         "source": "lib_network_FetchJson_3.out.json",
         "sink": "lib_debug_Log_6.in.message"
-      }
+      },
+      {
+        "source": "lib_html_QuerySelector_2.out.element",
+        "sink": "lib_html_BindEvent_1.in.target"
+      },
+      { "source": "in.ready", "sink": "lib_html_BindEvent_1.in.bind" },
+      { "source": "in.target", "sink": "lib_html_QuerySelector_2.in.target" }
     ],
     "metadata": {
-      "$": { "panX": -763, "panY": -391, "zoom": 1, "selected": [] },
-      "$in": { "x": -755, "y": 5 },
+      "$": { "panX": 211, "panY": -114, "zoom": 1, "selected": [] },
+      "$in": { "x": -725, "y": -20 },
       "$out": { "x": -400, "y": 0 },
       "lib_html_QuerySelector_1": { "x": -495, "y": 105 },
       "lib_html_BindEvent_1": { "x": -33.5, "y": 55 },
@@ -180,7 +181,8 @@ export default () => ({
       "OnCreate_3": { "x": -260.5, "y": -87 },
       "lib_debug_Log_5": { "x": 16.5, "y": 416 },
       "lib_network_FetchJson_3": { "x": 380, "y": 420 },
-      "lib_debug_Log_6": { "x": 764, "y": 473.5 }
+      "lib_debug_Log_6": { "x": 764, "y": 473.5 },
+      "lib_html_QuerySelector_2": { "x": -505, "y": 70 }
     }
   }`,
   'index.js': `const fs = require('fs');

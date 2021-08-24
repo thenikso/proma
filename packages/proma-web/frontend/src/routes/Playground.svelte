@@ -16,6 +16,7 @@
   import { page } from '$lib/stores/routing';
   import FileTree from '$lib/components/FileTree.svelte';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
+  import PromaRunView from '$lib/PromaRunView.svelte';
   import makeProject from '$lib/playground-projects/base';
   import CodeMirror from '$lib/components/CodeMirror.svelte';
 
@@ -150,7 +151,7 @@
   <div class="Sidebar">
     <div class="PreviewTitle">
       <div class="spacer" />
-      <h1>Proma <span class="sub">Preview</span></h1>
+      <h1>Proma <span class="sub">Concept</span></h1>
     </div>
     <div class="FileExplorer">
       <FileTree
@@ -177,7 +178,21 @@
       <PromaFileEditor
         bind:this={selectedEditor}
         source={selectedFileContent}
-      />
+        let:runPromise
+        let:clearRun
+        let:runUrl
+        let:actionTarget
+      >
+        {#if runPromise}
+          <div class="RunPanel">
+            <PromaRunView
+              url={runUrl}
+              results={runPromise}
+              on:close={clearRun}
+            />
+          </div>
+        {/if}
+      </PromaFileEditor>
     {:else}
       <CodeMirror
         bind:this={selectedEditor}
@@ -274,5 +289,31 @@
 
     display: flex;
     flex-direction: column;
+  }
+
+  /* RunPanel */
+
+  .RunPanel {
+    right: 30px;
+    top: 110px;
+    height: 100%;
+
+    box-sizing: border-box;
+    position: absolute;
+    width: 350px;
+    max-height: calc(100% - 140px);
+
+    background-color: var(
+      --proma-board--chip-selected--background-color,
+      #3e3e3e
+    );
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--proma-board--chip--border-color, #1d1d1d);
+    border-radius: 5px;
+    box-shadow: var(
+      --proma-board--chip--shadow,
+      0 2px 1px rgba(29, 29, 29, 0.8)
+    );
   }
 </style>
