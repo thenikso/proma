@@ -399,135 +399,137 @@
   }
 </script>
 
-<div {id} class="ChipBoard">
-  <Board
-    refreshKey={updatePortsKey}
-    on:board:contextmenu={handleBoardContextmenu}
-    on:wire:start={handleWireStart}
-    on:wire:probe={handleWireProbe}
-    on:wire:end={handleWireEnd}
-    bind:selectedChips={selectedChipIds}
-    bind:panX={metadata.$.panX}
-    bind:panY={metadata.$.panY}
-    bind:zoom={metadata.$.zoom}
-  >
-    {#if inputOutlets.length > 0}
-      <Chip
-        id="$in"
-        title="Input"
-        kind="outlet"
-        bind:x={metadata.$in.x}
-        bind:y={metadata.$in.y}
-      >
-        <Outputs>
-          {#each inputOutlets as outlet}
-            <Port
-              name={outlet.name}
-              type={getPortType(outlet)}
-              hideName={shouldHideName(outlet)}
-            />
-          {/each}
-        </Outputs>
-      </Chip>
-    {/if}
-
-    {#each innerChips as innerChip (innerChip.id)}
-      <Chip
-        id={innerChip.id}
-        title={innerChip.label}
-        kind={getChipKind(innerChip)}
-        bind:x={metadata[innerChip.id].x}
-        bind:y={metadata[innerChip.id].y}
-      >
-        {#if innerChip.in.length > 0}
-          <Inputs>
-            {#each innerChip.in as port}
-              {#if !port.variadic}
-                <Port
-                  name={port.name}
-                  type={getPortType(port)}
-                  hideName={shouldHideName(port)}
-                >
-                  {#if edit && updatePortsKey && port.isData && !edit.hasConnections(port)}
-                    <PortValueInput {edit} {port} />
-                  {/if}
-                </Port>
-              {:else if prepareVariadicPort(port)}
-                {#each variadicPorts[variadicRefName(port)] as variadicPort}
-                  <Port
-                    name={variadicPort.name}
-                    type={getPortType(variadicPort)}
-                  >
-                    {#if edit && updatePortsKey && variadicPort.isData && !edit.hasConnections(variadicPort)}
-                      <PortValueInput {edit} port={variadicPort} />
-                    {/if}
-                  </Port>
-                {/each}
-                {#if edit}
-                  <AddPortButton on:click={() => addVariadicPort(port)} />
-                {/if}
-              {/if}
-            {/each}
-          </Inputs>
-        {/if}
-        {#if innerChip.out.length > 0}
+{#key stableChip && stableChip.URI}
+  <div {id} class="ChipBoard">
+    <Board
+      refreshKey={updatePortsKey}
+      on:board:contextmenu={handleBoardContextmenu}
+      on:wire:start={handleWireStart}
+      on:wire:probe={handleWireProbe}
+      on:wire:end={handleWireEnd}
+      bind:selectedChips={selectedChipIds}
+      bind:panX={metadata.$.panX}
+      bind:panY={metadata.$.panY}
+      bind:zoom={metadata.$.zoom}
+    >
+      {#if inputOutlets.length > 0}
+        <Chip
+          id="$in"
+          title="Input"
+          kind="outlet"
+          bind:x={metadata.$in.x}
+          bind:y={metadata.$in.y}
+        >
           <Outputs>
-            {#each innerChip.out as port}
-              {#if !port.variadic}
-                <Port
-                  name={port.name}
-                  type={getPortType(port)}
-                  hideName={shouldHideName(port)}
-                  showOnHeader={port.name === 'handle'}
-                />
-              {:else if prepareVariadicPort(port)}
-                {#each variadicPorts[variadicRefName(port)] as variadicPort}
-                  <Port
-                    name={variadicPort.name}
-                    type={getPortType(variadicPort)}
-                  />
-                {/each}
-                {#if edit}
-                  <AddPortButton on:click={() => addVariadicPort(port)} />
-                {/if}
-              {/if}
+            {#each inputOutlets as outlet}
+              <Port
+                name={outlet.name}
+                type={getPortType(outlet)}
+                hideName={shouldHideName(outlet)}
+              />
             {/each}
           </Outputs>
-        {/if}
-      </Chip>
-    {/each}
+        </Chip>
+      {/if}
 
-    {#if outputOutlets.length > 0}
-      <Chip
-        id="$out"
-        title="Output"
-        kind="outlet"
-        bind:x={metadata.$out.x}
-        bind:y={metadata.$out.y}
-      >
-        <Inputs>
-          {#each outputOutlets as outlet}
-            <Port
-              name={outlet.name}
-              type={getPortType(outlet)}
-              hideName={shouldHideName(outlet)}
-            />
-          {/each}
-        </Inputs>
-      </Chip>
-    {/if}
+      {#each innerChips as innerChip (innerChip.id)}
+        <Chip
+          id={innerChip.id}
+          title={innerChip.label}
+          kind={getChipKind(innerChip)}
+          bind:x={metadata[innerChip.id].x}
+          bind:y={metadata[innerChip.id].y}
+        >
+          {#if innerChip.in.length > 0}
+            <Inputs>
+              {#each innerChip.in as port}
+                {#if !port.variadic}
+                  <Port
+                    name={port.name}
+                    type={getPortType(port)}
+                    hideName={shouldHideName(port)}
+                  >
+                    {#if edit && updatePortsKey && port.isData && !edit.hasConnections(port)}
+                      <PortValueInput {edit} {port} />
+                    {/if}
+                  </Port>
+                {:else if prepareVariadicPort(port)}
+                  {#each variadicPorts[variadicRefName(port)] as variadicPort}
+                    <Port
+                      name={variadicPort.name}
+                      type={getPortType(variadicPort)}
+                    >
+                      {#if edit && updatePortsKey && variadicPort.isData && !edit.hasConnections(variadicPort)}
+                        <PortValueInput {edit} port={variadicPort} />
+                      {/if}
+                    </Port>
+                  {/each}
+                  {#if edit}
+                    <AddPortButton on:click={() => addVariadicPort(port)} />
+                  {/if}
+                {/if}
+              {/each}
+            </Inputs>
+          {/if}
+          {#if innerChip.out.length > 0}
+            <Outputs>
+              {#each innerChip.out as port}
+                {#if !port.variadic}
+                  <Port
+                    name={port.name}
+                    type={getPortType(port)}
+                    hideName={shouldHideName(port)}
+                    showOnHeader={port.name === 'handle'}
+                  />
+                {:else if prepareVariadicPort(port)}
+                  {#each variadicPorts[variadicRefName(port)] as variadicPort}
+                    <Port
+                      name={variadicPort.name}
+                      type={getPortType(variadicPort)}
+                    />
+                  {/each}
+                  {#if edit}
+                    <AddPortButton on:click={() => addVariadicPort(port)} />
+                  {/if}
+                {/if}
+              {/each}
+            </Outputs>
+          {/if}
+        </Chip>
+      {/each}
 
-    {#each connections as conn (connectionId(conn))}
-      <Wire
-        outputChip={conn.source.chip ? conn.source.chip.id : '$in'}
-        outputPort={conn.source.port.name}
-        inputChip={conn.sink.chip ? conn.sink.chip.id : '$out'}
-        inputPort={conn.sink.port.name}
-      />
-    {/each}
-  </Board>
-  <slot />
-</div>
+      {#if outputOutlets.length > 0}
+        <Chip
+          id="$out"
+          title="Output"
+          kind="outlet"
+          bind:x={metadata.$out.x}
+          bind:y={metadata.$out.y}
+        >
+          <Inputs>
+            {#each outputOutlets as outlet}
+              <Port
+                name={outlet.name}
+                type={getPortType(outlet)}
+                hideName={shouldHideName(outlet)}
+              />
+            {/each}
+          </Inputs>
+        </Chip>
+      {/if}
+
+      {#each connections as conn (connectionId(conn))}
+        <Wire
+          outputChip={conn.source.chip ? conn.source.chip.id : '$in'}
+          outputPort={conn.source.port.name}
+          inputChip={conn.sink.chip ? conn.sink.chip.id : '$out'}
+          inputPort={conn.sink.port.name}
+        />
+      {/each}
+    </Board>
+    <slot />
+  </div>
+{/key}
 
 <style>
   .ChipBoard {
