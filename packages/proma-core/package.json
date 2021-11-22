@@ -14,12 +14,12 @@
     "build:vendors:fast-deep-equal": "node ./scripts/browserify.js ../../node_modules/fast-deep-equal/es6/index.js ./vendor/fast-deep-equal.mjs"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "17.1.0",
-    "@rollup/plugin-node-resolve": "11.2.0",
+    "@rollup/plugin-commonjs": "21.0.1",
+    "@rollup/plugin-node-resolve": "13.0.6",
     "browserify": "17.0.0",
-    "esbuild": "0.9.6",
-    "recast": "0.20.4",
-    "rollup": "2.42.3",
-    "serve": "11.3.2"
+    "esbuild": "0.13.15",
+    "recast": "0.20.5",
+    "rollup": "2.60.1",
+    "serve": "13.0.2"
   }
 }

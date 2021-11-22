@@ -61,7 +61,9 @@
   }
 
   export function getEditedSource() {
-    return editor.getValue();
+    if (editor) {
+      return editor.getValue();
+    }
   }
 
   // [Original Comment] We have to expose set and update methods,
