@@ -27,7 +27,7 @@ function makeHistory() {
     try {
       const { origin, pathname, search, hash } = new URL(
         url,
-        'https://proma.dev',
+        window.location.origin,
       );
       host = origin;
       path = pathname;

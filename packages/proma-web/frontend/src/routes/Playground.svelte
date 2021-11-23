@@ -13,15 +13,26 @@
   import * as proma from '@proma/core';
   import jszip from 'jszip';
   import { saveAs } from 'file-saver';
+  import { history } from '$lib/stores/history';
   import { page } from '$lib/stores/routing';
   import FileTree from '$lib/components/FileTree.svelte';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
   import PromaRunView from '$lib/PromaRunView.svelte';
-  import makeProject from '$lib/playground-projects/base';
+  import makeBaseProject from '$lib/playground-projects/base';
   import CodeMirror from '$lib/components/CodeMirror.svelte';
 
   // TODO load from localStorage
-  const files = makeProject();
+  let selectedProjectName = $page.query.project;
+  $: selectedProjectDataString =
+    selectedProjectName &&
+    localStorage.getItem('project-' + selectedProjectName);
+
+  let files;
+  $: if (selectedProjectDataString) {
+    files = JSON.parse(selectedProjectDataString);
+  } else {
+    files = makeBaseProject();
+  }
 
   //
   // File Selection
@@ -71,6 +82,23 @@
         expandedFolders = [...expandedFolders, folder];
       }
     }
+  }
+
+  //
+  // Url update
+  //
+
+  $: {
+    let url = window.location.pathname;
+    let andChar = '?';
+    if (selectedProjectName) {
+      url += andChar + 'project=' + selectedProjectName;
+      andChar = '&';
+    }
+    if (selectedFilePath) {
+      url += andChar + 'file=' + selectedFilePath;
+    }
+    history.replace(url);
   }
 
   //
