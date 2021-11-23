@@ -67,11 +67,10 @@
 
   let expandedFolders = selectedFilePath ? [selectedFilePath] : [];
 
-  function handleFileClick(e) {
-    action('Playground.save')();
-
+  function handleFileSelect(e) {
     const { file, folder } = e.detail;
     if (file) {
+      action('Playground.save')();
       selectedFilePath = file;
     } else {
       if (expandedFolders.some((s) => s.startsWith(folder))) {
@@ -184,8 +183,8 @@
       <FileTree
         files={fileNames}
         expand={expandedFolders}
-        select={selectedFilePath}
-        on:click={handleFileClick}
+        selected={selectedFilePath}
+        on:select={handleFileSelect}
       />
     </div>
     <div class="ProjectTools">

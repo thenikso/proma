@@ -4,16 +4,17 @@
   export let root = undefined;
   export let files = [];
   export let expand = [];
-  export let select = undefined;
+  export let selected = undefined;
 
   const dispatch = createEventDispatcher();
 
-  function dispatchClickFile(file) {
-    dispatch('click', { file });
+  function dispatchSelectFile(file) {
+    if (file === selected) return;
+    dispatch('select', { file });
   }
 
-  function dispatchClickFolder(folder) {
-    dispatch('click', { folder });
+  function dispatchSelectFolder(folder) {
+    dispatch('select', { folder });
   }
 
   $: filePaths = files
@@ -48,10 +49,10 @@
             .filter((p) => p[0] === firstPath)
             .map((p) => p.slice(1).join('/')),
           expand: expandFolder,
-          select:
-            select &&
-            select.startsWith(firstPath + '/') &&
-            select.substr(firstPath.length + 1),
+          selected:
+            selected &&
+            selected.startsWith(firstPath + '/') &&
+            selected.substr(firstPath.length + 1),
         });
       }
     }
@@ -60,20 +61,20 @@
 
   $: showFolderFiles = expand.length || !root;
 
-  function handleChildClick(e, parentItem) {
+  function handleChildSelect(e, parentItem) {
     const { file, folder } = e.detail;
     if (file) {
-      dispatchClickFile(parentItem.folder + '/' + file);
+      dispatchSelectFile(parentItem.folder + '/' + file);
     } else if (root) {
-      dispatchClickFolder(root + '/' + folder);
+      dispatchSelectFolder(root + '/' + folder);
     } else {
-      dispatchClickFolder(folder);
+      dispatchSelectFolder(folder);
     }
   }
 </script>
 
 {#if root}
-  <div class="item-name" on:click={() => dispatchClickFolder(root)}>
+  <div class="item-name" on:click={() => dispatchSelectFolder(root)}>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="16"
@@ -116,8 +117,8 @@
       {#if typeof item === 'string'}
         <li
           class="item-name"
-          class:selected={select === item}
-          on:click={() => dispatchClickFile(item)}
+          class:selected={selected === item}
+          on:click={() => dispatchSelectFile(item)}
         >
           <div class="spacer" />
           <svg
@@ -144,8 +145,8 @@
             root={item.folder}
             files={item.files}
             expand={item.expand}
-            select={item.select}
-            on:click={(e) => handleChildClick(e, item)}
+            selected={item.selected}
+            on:select={(e) => handleChildSelect(e, item)}
           />
         </li>
       {/if}
