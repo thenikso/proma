@@ -56,7 +56,12 @@
   saveCurrentPlayground = function savePlayground() {
     if (!selectedEditor || !selectedFilePath) return;
     files[selectedFilePath] = selectedEditor.getEditedSource();
-    console.log(' TODO save to localStorage', files);
+    if (selectedProjectName) {
+      localStorage.setItem(
+        'project-' + selectedProjectName,
+        JSON.stringify(files),
+      );
+    }
   };
 
   //
