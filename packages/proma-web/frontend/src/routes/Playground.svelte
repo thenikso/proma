@@ -43,9 +43,8 @@
   let selectedEditor;
 
   saveCurrentPlayground = function savePlayground() {
-    if (selectedEditor) {
-      files[selectedFilePath] = selectedEditor.getEditedSource();
-    }
+    if (!selectedEditor || !selectedFilePath) return;
+    files[selectedFilePath] = selectedEditor.getEditedSource();
     console.log(' TODO save to localStorage', files);
   };
 
@@ -55,7 +54,7 @@
 
   $: fileNames = Object.keys(files);
 
-  let expandedFolders = [$page.query.file];
+  let expandedFolders = selectedFilePath ? [selectedFilePath] : [];
 
   function handleFileClick(e) {
     action('Playground.save')();
@@ -193,7 +192,7 @@
           </div>
         {/if}
       </PromaFileEditor>
-    {:else}
+    {:else if selectedFileExt}
       <CodeMirror
         bind:this={selectedEditor}
         options={{
@@ -201,6 +200,8 @@
           mode: selectedFileExt,
         }}
       />
+    {:else}
+      <div>Select a file</div>
     {/if}
   </div>
   <div class="Logo">

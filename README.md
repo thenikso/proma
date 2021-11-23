@@ -13,7 +13,7 @@ A unreal engine blueprint inspired editor for javascript.
 - [x] frontend .proma files
 - [x] html page editor (codemirror)
 - [ ] saves changes in local storage
-- [ ] fix: if no file selected, tree view is broken
+- [x] fix: if no file selected, tree view is broken
 - [ ] show/use relevant libs for endpoint/node .proma files (`target: node/web`? better: `requirements: ['proma/core', 'proma/web']`)
 - [ ] run proma files with example payload (how to show relevan files? like html for web?)
 - [ ] add new endpoint .proma
