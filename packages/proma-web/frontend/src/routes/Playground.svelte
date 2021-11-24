@@ -20,12 +20,20 @@
   import PromaRunView from '$lib/PromaRunView.svelte';
   import makeBaseProject from '$lib/playground-projects/base';
   import CodeMirror from '$lib/components/CodeMirror.svelte';
+  import Select from 'svelte-select/src/Select.svelte';
 
-  // TODO load from localStorage
+  //
+  // Project Selection
+  //
+
   let selectedProjectName = $page.query.project;
   $: selectedProjectDataString =
     selectedProjectName &&
     localStorage.getItem('project-' + selectedProjectName);
+
+  //
+  // Project Load
+  //
 
   let files;
   $: if (selectedProjectDataString) {
@@ -33,6 +41,81 @@
   } else {
     files = makeBaseProject();
   }
+
+  //
+  // Projects List
+  //
+
+  let projectsOptions = [];
+
+  function updateProjectsOptions() {
+    const options = Array.from({ length: localStorage.length }, (_, i) =>
+      localStorage.key(i),
+    )
+      .filter((k) => k.startsWith('project-'))
+      .map((k) => k.substr(8))
+      .map((label) => ({
+        label,
+        value: 'project-' + label,
+      }));
+    const allOptions = [
+      {
+        label: '➕ &nbsp;New Project',
+        value: 'new',
+      },
+      ...options,
+    ];
+    projectsOptions = allOptions;
+    return allOptions;
+  }
+
+  updateProjectsOptions();
+
+  $: selectedProjectOption = selectedProjectName && {
+    label: selectedProjectName,
+    value: 'project-' + selectedProjectName,
+  };
+
+  function handleProjectOptionSelect({ detail }) {
+    if (detail.label === selectedProjectName) return;
+
+    action('Playground.save')();
+
+    if (detail.value === 'new') {
+      selectedProjectName = null;
+      selectedFilePath = 'readme.md';
+    } else {
+      const shouldSaveAs = detail.value.startsWith('saveas-');
+      selectedProjectName = detail.label;
+      if (shouldSaveAs) {
+        action('Playground.save')();
+        updateProjectsOptions();
+      } else {
+        selectedFilePath = null;
+      }
+    }
+  }
+
+  function handleProjectOptionClear() {
+    if (selectedProjectName) {
+      localStorage.removeItem('project-' + selectedProjectName);
+      updateProjectsOptions();
+    }
+
+    selectedProjectName = null;
+    selectedFilePath = 'readme.md';
+  }
+
+  const projectSelectOptionLabel = (option) =>
+    option.isCreator ? `Save as "${option.label}"` : option.label;
+
+  const projectSelectCreateItem = (text) => ({
+    value: 'saveas-' + text,
+    label: text,
+  });
+
+  $: projectSelectPlaceholder =
+    projectsOptions.length < 2 ? 'Save as...' : 'Select project or save as...';
 
   //
   // File Selection
@@ -54,14 +137,12 @@
   let selectedEditor;
 
   saveCurrentPlayground = function savePlayground() {
-    if (!selectedEditor || !selectedFilePath) return;
+    if (!selectedEditor || !selectedFilePath || !selectedProjectName) return;
     files[selectedFilePath] = selectedEditor.getEditedSource();
-    if (selectedProjectName) {
-      localStorage.setItem(
-        'project-' + selectedProjectName,
-        JSON.stringify(files),
-      );
-    }
+    localStorage.setItem(
+      'project-' + selectedProjectName,
+      JSON.stringify(files),
+    );
   };
 
   //
@@ -184,6 +265,18 @@
       <div class="spacer" />
       <h1>Proma <span class="sub">Concept</span></h1>
     </div>
+    <div class="ProjectsExplorer">
+      <Select
+        placeholder={projectSelectPlaceholder}
+        items={projectsOptions}
+        value={selectedProjectOption}
+        isCreatable
+        getOptionLabel={projectSelectOptionLabel}
+        createItem={projectSelectCreateItem}
+        on:select={handleProjectOptionSelect}
+        on:clear={handleProjectOptionClear}
+      />
+    </div>
     <div class="FileExplorer">
       <FileTree
         files={fileNames}
@@ -277,6 +370,7 @@
 
   .Editor {
     flex-grow: 1;
+    font-size: 16px;
   }
 
   /* Sidebar contents */
@@ -303,6 +397,11 @@
   .PreviewTitle h1 .sub {
     font-weight: 300;
     font-size: 0.8em;
+  }
+
+  .ProjectsExplorer {
+    width: 100%;
+    padding: 0px 8px 8px 8px;
   }
 
   .FileExplorer {

@@ -41,7 +41,8 @@
     "serverless-offline": "8.3.0",
     "serverless-s3-local": "0.6.20",
     "stream-browserify": "3.0.0",
-    "svelte": "3.44.2"
+    "svelte": "3.44.2",
+    "svelte-select": "4.4.5"
   },
   "dependencies": {
     "esbuild": "0.13.15",
