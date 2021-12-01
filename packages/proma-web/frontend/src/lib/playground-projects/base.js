@@ -1,6 +1,7 @@
 export default () => ({
   'endpoints/greet.proma': `{
   "URI": "backend/Greet",
+  "use": ["proma/core", "proma/node"],
   "target": "node",
   "in": [
     { "name": "exec", "kind": "flow" },
@@ -117,6 +118,7 @@ export default () => ({
 </html>`,
   'www/app.proma': `{
     "URI": "frontend/App",
+    "use": ["proma/core", "proma/html"],
     "in": [
       { "name": "ready", "kind": "flow" },
       { "name": "window", "kind": "data", "canonical": true, "type": "Window" },

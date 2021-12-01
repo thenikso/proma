@@ -326,7 +326,7 @@
         }}
       />
     {:else}
-      <div>Select a file</div>
+      <div>No File Selected</div>
     {/if}
   </div>
   <div class="Logo">
