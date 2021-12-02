@@ -48,9 +48,7 @@
     );
   }
 
-  $: selectedFileName = ((selectedFilePath || '').match(
-    /(?<=\/|^)([^.\/]+)\..+$/,
-  ) || [])[1];
+  $: selectedFileName = (selectedFilePath || '').split(/(\\|\/)/g).pop();
   $: selectedFileExt = ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
   $: selectedFileSource = atob(project?.files?.[selectedFilePath] ?? '');
   $: selectedFileRunUrl =

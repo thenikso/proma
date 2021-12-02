@@ -12,9 +12,7 @@ export default function install({ registry, chip, inputData, outputData }) {
 
       const value = outputData('value', {
         compute: () => {
-          const ps = Array.from(
-            path().matchAll(/(.+?)(?<!\\)(?:\.|$)/g),
-          ).map((x) => x[1].replaceAll('\\.', '.'));
+          const ps = path().split('.');
           let cursor = target();
           for (let i = 0, l = ps.length; i < l; i++) {
             if (typeof cursor === 'undefined') {

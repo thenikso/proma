@@ -52,7 +52,7 @@ describe('[core/lib/utils] GetPropertyAtPath', async (assert) => {
           });
 
           const GetPropertyAtPath__value = () => {
-            const ps = Array.from("one.1.two".matchAll(/(.+?)(?<!\\\\)(?:\\.|$)/g)).map(x => x[1].replaceAll("\\\\.", "."));
+            const ps = "one.1.two".split(".");
             let cursor = $in.input;
 
             for (let i = 0, l = ps.length; i < l; i++) {
@@ -152,7 +152,7 @@ describe('[core/lib/utils] GetPropertyAtPath', async (assert) => {
           });
 
           const GetPropertyAtPath__value = () => {
-            const ps = Array.from("one.1.two".matchAll(/(.+?)(?<!\\\\)(?:\\.|$)/g)).map(x => x[1].replaceAll("\\\\.", "."));
+            const ps = "one.1.two".split(".");
             let cursor = $in.input;
 
             for (let i = 0, l = ps.length; i < l; i++) {
