@@ -7,6 +7,7 @@ import './core/run.test.mjs';
 import './core/types.test.mjs';
 import './core/external.test.mjs';
 import './core/compile.test.mjs';
+import './core/registry.test.mjs';
 
 import './core/lib/utils.test.mjs';
 import './core/lib/flowControl.test.mjs';

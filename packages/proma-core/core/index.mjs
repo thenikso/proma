@@ -9,3 +9,6 @@ import { registry } from './registry.mjs';
 import installLib from './lib/index.mjs';
 
 export const lib = installLib({ ...proma, registry });
+
+// TODO rename
+export { Registry } from './registry2.mjs';
