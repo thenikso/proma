@@ -10,16 +10,16 @@ import {
   edit,
 } from '../../core/index.mjs';
 
-const Pass = registry.add(
-  chip('test/edit/Pass', () => {
-    const exec = inputFlow('exec');
-    const input = inputData('input', { canonical: true });
-    const then = outputFlow('then');
-    const output = outputData('output', then);
-    wire(exec, then);
-    wire(input, output);
-  }),
-);
+const Pass = chip('Pass', () => {
+  const exec = inputFlow('exec');
+  const input = inputData('input', { canonical: true });
+  const then = outputFlow('then');
+  const output = outputData('output', then);
+  wire(exec, then);
+  wire(input, output);
+});
+
+const testRegistry = registry.copy.add(Pass, 'test/edit');
 
 describe('[core/edit] edit connections', async (assert) => {
   assert({
@@ -77,7 +77,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
     chips: [
       {
         id: 'Pass',
-        chipURI: 'test/edit/Pass',
+        chipURI: 'test/edit#Pass',
         args: ['pass'],
       },
     ],
@@ -108,7 +108,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addConnection('exec', '$0.in.exec')
       .addConnection('$0.out.output', 'value')
       .addConnection('$0.out.then', 'then')
-      .Chip.toJSON(),
+      .Chip.toJSON(testRegistry),
     expected,
   });
 
@@ -126,7 +126,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
       .addConnection('Pass.out.then', 'then')
-      .Chip.toJSON(),
+      .Chip.toJSON(testRegistry),
     expected,
   });
 
@@ -139,12 +139,13 @@ describe('[core/edit] edit sub-chips', async (assert) => {
         const then = outputFlow('then');
         const value = outputData('value');
       }),
+      testRegistry,
     )
-      .addChip('test/edit/Pass', ['pass'], 'Pass')
+      .addChip('test/edit#Pass', ['pass'], 'Pass')
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
       .addConnection('Pass.out.then', 'then')
-      .Chip.toJSON(),
+      .Chip.toJSON(testRegistry),
     expected,
   });
 });

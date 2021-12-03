@@ -118,8 +118,8 @@ export class Chip {
     return chipInfo.URI;
   }
 
-  toJSON() {
-    return serializeChipInstance(this);
+  toJSON(registry) {
+    return serializeChipInstance(this, registry);
   }
 }
 
@@ -606,7 +606,7 @@ export class ChipInfo {
   // Serialization
   //
 
-  toJSON() {
-    return serializeChipInfo(this);
+  toJSON(registry) {
+    return serializeChipInfo(this, registry);
   }
 }

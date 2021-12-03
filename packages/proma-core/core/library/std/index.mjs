@@ -4,15 +4,10 @@ import installSetProperty from './SetProperty.mjs';
 import installGetPropertyAtPath from './GetPropertyAtPath.mjs';
 import installToString from './ToString.mjs';
 import installEqual from './Equal.mjs';
+// flowControl
+import installFlowControl from './flowControl.mjs';
 // string
 import installAppend from './string/Append.mjs';
-// flow
-import installFlowControl from './utils/flowControl.mjs';
-// html
-import installQuerySelector from './html/QuerySelector.mjs';
-import installBindEvent from './html/BindEvent.mjs';
-// network
-import installFetchJson from './network/FetchJson.mjs';
 // debug
 import installLog from './debug/Log.mjs';
 
@@ -28,13 +23,6 @@ export default function installLib(proma) {
       Append: installAppend(proma),
     },
     flowControl: installFlowControl(proma),
-    html: {
-      QuerySelector: installQuerySelector(proma),
-      BindEvent: installBindEvent(proma),
-    },
-    network: {
-      FetchJson: installFetchJson(proma),
-    },
     debug: {
       Log: installLog(proma),
     },

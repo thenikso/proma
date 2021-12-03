@@ -366,7 +366,7 @@ function makeChipFactory($customChips, $hooks) {
           (importModule
             ? Promise.resolve(importModule(url))
             : import(url).catch((e) => {
-                console.warn(`Could not load module: ${url}`);
+                console.warn('Could not import: ', url);
                 return Promise.reject(e);
               })
           ).then((m) => m.default || m),
@@ -388,8 +388,8 @@ function makeChipFactory($customChips, $hooks) {
         );
       }
 
-      static toJSON() {
-        const chipData = chipInfo.toJSON();
+      static toJSON(registry) {
+        const chipData = chipInfo.toJSON(registry);
         if (!this.editable) {
           chipData.editable = false;
         }

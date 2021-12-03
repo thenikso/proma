@@ -45,8 +45,10 @@
   function updateChipEditor() {
     sourceChip =
       sourceJson &&
-      proma.fromJSON(proma.chip, sourceJson, (errors) => {
-        console.error(errors);
+      proma.fromJSON(proma.chip, sourceJson, {
+        withErrors: (errors) => {
+          console.error(errors);
+        },
       });
     chipEditor = sourceChip && proma.edit(sourceChip);
   }

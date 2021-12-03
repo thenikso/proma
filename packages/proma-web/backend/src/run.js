@@ -73,15 +73,14 @@ export const endpoint = async (event) => {
   // Construct chip
   let chipInstance;
   let chipErrors;
+
   try {
     const endpointChipSource = JSON.parse(btoa(endpointBase64));
-    const chipClass = proma.fromJSON(
-      proma.chip,
-      endpointChipSource,
-      (errors) => {
+    const chipClass = proma.fromJSON(proma.chip, endpointChipSource, {
+      withErrors: (errors) => {
         chipErrors = errors;
       },
-    );
+    });
     // TODO can not give access to `global`. Use something like `entrypointGlobal.ts`
     // to mask all global objects
     const chipCompiledClass = await getCompiledClass(

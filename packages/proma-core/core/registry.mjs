@@ -1,121 +1,189 @@
-const REGISTRY_VERSION = '0.1';
+import { isChipClass } from './chip.mjs';
 
-function getRegistry() {
-  if (typeof window !== 'undefined') {
-    return window.promaRegistry;
-  } else if (typeof global !== 'undefined') {
-    return global.promaRegistry;
-  }
-}
+import * as lib from './library/index.mjs';
 
-// TODO gettin a registry from the env is a potential security risk
-// also we need to address the multiple proma versions/runtimes loaded in the
-// same page. Maybe using methods instead of `instanceof` and the like.
-let promaRegistry; // = getRegistry();
+// `Registry` is a store for chips specified with the `use` keyword
+// that are available during editing (and hence also deserialize).
+export class Registry {
+  #qualifiedChips;
+  #uriChips;
+  #chipsQualifiers;
+  #resolvers;
 
-if (!promaRegistry) {
-  promaRegistry = initRegistry();
-
-  // Set registry
-  if (typeof window !== 'undefined') {
-    window.promaRegistry = promaRegistry;
-  } else if (typeof global !== 'undefined') {
-    global.promaRegistry = promaRegistry;
-  }
-}
-
-export const registry = promaRegistry;
-
-// $core/lib/Add.mjs
-// math/Add
-
-// @nikso/proma-test-lib#main/Add.mjs
-// await (await fetch('https://api.github.com/repos/<owner>/<repo>/branches')).json()
-// await (await fetch('https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>')).text()
-// https://docs.github.com/en/rest/reference/repos#contents
-
-function initRegistry() {
-  const resolvers = [];
-  const loadedChips = new Map();
-
-  function hasChip(chipURI) {
-    return loadedChips.has(chipURI);
+  constructor() {
+    this.#qualifiedChips = new Map();
+    this.#uriChips = new Map();
+    this.#chipsQualifiers = new Map();
+    this.#resolvers = [];
   }
 
-  function addChip(chip, override) {
-    // TODO verify that chip is a Chip and can have the given URI
-    if (!chip || typeof chip.URI !== 'string') {
-      throw new Error('Invalid Chip class');
+  // Add a chip to the registry. You can pass a valid Chip or an array of Chips
+  // or an object with other valid `add` values.
+  add(chip, qualifier) {
+    if (Object.isFrozen(this)) {
+      throw new Error('Cannot add to a locked registry');
     }
-    const chipURI = chip.URI;
-    // TODO if URI is internal lib, do not overryde
-    if (loadedChips.has(chipURI) && !override) {
-      return loadedChips.get(chipURI);
-    }
-    loadedChips.set(chipURI, chip);
-    return chip;
+    return this.#add(chip, qualifier);
   }
 
-  function loadChip(chipURI) {
-    if (loadedChips.has(chipURI)) {
-      return loadedChips.get(chipURI);
+  #add(chip, qualifier) {
+    if (Array.isArray(chip)) {
+      chip.forEach((c) => this.#add(c, qualifier));
+      return this;
     }
+    if (!isChipClass(chip)) {
+      if (typeof chip === 'object' && chip) {
+        this.#add(Array.from(Object.values(chip)), qualifier);
+        return this;
+      }
+      throw new Error('chip must be a Chip');
+    }
+    if (this.#chipsQualifiers.has(chip)) {
+      throw new Error(`Chip ${chip.URI} is already registered`);
+    }
+    let qualifiedName = chip.URI;
+    if (qualifier) {
+      qualifiedName = `${qualifier}#${qualifiedName}`;
+    }
+    if (this.#qualifiedChips.has(qualifiedName)) {
+      throw new Error(`Duplicate qualified name: ${qualifiedName}`);
+    }
+    this.#qualifiedChips.set(qualifiedName, chip);
+    this.#chipsQualifiers.set(chip, qualifiedName);
+    if (this.#uriChips.has(chip.URI)) {
+      this.#uriChips.delete(chip.URI);
+    } else {
+      this.#uriChips.set(chip.URI, chip);
+    }
+    return this;
+  }
+
+  // Adds a resolver to be used when `use` or `load` is called.
+  // `test` should be a regular expression matching a qualified chip name.
+  // `load` should be a function receiving the `add` method of this registry
+  // and the `test` match result. The function should return a promise resolving
+  // when the requested match has been added to the registry.
+  resolver(test, load) {
+    if (Object.isFrozen(this)) {
+      throw new Error('Cannot add to a locked registry');
+    }
+    this.#resolvers.push({ test, load });
+    return this;
+  }
+
+  #resolve(qualifiedName) {
+    // Search for resolvers
+    const resolvers = this.#resolvers
+      .map((r) => ({ match: r.test.test(qualifiedName), load: r.load }))
+      .filter((r) => r.match);
+    if (resolvers.length === 0) {
+      return false;
+    }
+    // Prepare resolution indicator
+    let didResolve = false;
+    const add = (chip, qualifier) => {
+      didResolve = true;
+      this.#add(chip, qualifier);
+    };
+    // Attempt to resolve syncronously
+    const fastResolve = resolvers[0].load(add, resolvers[0].match);
+    if (!(fastResolve instanceof Promise) && didResolve) {
+      return true;
+    }
+    // Resolve with promise
     return Promise.resolve().then(async () => {
-      const selectedResolvers = resolvers
-        .map((resolver) => ({ match: resolver.test.test(chipURI), resolver }))
-        .filter(({ match }) => !!match);
-      if (selectedResolvers.length === 0) {
-        throw new Error(`Can not resolve chip URI: ${chipURI}`);
-      }
-      // TODO resolver's priority?
-      let res;
       let error;
-      for (const { match, resolver } of selectedResolvers) {
-        try {
-          res = await resolver.load(chipURI, match);
-          break;
-        } catch (e) {
-          if (!error) {
-            error = e;
-          }
-        }
+      let didResolve = await fastResolve
+        .then(() => true)
+        .catch((err) => {
+          error = err;
+          return false;
+        });
+      for (let i = 1, l = resolvers.length; i < l && !didResolve; i++) {
+        const resolver = resolvers[i];
+        didResolve = await Promise.resolve(
+          resolver.load(this.#add.bind(this), resolver.match),
+        )
+          .then(() => true)
+          .catch((err) => {
+            error = err;
+            return false;
+          });
       }
-      if (!res) {
-        throw error || new Error(`Could not load URI: ${chipURI}`);
+      if (!didResolve) {
+        throw error || new Error(`Failed to resolve ${qualifiedName}`);
       }
-      return res;
     });
   }
 
-  function addResolver(resolver) {
-    if (!resolver || !resolver.test || typeof resolver.load !== 'function') {
-      throw new Error(
-        'Invalid resolver. test and load properties are required.',
-      );
+  // Given a string, attempts to resolve it with a `resolver` and
+  // loads in the registry all the chips returned by the resolver.
+  async use(qualifiedName) {
+    await this.#resolve(qualifiedName);
+    // TODO also throw if nothing resolved?
+    return this;
+  }
+
+  // Returns true if there is at least one chip with the given name
+  // in the registry.
+  has(name) {
+    return this.#qualifiedChips.has(name) || this.#uriChips.has(name);
+  }
+
+  // Get the chip class in the registry with the given name.
+  // If the chip is not found or the name is ambiguous, throws an error.
+  // Returns either the chip or a promise resolving to the chip.
+  load(name) {
+    const chip = this.#qualifiedChips.get(name) || this.#uriChips.get(name);
+    if (chip) {
+      return chip;
     }
-    const test =
-      resolver.test instanceof RegExp
-        ? resolver.test
-        : new RegExp(resolver.test);
-    resolvers.unshift({
-      ...resolver,
-      test,
-    });
+    const resolveChip = this.#resolve(name);
+    const getChip = () => {
+      const chip = this.#qualifiedChips.get(name);
+      if (!chip) {
+        throw new Error(`Failed to load ${name}`);
+      }
+      return chip;
+    };
+    if (resolveChip instanceof Promise) {
+      return resolveChip.then(getChip);
+    }
+    return getChip();
   }
 
-  const registry = {
-    version: REGISTRY_VERSION,
-    has: hasChip,
-    add: addChip,
-    load: loadChip,
-    list() {
-      return Array.from(loadedChips.values());
-    },
-    names() {
-      return Array.from(loadedChips.keys());
-    },
-    loader: addResolver,
-  };
+  // If the given chip is registered, returns the qualified name
+  // according to this registry.
+  qualifiedName(chip) {
+    return this.#chipsQualifiers.get(chip);
+  }
 
-  return Object.freeze(registry);
+  // Returns the list of all qualified names in the registry.
+  get qualifiedNames() {
+    return Array.from(this.#qualifiedChips.keys());
+  }
+
+  // Copy the registry to a new registry that allows changes even
+  // if the original registry is locked.
+  get copy() {
+    const copy = new Registry();
+    copy.#qualifiedChips = new Map(this.#qualifiedChips);
+    copy.#uriChips = new Map(this.#uriChips);
+    copy.#chipsQualifiers = new Map(this.#chipsQualifiers);
+    copy.#resolvers = this.#resolvers.slice();
+    return copy;
+  }
+
+  // Locks the registry to prevent further changes.
+  get lock() {
+    Object.freeze(this.#resolvers);
+    Object.freeze(this);
+    return this;
+  }
 }
+
+export const registry = new Registry()
+  .add(lib.std, 'proma/std')
+  .resolver(/^proma\/web(?:#(.+))?$/, (add) => add(lib.web, 'proma/web'))
+  .resolver(/^proma\/node(?:#(.+))?$/, (add) => add(lib.node, 'proma/node'))
+  .lock;

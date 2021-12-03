@@ -7,14 +7,14 @@ import {
   outputFlow,
   outputData,
   wire,
-  lib,
+  library,
 } from '../../../core/index.mjs';
 
 describe('[core/lib/flowControl] If', async (assert) => {
   assert({
     given: 'an If chip',
     should: 'compile and run',
-    actual: compileAndRun(lib.flowControl.If, (chip) => {
+    actual: compileAndRun(library.std.flowControl.If, (chip) => {
       const res = [];
       chip.out.whenTrue(() => res.push(true));
       chip.out.whenFalse(() => res.push(false));
@@ -28,7 +28,7 @@ describe('[core/lib/flowControl] If', async (assert) => {
     }),
     expected: compileAndRunResult(
       js`
-      class lib_flowControl_If {
+      class flowControl_If {
         constructor(condition) {
           const $in = Object.seal({
             condition: condition || false
@@ -104,7 +104,7 @@ describe('[core/lib/flowControl] If', async (assert) => {
         const exec = inputFlow('exec');
         const input = inputData('input', { defaultValue: false });
 
-        const branch = new lib.flowControl.If();
+        const branch = new library.std.flowControl.If();
 
         const then = outputFlow('then');
 
@@ -189,7 +189,7 @@ describe('[core/lib/flowControl] Sequence', async (assert) => {
       () => {
         const exec = inputFlow('exec');
 
-        const seq = new lib.flowControl.Sequence();
+        const seq = new library.std.flowControl.Sequence();
         seq.id = 'Sequence';
 
         const first = outputFlow('first');
@@ -277,7 +277,7 @@ describe('[core/lib/flowControl] ForLoop', async (assert) => {
       () => {
         const exec = inputFlow('exec');
 
-        const loop = new lib.flowControl.ForLoop(1, 4);
+        const loop = new library.std.flowControl.ForLoop(1, 4);
         loop.id = 'ForLoop';
 
         const done = outputFlow('done');
@@ -372,7 +372,7 @@ describe('[core/lib/flowControl] WhileLoop', async (assert) => {
         const exec = inputFlow('exec');
         const input = inputData('input', { defaultValue: false });
 
-        const loop = new lib.flowControl.WhileLoop();
+        const loop = new library.std.flowControl.WhileLoop();
         loop.id = 'WhileLoop';
 
         const done = outputFlow('done');
@@ -477,7 +477,7 @@ describe('[core/lib/flowControl] Switch', async (assert) => {
         const exec = inputFlow('exec');
         const input = inputData('input', { defaultValue: false });
 
-        const swi = new lib.flowControl.Switch();
+        const swi = new library.std.flowControl.Switch();
         swi.id = 'Switch';
         swi.in.case0 = 'one';
         swi.in.case1 = 'two';

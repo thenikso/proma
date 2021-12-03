@@ -2,7 +2,7 @@ import { info, assert } from './utils.mjs';
 import { Chip, isChipClass } from './chip.mjs';
 import { PortOutlet } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
-import { registry } from './registry.mjs';
+import { registry as defaultRegistry } from './registry.mjs';
 import { event, switchChip, externalGet } from './api.mjs';
 
 const VALID_CUSTOM_CHIPS = {
@@ -15,12 +15,12 @@ const CUSTOM_CHIP_REGEXP = new RegExp(
   'i',
 );
 
-export function edit(ChipClass) {
+export function edit(ChipClass, registry) {
   // TODO accept an optional new "build" function that can have deleteChip..?
   if (!ChipClass.editable) {
     throw new Error('Chip is not editable');
   }
-  return new EditableChipInfo(ChipClass);
+  return new EditableChipInfo(ChipClass, registry);
 }
 
 const sharedEventsByChipInfo = new WeakMap();
@@ -62,9 +62,11 @@ function getSharedEvents(chipInfo, eventName) {
 }
 
 class EditableChipInfo {
-  constructor(chipClass) {
+  constructor(chipClass, registry = defaultRegistry) {
     const chipInfo = info(chipClass);
     info(this, chipInfo);
+
+    this.registry = registry;
 
     const self = this;
 
@@ -182,7 +184,8 @@ class EditableChipInfo {
       // Search in context chips or registry
       else {
         chipClass =
-          this.Chip.customChipClasses[chipToAdd] || registry.load(chipToAdd);
+          this.Chip.customChipClasses[chipToAdd] ||
+          this.registry.load(chipToAdd);
       }
       // Chip to add will be instantiated from this class
       if (isChipClass(chipClass)) {
@@ -196,6 +199,7 @@ class EditableChipInfo {
       id = canonicalValues;
       canonicalValues = undefined;
     }
+
     if (isChipClass(chipToAdd)) {
       chipToAdd = new chipToAdd(...(canonicalValues || []));
     }

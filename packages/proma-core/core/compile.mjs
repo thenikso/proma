@@ -16,6 +16,10 @@ export class Compilation {
   }
 
   compile(codeWrapper, hooks) {
+    if (!this.rootChipInfo.isLoaded) {
+      throw new Error('Cannot compile non-fully loaded chip');
+    }
+
     codeWrapper = codeWrapper || new ClassWrapper();
 
     // TODO compile each input exec ports

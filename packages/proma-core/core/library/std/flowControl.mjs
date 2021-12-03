@@ -1,5 +1,4 @@
 export default function install({
-  registry,
   chip,
   inputFlow,
   inputData,
@@ -7,7 +6,7 @@ export default function install({
   outputData,
   switchChip,
 }) {
-  const If = chip('lib/flowControl/If', () => {
+  const If = chip('flowControl/If', () => {
     const exec = inputFlow('exec', {
       execute: () => {
         if (condition()) {
@@ -42,7 +41,7 @@ export default function install({
     const whenFalse = outputFlow('whenFalse');
   });
 
-  const Sequence = chip('lib/flowControl/Sequence', () => {
+  const Sequence = chip('flowControl/Sequence', () => {
     const exec = inputFlow('exec', {
       execute: () => {
         for (const t of then()) {
@@ -69,7 +68,7 @@ export default function install({
     const then = outputFlow('then', { variadic: 'then{index}' });
   });
 
-  const ForLoop = chip('lib/flowControl/ForLoop', () => {
+  const ForLoop = chip('flowControl/ForLoop', () => {
     const exec = inputFlow('exec', {
       execute: () => {
         for (let i = firstIndex(), l = lastIndex(); i < l; i++) {
@@ -94,7 +93,7 @@ export default function install({
     const completed = outputFlow('completed');
   });
 
-  const WhileLoop = chip('lib/flowControl/WhileLoop', () => {
+  const WhileLoop = chip('flowControl/WhileLoop', () => {
     const exec = inputFlow('exec', {
       execute: () => {
         while (condition()) {
@@ -113,13 +112,13 @@ export default function install({
     const completed = outputFlow('completed');
   });
 
-  const Switch = switchChip('lib/flowControl/Switch');
+  const Switch = switchChip('flowControl/Switch');
 
   return {
-    If: registry.add(If),
-    Sequence: registry.add(Sequence),
-    ForLoop: registry.add(ForLoop),
-    WhileLoop: registry.add(WhileLoop),
-    Switch: registry.add(Switch),
+    If,
+    Sequence,
+    ForLoop,
+    WhileLoop,
+    Switch,
   };
 }

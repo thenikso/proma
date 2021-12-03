@@ -1,7 +1,8 @@
 import { describe, Try } from '../runner/riteway.mjs';
-import { chip, Registry } from '../../core/index.mjs';
-
+import { chip } from '../../core/index.mjs';
 import { Literal, Log } from '../lib.mjs';
+
+import { Registry } from '../../core/registry.mjs';
 
 const CustomLog = chip('Log', () => {});
 
@@ -86,16 +87,16 @@ describe('[core/registry] Registry.resolver/use', async (assert) => {
   });
 });
 
-describe('[core/registry] Registry.get', async (assert) => {
+describe('[core/registry] Registry.load', async (assert) => {
   const registry = new Registry()
     .add(Literal, 'test')
     .add(Log, 'test')
     .add(CustomLog, 'custom');
 
   assert({
-    given: 'registry.get with a registered chip',
+    given: 'registry.load with a registered chip',
     should: 'return the chip class',
-    actual: registry.get('Literal'),
+    actual: registry.load('Literal'),
     expected: Literal,
   });
 });

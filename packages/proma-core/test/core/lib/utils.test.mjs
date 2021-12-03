@@ -7,7 +7,7 @@ import {
   outputFlow,
   outputData,
   wire,
-  lib,
+  library,
 } from '../../../core/index.mjs';
 
 describe('[core/lib/utils] GetPropertyAtPath', async (assert) => {
@@ -19,7 +19,7 @@ describe('[core/lib/utils] GetPropertyAtPath', async (assert) => {
         const exec = inputFlow('exec');
         const input = inputData('input', { defaultValue: {} });
 
-        const get = new lib.GetPropertyAtPath('one.1.two', 'fallback');
+        const get = new library.std.GetPropertyAtPath('one.1.two', 'fallback');
         get.id = 'GetPropertyAtPath';
 
         const then = outputFlow('then');
@@ -121,7 +121,7 @@ describe('[core/lib/utils] GetPropertyAtPath', async (assert) => {
         const exec = inputFlow('exec');
         const input = inputData('input', { defaultValue: {} });
 
-        const get = new lib.GetPropertyAtPath('one.1.two');
+        const get = new library.std.GetPropertyAtPath('one.1.two');
         get.id = 'GetPropertyAtPath';
 
         const then = outputFlow('then');
@@ -223,7 +223,7 @@ describe.skip('[core/lib/utils] Equal', async (assert) => {
         const exec = inputFlow('exec');
         const input = inputData('input');
 
-        const eq = new lib.Equal('1');
+        const eq = new library.std.Equal('1');
         eq.id = 'Equal';
 
         const then = outputFlow('then');

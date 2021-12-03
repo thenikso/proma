@@ -18,13 +18,16 @@ A unreal engine blueprint inspired editor for javascript.
 - [ ] show/use relevant libs for endpoint/node .proma files (`target: node/web`? better: `use: ['proma.com/lib/prelude@3.0', 'proma.com/lib/html']`)
   - [x] build new registry that can be instantiated
   - [x] move async to `use` instead of loadable chips (as a concept)
-  - [ ] refactor embedded libs to be standard,node,web
-  - [ ] load standard library by default
-  - [ ] resolvers for other embeeded libs (node, web)
-  - [ ] use new registry in `edit`
-  - [ ] remove old registry
-  - [ ] remove old embedded libs
-  - [ ] serialize should use qualified URIs
+  - [x] refactor embedded libs to be standard,node,web
+  - [x] load standard library by default
+  - [x] resolvers for other embeeded libs (node, web)
+  - [x] use new registry in `edit`
+  - [ ] ~~the `chip` should accept a `use` config and send loaded chips to the chip builder function? MAYBE NOT~~
+  - [ ] ~~`edit#addChip` must use a string to be resolved by the registry and can not accept a Chip because we will need the qualified name~~
+  - [x] remove old registry
+  - [x] remove old embedded libs
+  - [x] serialize should use qualified URIs from a registry if provided
+  - [ ] deserialize should add `use` to the registry.copy
   - in registry viewer cut the common part/the `use` to show shortened names/folders
   - maybe the registry should know where it loads a lib from, and the lib can just have local names
 - [ ] run proma files with example payload (how to show relevan files? like html for web?)
@@ -32,6 +35,7 @@ A unreal engine blueprint inspired editor for javascript.
 - [ ] DOM node chip? basically you enter html with `{port}` and we return an updating DOM (created, updated then ports + element)
 - [ ] example project selector / select from local stored
 - [ ] 3d game scripting?
+- [ ] use esbuild instead of rollup: new plugin to add `exec.toString` to avoid minification problems
 
 ## ideas
 - need context menu for adding, removing, renaming files

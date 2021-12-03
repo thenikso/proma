@@ -5,10 +5,11 @@ import { INPUT, OUTPUT } from './ports.mjs';
 // Serialization
 //
 
-export function serializeChipInstance(chip) {
+export function serializeChipInstance(chip, registry) {
   const res = {
     id: chip.id,
-    chipURI: chip.chipURI,
+    chipURI:
+      (registry && registry.qualifiedName(chip.constructor)) || chip.chipURI,
   };
 
   const chipInfo = info(chip);
@@ -50,8 +51,8 @@ export function serializeChipInstance(chip) {
   return res;
 }
 
-export function serializeChipInfo(chipInfo) {
-  const toJSON = (x) => x.toJSON();
+export function serializeChipInfo(chipInfo, registry) {
+  const toJSON = (x) => x.toJSON(registry);
   const inputs = chipInfo.inputs.map(toJSON);
   const outputs = chipInfo.outputs.map(toJSON);
   const chips = chipInfo.chips.map(toJSON);

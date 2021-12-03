@@ -1,11 +1,11 @@
 import { INPUT, OUTPUT } from './ports.mjs';
 import { edit } from './edit.mjs';
 
-export function fromJSON(chip, data, withErrors) {
+export function fromJSON(chip, data, { registry, withErrors } = {}) {
   if (typeof data === 'string') {
     data = JSON.parse(data);
   }
-  const ChipClass = deserializeChip(chip, data, withErrors);
+  const ChipClass = deserializeChip(chip, data, registry, withErrors);
   ChipClass.metadata = data.metadata;
   return ChipClass;
 }
@@ -14,10 +14,11 @@ export function fromJSON(chip, data, withErrors) {
 // Deserialization
 //
 
-function deserializeChip(chip, data, withErrors) {
+function deserializeChip(chip, data, registry, withErrors) {
   // TODO validate `data`
+  // TODO build `registry` from `data.use`
   const res = chip(data.URI, null, { editable: true });
-  const build = edit(res);
+  const build = edit(res, registry);
   const errors = [];
   const portsToCompile = [];
   for (const port of data[INPUT] || []) {

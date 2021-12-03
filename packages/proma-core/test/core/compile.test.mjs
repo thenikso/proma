@@ -28,16 +28,16 @@ describe('[core/compile] compilation regression checks', async (assert) => {
       },
       {
         id: 'lib_debug_Log_1',
-        chipURI: 'lib/debug/Log',
+        chipURI: 'proma/std#debug/Log',
       },
       {
         id: 'lib_html_QuerySelector_1',
-        chipURI: 'lib/html/QuerySelector',
+        chipURI: 'proma/web#QuerySelector',
         args: [null, 'button'],
       },
       {
         id: 'lib_html_BindEvent_1',
-        chipURI: 'lib/html/BindEvent',
+        chipURI: 'proma/web#BindEvent',
         args: [null, 'click'],
       },
       {
