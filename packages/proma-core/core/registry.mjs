@@ -7,8 +7,10 @@ import * as lib from './library/index.mjs';
 export class Registry {
   // Map from full qualified URI to chip class.
   #qualifiedToChip;
-  // Inverese of `#qualifiedChips`. Chip classes to full qualified names.
-  #chipToQualifier;
+  // Chip classes to an array of [qualifiedName, URI | undefined].
+  // The second element of the array is defined if the chip is registered
+  // via the `use` method.
+  #chipToQualifiers;
   // A map from a chip URI to the chip class. This will be only populated if the
   // chip is registered via `use`. If attempting to `use` a library which would
   // conflict with an existing URI in here, the `use` method will throw.
@@ -24,7 +26,7 @@ export class Registry {
 
   constructor() {
     this.#qualifiedToChip = new Map();
-    this.#chipToQualifier = new Map();
+    this.#chipToQualifiers = new Map();
     this.#uriToChip = new Map();
     this.#resolvers = [];
     this.#useToChips = new Map();
@@ -47,7 +49,7 @@ export class Registry {
       }
       throw new Error('chip must be a Chip');
     }
-    if (this.#chipToQualifier.has(chip)) {
+    if (this.#chipToQualifiers.has(chip)) {
       throw new Error(`Chip ${chip.URI} is already registered`);
     }
     let qualifiedName = chip.URI;
@@ -58,7 +60,7 @@ export class Registry {
       throw new Error(`Duplicate qualified name: ${qualifiedName}`);
     }
     this.#qualifiedToChip.set(qualifiedName, chip);
-    this.#chipToQualifier.set(chip, qualifiedName);
+    this.#chipToQualifiers.set(chip, [qualifiedName]);
     return this;
   }
 
@@ -130,7 +132,10 @@ export class Registry {
       }
       this.#uriToChip.set(chip.URI, chip);
       loadedChips.push(chip);
-      return this.add(chip, qualifier);
+      const res = this.add(chip, qualifier);
+      // Adds the unqualified URI to the valid qualifiers for the chip
+      this.#chipToQualifiers.get(chip).push(chip.URI);
+      return res;
     });
     this.#useToChips.set(qualifiedName, loadedChips);
     // TODO also throw if nothing resolved?
@@ -147,8 +152,8 @@ export class Registry {
     }
     chips.forEach((chip) => {
       this.#uriToChip.delete(chip.URI);
-      this.#qualifiedToChip.delete(this.#chipToQualifier.get(chip));
-      this.#chipToQualifier.delete(chip);
+      this.#qualifiedToChip.delete(this.#chipToQualifiers.get(chip)[0]);
+      this.#chipToQualifiers.delete(chip);
     });
     this.#useToChips.delete(qualifiedName);
     return this;
@@ -191,10 +196,20 @@ export class Registry {
     return getChip();
   }
 
+  // Returns the shortest name for the given chip according to this
+  // registry. That could be the `qualifiedName` or the chip `URI`
+  // if the chip is registered via the `use` method.
+  name(chip) {
+    const [fullQualifiedName, localQualifiedName] = this.#chipToQualifiers.get(
+      chip,
+    );
+    return localQualifiedName || fullQualifiedName;
+  }
+
   // If the given chip is registered, returns the qualified name
   // according to this registry.
   qualifiedName(chip) {
-    return this.#chipToQualifier.get(chip);
+    return this.#chipToQualifiers.get(chip)[0];
   }
 
   // Returns the list of all qualified names in the registry.
@@ -208,7 +223,7 @@ export class Registry {
     const copy = new Registry();
     copy.#qualifiedToChip = new Map(this.#qualifiedToChip);
     copy.#uriToChip = new Map(this.#uriToChip);
-    copy.#chipToQualifier = new Map(this.#chipToQualifier);
+    copy.#chipToQualifiers = new Map(this.#chipToQualifiers);
     copy.#resolvers = this.#resolvers.slice();
     copy.#useToChips = new Map(this.#useToChips);
     return copy;

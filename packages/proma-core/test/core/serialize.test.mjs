@@ -356,7 +356,7 @@ describe('[core/serialize] from JSON with async chips', async (assert) => {
   });
 });
 
-describe('[core/serialize] from JSON with `use` property', async (assert) => {
+describe('[core/serialize] `use` property', async (assert) => {
   const useChipJSON = {
     ...chipJSON,
     use: ['test/serialize'],
@@ -379,7 +379,7 @@ describe('[core/serialize] from JSON with `use` property', async (assert) => {
 
   assert({
     given: 'a JSON chip with `use` property',
-    should: 'compile and run',
+    should: 'deserialize',
     actual: await (async () => {
       const C = await fromJSON(chip, useChipJSON, opt);
       return compileAndRun(C, (chip) => {
@@ -392,5 +392,12 @@ describe('[core/serialize] from JSON with `use` property', async (assert) => {
       });
     })(),
     expected: compileAndRunResult(chipJS, [3]),
+  });
+
+  assert({
+    given: 'a chip with `use` property',
+    should: 'serialize',
+    actual: (await fromJSON(chip, useChipJSON, opt)).toJSON(),
+    expected: useChipJSON,
   });
 });

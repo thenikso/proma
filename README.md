@@ -8,8 +8,8 @@ A unreal engine blueprint inspired editor for javascript.
       (`use: ['proma.com/lib/std@3.0', 'proma.com/lib/web']`)
   - [x] always use a `registry.copy` when editing something
   - [x] add `edit.addUse`/`edit.removeUse` to modify `use` for chip
-  - [ ] deserialize should add `use` to the registry.copy. NOTE that `fromJSON` must become async because partial URIs can not be constructed if `use` is not resolved first
-  - [ ] serialize should add `use` and use short URIs for chips
+  - [x] deserialize should add `use` to the registry.copy. NOTE that `fromJSON` must become async because partial URIs can not be constructed if `use` is not resolved first
+  - [x] serialize should add `use` and use short URIs for chips
   - [ ] update frontend to use new library
 - [ ] run proma files with example payload (how to show relevan files? like html for web?)
 - [ ] register local chips in registry?
