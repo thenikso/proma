@@ -66,7 +66,9 @@ class EditableChipInfo {
     const chipInfo = info(chipClass);
     info(this, chipInfo);
 
-    this.registry = registry;
+    // We always copy the registry so that we can load new things in it
+    // and keep those local to the chip.
+    this.registry = registry.copy;
 
     const self = this;
 
