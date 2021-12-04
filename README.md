@@ -4,10 +4,9 @@ A unreal engine blueprint inspired editor for javascript.
 
 ## WIP
 
-
 - [ ] show/use relevant libs for endpoint/node .proma files
       (`use: ['proma.com/lib/std@3.0', 'proma.com/lib/web']`)
-  - [ ] always use a `registry.copy` when editing something
+  - [x] always use a `registry.copy` when editing something
   - [ ] add `edit.addUse`/`edit.removeUse` to modify `use` for chip
   - [ ] deserialize should add `use` to the registry.copy. NOTE that `fromJSON` must become async because partial URIs can not be constructed if `use` is not resolved first
   - [ ] serialize should add `use`? if original chip had it? registry should know? prop not, is a chip thing

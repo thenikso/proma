@@ -119,7 +119,7 @@ export class Chip {
   }
 
   toJSON(registry) {
-    return serializeChipInstance(this, registry);
+    return serializeChipInstance(this, registry || info(this).registry);
   }
 }
 
@@ -132,12 +132,15 @@ export function isChipClass(obj) {
 //
 
 export class ChipInfo {
-  constructor(URI, makeLabel) {
+  constructor(URI, makeLabel, registry) {
     // TODO validate name, qualifiedName instead?
     this.URI = URI || 'local/' + shortUID();
     this.chips = [];
     this.inputs = [];
     this.outputs = [];
+    // If specified, the registry to use to serialize this chip.
+    // Serialization may need a registry to produce fully qualified URIs.
+    this.registry = registry;
     // Wire map from source -> [sink]. Souces can have multiple sinks.
     // Also forwards PortOutlet sinks to [sinks] by saving their PortOutlet.
     // TODO should map to a Set
@@ -176,6 +179,7 @@ export class ChipInfo {
   }
 
   // Name given to the javascript entity representing this chip
+  // TODO rename to `jsName`
   get name() {
     return this.URI.replace(/[^_$a-z0-9]/gi, '_');
   }
@@ -607,6 +611,6 @@ export class ChipInfo {
   //
 
   toJSON(registry) {
-    return serializeChipInfo(this, registry);
+    return serializeChipInfo(this, registry || this.registry);
   }
 }

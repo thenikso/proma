@@ -100,7 +100,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
   assert({
     given: 'a chip instance',
     should: 'add the sub-chip',
-    actual: edit(chip('EditChip'))
+    actual: edit(chip('EditChip'), testRegistry)
       .addInputFlowOutlet('exec')
       .addOutputFlowOutlet('then')
       .addOutputDataOutlet('value')
@@ -108,7 +108,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addConnection('exec', '$0.in.exec')
       .addConnection('$0.out.output', 'value')
       .addConnection('$0.out.then', 'then')
-      .Chip.toJSON(testRegistry),
+      .Chip.toJSON(),
     expected,
   });
 
@@ -121,12 +121,13 @@ describe('[core/edit] edit sub-chips', async (assert) => {
         const then = outputFlow('then');
         const value = outputData('value');
       }),
+      testRegistry
     )
       .addChip(Pass, ['pass'], 'Pass')
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
       .addConnection('Pass.out.then', 'then')
-      .Chip.toJSON(testRegistry),
+      .Chip.toJSON(),
     expected,
   });
 
@@ -145,7 +146,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
       .addConnection('exec', 'Pass.in.exec')
       .addConnection('Pass.out.output', 'value')
       .addConnection('Pass.out.then', 'then')
-      .Chip.toJSON(testRegistry),
+      .Chip.toJSON(),
     expected,
   });
 });

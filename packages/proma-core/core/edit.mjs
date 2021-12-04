@@ -68,7 +68,10 @@ class EditableChipInfo {
 
     // We always copy the registry so that we can load new things in it
     // and keep those local to the chip.
-    this.registry = registry.copy;
+    if (!chipInfo.registry) {
+      chipInfo.registry = registry || defaultRegistry;
+    }
+    chipInfo.registry = chipInfo.registry.copy;
 
     const self = this;
 
@@ -162,6 +165,7 @@ class EditableChipInfo {
   }
 
   addChip(chipToAdd, canonicalValues, id) {
+    const chipInfo = info(this);
     if (typeof chipToAdd === 'string') {
       let chipClass;
       // Special case for custom chips in the form of
@@ -187,7 +191,7 @@ class EditableChipInfo {
       else {
         chipClass =
           this.Chip.customChipClasses[chipToAdd] ||
-          this.registry.load(chipToAdd);
+          chipInfo.registry.load(chipToAdd);
       }
       // Chip to add will be instantiated from this class
       if (isChipClass(chipClass)) {
@@ -211,7 +215,6 @@ class EditableChipInfo {
     if (id) {
       chipToAdd.id = id;
     }
-    const chipInfo = info(this);
     while (chipInfo.getChip(chipToAdd.id)) {
       chipToAdd.id = info(chipToAdd).makeChipId();
     }
