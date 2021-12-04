@@ -4,33 +4,16 @@ A unreal engine blueprint inspired editor for javascript.
 
 ## WIP
 
-- [x] file explorer
-- [x] ui with file explorer
-- [x] download as zip with jszip and file-saver
-- [x] playground editor for proma files
-- [x] index file to start server, try downloaded
-- [x] download project as express server
-- [x] frontend .proma files
-- [x] html page editor (codemirror)
-- [x] saves changes in local storage
-- [x] fix: if no file selected, tree view is broken
-- [x] select local storage projects or create a new one
-- [ ] show/use relevant libs for endpoint/node .proma files (`target: node/web`? better: `use: ['proma.com/lib/prelude@3.0', 'proma.com/lib/html']`)
-  - [x] build new registry that can be instantiated
-  - [x] move async to `use` instead of loadable chips (as a concept)
-  - [x] refactor embedded libs to be standard,node,web
-  - [x] load standard library by default
-  - [x] resolvers for other embeeded libs (node, web)
-  - [x] use new registry in `edit`
-  - [ ] ~~the `chip` should accept a `use` config and send loaded chips to the chip builder function? MAYBE NOT~~
-  - [ ] ~~`edit#addChip` must use a string to be resolved by the registry and can not accept a Chip because we will need the qualified name~~
-  - [x] remove old registry
-  - [x] remove old embedded libs
-  - [x] serialize should use qualified URIs from a registry if provided
-  - [ ] deserialize should add `use` to the registry.copy
-  - in registry viewer cut the common part/the `use` to show shortened names/folders
-  - maybe the registry should know where it loads a lib from, and the lib can just have local names
+
+- [ ] show/use relevant libs for endpoint/node .proma files
+      (`use: ['proma.com/lib/std@3.0', 'proma.com/lib/web']`)
+  - [ ] always use a `registry.copy` when editing something
+  - [ ] add `edit.addUse`/`edit.removeUse` to modify `use` for chip
+  - [ ] deserialize should add `use` to the registry.copy. NOTE that `fromJSON` must become async because partial URIs can not be constructed if `use` is not resolved first
+  - [ ] serialize should add `use`? if original chip had it? registry should know? prop not, is a chip thing
+  - [ ] update frontend to use new library
 - [ ] run proma files with example payload (how to show relevan files? like html for web?)
+- [ ] register local chips in registry?
 - [ ] add new endpoint .proma
 - [ ] DOM node chip? basically you enter html with `{port}` and we return an updating DOM (created, updated then ports + element)
 - [ ] example project selector / select from local stored
@@ -38,6 +21,7 @@ A unreal engine blueprint inspired editor for javascript.
 - [ ] use esbuild instead of rollup: new plugin to add `exec.toString` to avoid minification problems
 
 ## ideas
+
 - need context menu for adding, removing, renaming files
 - need a way to change imports/other props of proma files (maybe later)
 - preview of current file

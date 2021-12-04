@@ -17,7 +17,7 @@ describe('[core/registry] Registry.add', async (assert) => {
   assert({
     given: 'registry.add with a single chip',
     should: 'add the chip',
-    actual: new Registry().add(Literal, 'test').has('Literal'),
+    actual: new Registry().add(Literal, 'test').has('test#Literal'),
     expected: true,
   });
 
@@ -42,13 +42,6 @@ describe('[core/registry] Registry.has', async (assert) => {
     .add(Literal, 'test')
     .add(Log, 'test')
     .add(CustomLog, 'custom');
-
-  assert({
-    given: 'registry.has with unqualified name',
-    should: 'return true for unambiguous chip',
-    actual: registry.has('Literal'),
-    expected: true,
-  });
 
   assert({
     given: 'registry.has with unqualified name',
@@ -81,7 +74,7 @@ describe('[core/registry] Registry.resolver/use', async (assert) => {
 
   assert({
     given: 'registry.use with a resolvable name',
-    should: 'use the resolver and find the chip',
+    should: 'use the resolver and find the chip with unqualified name',
     actual: (await registry.use('test#Literal')).has('Literal'),
     expected: true,
   });
@@ -96,7 +89,7 @@ describe('[core/registry] Registry.load', async (assert) => {
   assert({
     given: 'registry.load with a registered chip',
     should: 'return the chip class',
-    actual: registry.load('Literal'),
+    actual: registry.load('test#Literal'),
     expected: Literal,
   });
 });

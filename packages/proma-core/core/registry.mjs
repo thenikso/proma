@@ -5,15 +5,25 @@ import * as lib from './library/index.mjs';
 // `Registry` is a store for chips specified with the `use` keyword
 // that are available during editing (and hence also deserialize).
 export class Registry {
+  // Map from full qualified URI to chip class.
   #qualifiedChips;
-  #uriChips;
+  // Inverese of `#qualifiedChips`. Chip classes to full qualified names.
   #chipsQualifiers;
+  // A map from a chip URI to the chip class. This will be only populated if the
+  // chip is registered via `use`. If attempting to `use` a library which would
+  // conflict with an existing URI in here, the `use` method will throw.
+  #useShortcuts;
+  // List of resolvers as objects containing:
+  // - `test`: a regular expression matching a qualified chip name
+  // - `load`: a function receiving the `add` method of this registry and the
+  //           `test` match result.
+  // See `resolver` for more details.
   #resolvers;
 
   constructor() {
     this.#qualifiedChips = new Map();
-    this.#uriChips = new Map();
     this.#chipsQualifiers = new Map();
+    this.#useShortcuts = new Map();
     this.#resolvers = [];
   }
 
@@ -23,17 +33,13 @@ export class Registry {
     if (Object.isFrozen(this)) {
       throw new Error('Cannot add to a locked registry');
     }
-    return this.#add(chip, qualifier);
-  }
-
-  #add(chip, qualifier) {
     if (Array.isArray(chip)) {
-      chip.forEach((c) => this.#add(c, qualifier));
+      chip.forEach((c) => this.add(c, qualifier));
       return this;
     }
     if (!isChipClass(chip)) {
       if (typeof chip === 'object' && chip) {
-        this.#add(Array.from(Object.values(chip)), qualifier);
+        this.add(Array.from(Object.values(chip)), qualifier);
         return this;
       }
       throw new Error('chip must be a Chip');
@@ -50,11 +56,6 @@ export class Registry {
     }
     this.#qualifiedChips.set(qualifiedName, chip);
     this.#chipsQualifiers.set(chip, qualifiedName);
-    if (this.#uriChips.has(chip.URI)) {
-      this.#uriChips.delete(chip.URI);
-    } else {
-      this.#uriChips.set(chip.URI, chip);
-    }
     return this;
   }
 
@@ -71,10 +72,10 @@ export class Registry {
     return this;
   }
 
-  #resolve(qualifiedName) {
+  #resolve(qualifiedName, addChipToRegistry) {
     // Search for resolvers
     const resolvers = this.#resolvers
-      .map((r) => ({ match: r.test.test(qualifiedName), load: r.load }))
+      .map((r) => ({ match: r.test.exec(qualifiedName), load: r.load }))
       .filter((r) => r.match);
     if (resolvers.length === 0) {
       return false;
@@ -83,7 +84,7 @@ export class Registry {
     let didResolve = false;
     const add = (chip, qualifier) => {
       didResolve = true;
-      this.#add(chip, qualifier);
+      addChipToRegistry(chip, qualifier);
     };
     // Attempt to resolve syncronously
     const fastResolve = resolvers[0].load(add, resolvers[0].match);
@@ -102,7 +103,7 @@ export class Registry {
       for (let i = 1, l = resolvers.length; i < l && !didResolve; i++) {
         const resolver = resolvers[i];
         didResolve = await Promise.resolve(
-          resolver.load(this.#add.bind(this), resolver.match),
+          resolver.load(addChipToRegistry, resolver.match),
         )
           .then(() => true)
           .catch((err) => {
@@ -119,7 +120,13 @@ export class Registry {
   // Given a string, attempts to resolve it with a `resolver` and
   // loads in the registry all the chips returned by the resolver.
   async use(qualifiedName) {
-    await this.#resolve(qualifiedName);
+    await this.#resolve(qualifiedName, (chip, qualifier) => {
+      if (this.#useShortcuts.has(chip.URI)) {
+        throw new Error(`Use of ambiguous chip URI: ${chip.URI}`);
+      }
+      this.#useShortcuts.set(chip.URI, chip);
+      return this.add(chip, qualifier);
+    });
     // TODO also throw if nothing resolved?
     return this;
   }
@@ -127,22 +134,26 @@ export class Registry {
   // Returns true if there is at least one chip with the given name
   // in the registry.
   has(name) {
-    return this.#qualifiedChips.has(name) || this.#uriChips.has(name);
+    return this.#qualifiedChips.has(name) || this.#useShortcuts.has(name);
   }
 
   // Get the chip class in the registry with the given name.
   // If the chip is not found or the name is ambiguous, throws an error.
   // Returns either the chip or a promise resolving to the chip.
   load(name) {
-    const chip = this.#qualifiedChips.get(name) || this.#uriChips.get(name);
+    const chip = this.#qualifiedChips.get(name) || this.#useShortcuts.get(name);
     if (chip) {
       return chip;
     }
-    const resolveChip = this.#resolve(name);
+    const resolveChip = this.#resolve(name, (chip, qualifier) =>
+      this.add(chip, qualifier),
+    );
     const getChip = () => {
       const chip = this.#qualifiedChips.get(name);
       if (!chip) {
-        throw new Error(`Failed to load ${name}`);
+        throw new Error(
+          `Failed to load "${name}". Maybe it is not registered or not fully qualified?`,
+        );
       }
       return chip;
     };
@@ -168,7 +179,7 @@ export class Registry {
   get copy() {
     const copy = new Registry();
     copy.#qualifiedChips = new Map(this.#qualifiedChips);
-    copy.#uriChips = new Map(this.#uriChips);
+    copy.#useShortcuts = new Map(this.#useShortcuts);
     copy.#chipsQualifiers = new Map(this.#chipsQualifiers);
     copy.#resolvers = this.#resolvers.slice();
     return copy;

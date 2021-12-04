@@ -304,12 +304,17 @@ describe('[core/serialize] from JSON with async chips', async (assert) => {
       if (!passAsyncResolver) {
         passAsyncResolver = new Promise((resolve) => {
           setTimeout(() => {
-            add(Pass, 'test/serialize');
             resolve();
           }, 10);
         });
       }
-      return passAsyncResolver;
+      // Given that registries are always copied by `edit`, a resolver
+      // should cache the resolved chips and add them on ucoming requests.
+      // FIX This might have problems if there are multiple resolution requests
+      // for the same registry/chip while still resolving the original promise.
+      return passAsyncResolver.then(() => {
+        add(Pass, 'test/serialize');
+      });
     },
   );
 
@@ -349,4 +354,8 @@ describe('[core/serialize] from JSON with async chips', async (assert) => {
     })(),
     expected: compileAndRunResult(chipJS, [3, 7, 7]),
   });
+});
+
+describe('[core/serialize] from JSON with `use` property', async (assert) => {
+  // TODO add tests for `use` that uses short UIDs in chip names
 });
