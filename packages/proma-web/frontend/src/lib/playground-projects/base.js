@@ -1,7 +1,7 @@
 export default () => ({
   'endpoints/greet.proma': `{
   "URI": "backend/Greet",
-  "use": ["proma/core", "proma/node"],
+  "use": ["proma/node"],
   "target": "node",
   "in": [
     { "name": "exec", "kind": "flow" },
@@ -15,39 +15,39 @@ export default () => ({
     { "id": "OnCreate_1", "chipURI": "OnCreate:event" },
     {
       "id": "lib_debug_Log_1",
-      "chipURI": "lib/debug/Log",
+      "chipURI": "debug/Log",
       "args": ["chip created"]
     },
     {
       "id": "lib_string_Append_1",
-      "chipURI": "lib/string/Append",
+      "chipURI": "string/Append",
       "args": ["Hello ", null, "!"]
     },
     {
       "id": "lib_network_FetchJson_1",
-      "chipURI": "lib/network/FetchJson",
+      "chipURI": "network/FetchJson",
       "args": ["https://jsonplaceholder.typicode.com/todos/1"]
     },
     {
       "id": "lib_GetPropertyAtPath_1",
-      "chipURI": "lib/GetPropertyAtPath",
+      "chipURI": "GetPropertyAtPath",
       "args": ["query.name"]
     },
-    { "id": "lib_Equal_1", "chipURI": "lib/Equal", "args": ["GET"] },
-    { "id": "lib_debug_Log_2", "chipURI": "lib/debug/Log" },
-    { "id": "lib_ToString_1", "chipURI": "lib/ToString" },
+    { "id": "lib_Equal_1", "chipURI": "Equal", "args": ["GET"] },
+    { "id": "lib_debug_Log_2", "chipURI": "debug/Log" },
+    { "id": "lib_ToString_1", "chipURI": "ToString" },
     {
       "id": "lib_string_Append_2",
-      "chipURI": "lib/string/Append",
+      "chipURI": "string/Append",
       "args": ["is GET: "]
     },
     {
       "id": "lib_flowControl_Sequence_1",
-      "chipURI": "lib/flowControl/Sequence"
+      "chipURI": "flowControl/Sequence"
     },
     {
       "id": "lib_GetProperty_1",
-      "chipURI": "lib/GetProperty",
+      "chipURI": "GetProperty",
       "args": [null, "method"]
     }
   ],
@@ -118,33 +118,33 @@ export default () => ({
 </html>`,
   'www/app.proma': `{
     "URI": "frontend/App",
-    "use": ["proma/core", "proma/html"],
+    "use": ["proma/web"],
     "in": [
       { "name": "ready", "kind": "flow" },
-      { "name": "window", "kind": "data", "canonical": true, "type": "Window" },
-      { "name": "target", "kind": "data", "canonical": true, "type": "Element" }
+      { "name": "window", "kind": "data", "canonical": true },
+      { "name": "target", "kind": "data", "canonical": true }
     ],
     "chips": [
       {
         "id": "lib_html_BindEvent_1",
-        "chipURI": "lib/html/BindEvent",
+        "chipURI": "BindEvent",
         "args": [null, "click"]
       },
       { "id": "CustomEvent_1", "chipURI": "CustomEvent:event(event:Event)" },
       {
         "id": "lib_debug_Log_5",
-        "chipURI": "lib/debug/Log",
+        "chipURI": "debug/Log",
         "args": ["clicked"]
       },
       {
         "id": "lib_network_FetchJson_3",
-        "chipURI": "lib/network/FetchJson",
+        "chipURI": "network/FetchJson",
         "args": ["/greet?name=nico"]
       },
-      { "id": "lib_debug_Log_6", "chipURI": "lib/debug/Log" },
+      { "id": "lib_debug_Log_6", "chipURI": "debug/Log" },
       {
         "id": "lib_html_QuerySelector_2",
-        "chipURI": "lib/html/QuerySelector",
+        "chipURI": "QuerySelector",
         "args": [null, "button"]
       }
     ],

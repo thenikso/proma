@@ -80,9 +80,10 @@ export function serializeChipInfo(chipInfo, registry) {
     URI: chipInfo.URI,
   };
   if (registry) {
-    const useList = registry.useList;
-    if (useList && useList.length > 0) {
-      res.use = useList;
+    const useSet = new Set(registry.useList);
+    useSet.delete('proma/std');
+    if (useSet && useSet.size > 0) {
+      res.use = [...useSet];
     }
   }
   if (inputs.length > 0) {

@@ -100,7 +100,7 @@
 
   let metadata;
 
-  $: updateChipMetadata(metadata);
+  $: metadata && updateChipMetadata(metadata);
 
   function updateChipMetadata(metadata) {
     if (edit) {

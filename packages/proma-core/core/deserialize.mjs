@@ -18,7 +18,9 @@ async function deserializeChip(chip, data, registry, withErrors) {
   // TODO validate `data`
   const res = chip(data.URI, null, { editable: true });
   const build = edit(res, registry);
-  await Promise.all((data.use || []).map((u) => build.addUse(u)));
+  const useSet = new Set(data.use);
+  useSet.add('proma/std');
+  await Promise.all([...useSet].map((u) => build.addUse(u)));
   const errors = [];
   const portsToCompile = [];
   for (const port of data[INPUT] || []) {

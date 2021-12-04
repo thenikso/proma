@@ -3,9 +3,9 @@
   import { onMount, createEventDispatcher } from 'svelte';
   import GroupList from '$lib/components/GroupList.svelte';
   import TextWithMatches from '$lib/components/TextWithMatches.svelte';
-  import { registry } from '@proma/core';
   const dispatch = createEventDispatcher();
 
+  export let registry;
   export let contextChips = [];
 
   function dispatchClose() {
@@ -31,7 +31,8 @@
   // Build context chip list
   //
 
-  $: contextGroupList = contextChips &&
+  $: contextGroupList =
+    contextChips &&
     contextChips.length &&
     chipListToGroupListOptions(contextChips);
 
@@ -39,22 +40,16 @@
   // Build registry list
   //
 
-  let registryGroupList;
-  {
-    registryGroupList = chipListToGroupListOptions(registry.list());
-    // TODO better select root of registry list
-    registryGroupList.shift();
-  }
+  // TODO should update on registry use change
+  let registryGroupList = chipListToGroupListOptions(registry.chipList);
 
   //
   // Build list for display
   //
 
-  $: fullGroupList = contextGroupList ? [
-    ...contextGroupList,
-    { header: 'From Libraries' },
-    ...registryGroupList
-  ] : registryGroupList;
+  $: fullGroupList = contextGroupList
+    ? [...contextGroupList, { header: 'From Libraries' }, ...registryGroupList]
+    : registryGroupList;
 
   $: registryFuse = new Fuse(
     fullGroupList.flat().filter((i) => !i.groupStart && !i.header),
@@ -172,7 +167,11 @@
 
   function sortedKeys(obj) {
     return Array.from(Object.keys(obj))
-      .sort((a, b) => a - b)
+      .sort((a, b) => {
+        if (a < b) return -1;
+        if (a > b) return 1;
+        return 0;
+      })
       .filter((k) => !k.startsWith('$'));
   }
 
@@ -315,7 +314,8 @@
             <div
               id={options.id}
               class="library-item"
-              class:highlighted={highlightedEl && highlightedEl.id === options.id}
+              class:highlighted={highlightedEl &&
+                highlightedEl.id === options.id}
               on:click={() => dispatchSelect(options.chip)}
             >
               <div class="library-item-bg">

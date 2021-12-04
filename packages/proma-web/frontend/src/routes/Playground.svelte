@@ -192,7 +192,7 @@
 
   let currentDownload;
 
-  function download(files) {
+  async function download(files) {
     action('Playground.save')();
 
     const zip = new jszip();
@@ -202,7 +202,7 @@
       zip.file(fileName, fileContent);
       const ext = getFileExt(fileName);
       if (ext === 'proma') {
-        const chip = proma.fromJSON(proma.chip, fileContent);
+        const chip = await proma.fromJSON(proma.chip, fileContent);
         const classSource = chip.compile();
         let source = '';
         // TODO should use some kind of chip.target or similar

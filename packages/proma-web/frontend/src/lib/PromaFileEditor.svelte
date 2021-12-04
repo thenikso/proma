@@ -38,18 +38,20 @@
   let sourceChip;
   let chipEditor;
 
-  $: if (!chipEditor || !eq(chipEditor.Chip.toJSON(), sourceJson)) {
-    updateChipEditor();
-  }
+  $: updateChipEditor(sourceJson);
 
-  function updateChipEditor() {
+  async function updateChipEditor(sourceJson) {
+    // TODO better check to see if soruce changed. maybe just check URI?
+    if (chipEditor && eq(chipEditor.Chip.toJSON(), sourceJson)) {
+      return;
+    }
     sourceChip =
       sourceJson &&
-      proma.fromJSON(proma.chip, sourceJson, {
+      (await proma.fromJSON(proma.chip, sourceJson, {
         withErrors: (errors) => {
           console.error(errors);
         },
-      });
+      }));
     chipEditor = sourceChip && proma.edit(sourceChip);
   }
 
@@ -171,35 +173,38 @@
   }
 </script>
 
-<div class="PromaFile" {id} on:keydown={dispatchShortcut}>
-  <ChipBoardView
-    chip={sourceChip}
-    edit={chipEditor}
-    on:subChip:request={handleChipRequest}
-  />
+{#if sourceChip}
+  <div class="PromaFile" {id} on:keydown={dispatchShortcut}>
+    <ChipBoardView
+      chip={sourceChip}
+      edit={chipEditor}
+      on:subChip:request={handleChipRequest}
+    />
 
-  {#if newSubChipRequest}
-    <Overlay
-      anchor={{
-        x: newSubChipRequest.clientX - 5,
-        y: newSubChipRequest.clientY - 5,
-      }}
-      on:dismiss={() => (newSubChipRequest = null)}
-    >
-      <PromaChipRegistry
-        contextChips={subChipContextList}
-        on:close={() => (newSubChipRequest = null)}
-        on:select={(e) => {
-          const chipClass = e.detail.chip;
-          newSubChipRequest.provideChipInstance(new chipClass());
-          newSubChipRequest = null;
+    {#if newSubChipRequest}
+      <Overlay
+        anchor={{
+          x: newSubChipRequest.clientX - 5,
+          y: newSubChipRequest.clientY - 5,
         }}
-      />
-    </Overlay>
-  {/if}
+        on:dismiss={() => (newSubChipRequest = null)}
+      >
+        <PromaChipRegistry
+          registry={chipEditor.registry}
+          contextChips={subChipContextList}
+          on:close={() => (newSubChipRequest = null)}
+          on:select={(e) => {
+            const chipClass = e.detail.chip;
+            newSubChipRequest.provideChipInstance(new chipClass());
+            newSubChipRequest = null;
+          }}
+        />
+      </Overlay>
+    {/if}
 
-  <slot {sourceChip} {runLocal} {runPromise} {runUrl} {clearRun} />
-</div>
+    <slot {sourceChip} {runLocal} {runPromise} {runUrl} {clearRun} />
+  </div>
+{/if}
 
 <style>
   .PromaFile {

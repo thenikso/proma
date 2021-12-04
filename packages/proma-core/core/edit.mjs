@@ -150,6 +150,10 @@ class EditableChipInfo {
     Object.freeze(this);
   }
 
+  get registry() {
+    return info(this).registry;
+  }
+
   //
   // Use
   //

@@ -32,19 +32,32 @@ export class Registry {
     this.#useToChips = new Map();
   }
 
+  // The list of `use` strings that have been used to load chips.
+  get useList() {
+    return Array.from(this.#useToChips.keys());
+  }
+
+  get chipList() {
+    return Array.from(this.#chipToQualifiers.keys());
+  }
+
   // Add a chip to the registry. You can pass a valid Chip or an array of Chips
   // or an object with other valid `add` values.
   add(chip, qualifier) {
+    return this.#add(chip, qualifier, null);
+  }
+
+  #add(chip, qualifier, useChipCb) {
     if (Object.isFrozen(this)) {
       throw new Error('Cannot add to a locked registry');
     }
     if (Array.isArray(chip)) {
-      chip.forEach((c) => this.add(c, qualifier));
+      chip.forEach((c) => this.#add(c, qualifier, useChipCb));
       return this;
     }
     if (!isChipClass(chip)) {
       if (typeof chip === 'object' && chip) {
-        this.add(Array.from(Object.values(chip)), qualifier);
+        this.#add(Array.from(Object.values(chip)), qualifier, useChipCb);
         return this;
       }
       throw new Error('chip must be a Chip');
@@ -61,6 +74,9 @@ export class Registry {
     }
     this.#qualifiedToChip.set(qualifiedName, chip);
     this.#chipToQualifiers.set(chip, [qualifiedName]);
+    if (useChipCb) {
+      useChipCb(chip);
+    }
     return this;
   }
 
@@ -126,17 +142,17 @@ export class Registry {
   // loads in the registry all the chips returned by the resolver.
   async use(qualifiedName) {
     const loadedChips = [];
-    await this.#resolve(qualifiedName, (chip, qualifier) => {
-      if (this.#uriToChip.has(chip.URI)) {
-        throw new Error(`Use of ambiguous chip URI: ${chip.URI}`);
-      }
-      this.#uriToChip.set(chip.URI, chip);
-      loadedChips.push(chip);
-      const res = this.add(chip, qualifier);
-      // Adds the unqualified URI to the valid qualifiers for the chip
-      this.#chipToQualifiers.get(chip).push(chip.URI);
-      return res;
-    });
+    await this.#resolve(qualifiedName, (chip, qualifier) =>
+      this.#add(chip, qualifier, (chip) => {
+        if (this.#uriToChip.has(chip.URI)) {
+          throw new Error(`Use of ambiguous chip URI: ${chip.URI}`);
+        }
+        this.#uriToChip.set(chip.URI, chip);
+        loadedChips.push(chip);
+        // Adds the unqualified URI to the valid qualifiers for the chip
+        this.#chipToQualifiers.get(chip).push(chip.URI);
+      }),
+    );
     this.#useToChips.set(qualifiedName, loadedChips);
     // TODO also throw if nothing resolved?
     return this;
@@ -159,11 +175,6 @@ export class Registry {
     return this;
   }
 
-  // The list of `use` strings that have been used to load chips.
-  get useList() {
-    return Array.from(this.#useToChips.keys());
-  }
-
   // Returns true if there is at least one chip with the given name
   // in the registry.
   has(name) {
@@ -179,7 +190,7 @@ export class Registry {
       return chip;
     }
     const resolveChip = this.#resolve(name, (chip, qualifier) =>
-      this.add(chip, qualifier),
+      this.#add(chip, qualifier),
     );
     const getChip = () => {
       const chip = this.#qualifiedToChip.get(name);
@@ -200,16 +211,15 @@ export class Registry {
   // registry. That could be the `qualifiedName` or the chip `URI`
   // if the chip is registered via the `use` method.
   name(chip) {
-    const [fullQualifiedName, localQualifiedName] = this.#chipToQualifiers.get(
-      chip,
-    );
+    const [fullQualifiedName, localQualifiedName] =
+      this.#chipToQualifiers.get(chip) || [];
     return localQualifiedName || fullQualifiedName;
   }
 
   // If the given chip is registered, returns the qualified name
   // according to this registry.
   qualifiedName(chip) {
-    return this.#chipToQualifiers.get(chip)[0];
+    return (this.#chipToQualifiers.get(chip) || [])[0];
   }
 
   // Returns the list of all qualified names in the registry.
@@ -237,7 +247,7 @@ export class Registry {
 }
 
 export const registry = new Registry()
-  .add(lib.std, 'proma/std')
+  .resolver(/^proma\/std(?:#(.+))?$/, (add) => add(lib.std, 'proma/web'))
   .resolver(/^proma\/web(?:#(.+))?$/, (add) => add(lib.web, 'proma/web'))
   .resolver(/^proma\/node(?:#(.+))?$/, (add) => add(lib.node, 'proma/node'))
   .lock;
