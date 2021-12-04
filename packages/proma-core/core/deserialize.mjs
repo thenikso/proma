@@ -1,13 +1,11 @@
 import { INPUT, OUTPUT } from './ports.mjs';
 import { edit } from './edit.mjs';
 
-// TODO this must be async to allow for `use` as we can not resolve unqualified
-// chip URIs until we have a registry
-export function fromJSON(chip, data, { registry, withErrors } = {}) {
+export async function fromJSON(chip, data, { registry, withErrors } = {}) {
   if (typeof data === 'string') {
     data = JSON.parse(data);
   }
-  const ChipClass = deserializeChip(chip, data, registry, withErrors);
+  const ChipClass = await deserializeChip(chip, data, registry, withErrors);
   ChipClass.metadata = data.metadata;
   return ChipClass;
 }
@@ -16,11 +14,11 @@ export function fromJSON(chip, data, { registry, withErrors } = {}) {
 // Deserialization
 //
 
-function deserializeChip(chip, data, registry, withErrors) {
+async function deserializeChip(chip, data, registry, withErrors) {
   // TODO validate `data`
   const res = chip(data.URI, null, { editable: true });
   const build = edit(res, registry);
-  // TODO build `registry` from `data.use`
+  await Promise.all((data.use || []).map((u) => build.addUse(u)));
   const errors = [];
   const portsToCompile = [];
   for (const port of data[INPUT] || []) {

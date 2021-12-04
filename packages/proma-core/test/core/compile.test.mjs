@@ -12,7 +12,7 @@ import { js } from '../utils.mjs';
 import { Log } from '../lib.mjs';
 
 describe('[core/compile] compilation regression checks', async (assert) => {
-  const TestChip = fromJSON(chip, {
+  const TestChip = await fromJSON(chip, {
     URI: 'Main',
     in: [
       {
