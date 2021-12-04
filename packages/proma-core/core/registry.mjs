@@ -137,6 +137,23 @@ export class Registry {
     return this;
   }
 
+  unuse(qualifiedName) {
+    if (Object.isFrozen(this)) {
+      throw new Error('Cannot remove from a locked registry');
+    }
+    const chips = this.#useToChips.get(qualifiedName);
+    if (!chips) {
+      throw new Error(`No chips registered with use ${qualifiedName}`);
+    }
+    chips.forEach((chip) => {
+      this.#uriToChip.delete(chip.URI);
+      this.#qualifiedToChip.delete(this.#chipToQualifier.get(chip));
+      this.#chipToQualifier.delete(chip);
+    });
+    this.#useToChips.delete(qualifiedName);
+    return this;
+  }
+
   // The list of `use` strings that have been used to load chips.
   get useList() {
     return Array.from(this.#useToChips.keys());
@@ -193,12 +210,12 @@ export class Registry {
     copy.#uriToChip = new Map(this.#uriToChip);
     copy.#chipToQualifier = new Map(this.#chipToQualifier);
     copy.#resolvers = this.#resolvers.slice();
+    copy.#useToChips = new Map(this.#useToChips);
     return copy;
   }
 
   // Locks the registry to prevent further changes.
   get lock() {
-    Object.freeze(this.#resolvers);
     Object.freeze(this);
     return this;
   }

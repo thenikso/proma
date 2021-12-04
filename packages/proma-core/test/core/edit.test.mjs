@@ -10,7 +10,7 @@ import {
   edit,
 } from '../../core/index.mjs';
 
-import { Pass, Log } from '../lib.mjs';
+import { Pass, Log, Literal } from '../lib.mjs';
 
 const testRegistry = registry.copy.add(Pass, 'test/edit');
 
@@ -213,15 +213,32 @@ describe('[core/edit] edit ports', async (assert) => {
 });
 
 describe('[core/edit] edit uses', async (assert) => {
-  testRegistry.resolver(/^use-test/, (add) => {
-    add(Log, 'use-test');
+  testRegistry
+    .resolver(/^use-log/, (add) => {
+      add(Log, 'use-log');
+    })
+    .resolver(/^use-literal/, (add) => {
+      add(Literal, 'use-literal');
+    });
+
+  assert({
+    given: 'a `addUse` operation',
+    should: 'add the use to the chip',
+    actual: (await edit(chip('EditChip'), testRegistry).addUse('use-log')).Chip
+      .uses,
+    expected: ['use-log'],
   });
 
   assert({
-    given: 'a `use` operation',
-    should: 'add the use',
-    actual: (await edit(chip('EditChip'), testRegistry).addUse('use-test')).Chip
-      .uses,
-    expected: ['use-test'],
+    given: 'a `removeUse` operation',
+    should: 'remove the use from the chip',
+    actual: await (async () => {
+      const e = edit(chip('EditChip'), testRegistry);
+      await e.addUse('use-log');
+      await e.addUse('use-literal');
+      e.removeUse('use-log');
+      return e.Chip.uses;
+    })(),
+    expected: ['use-literal'],
   });
 });

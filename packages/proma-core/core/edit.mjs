@@ -161,7 +161,12 @@ class EditableChipInfo {
     return this;
   }
 
-  // TODO  async removeUse
+  removeUse(libraryURI) {
+    const chipInfo = info(this);
+    const registry = chipInfo.registry;
+    registry.unuse(libraryURI);
+    return this;
+  }
 
   //
   // Chips
