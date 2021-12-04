@@ -59,23 +59,41 @@ describe('[core/registry] Registry.has', async (assert) => {
 });
 
 describe('[core/registry] Registry.resolver/use', async (assert) => {
-  const registry = new Registry().resolver(/^test(?:#(.+))/, (add, match) => {
-    switch (match[1]) {
-      case 'Literal':
-        add(Literal, 'test');
-        break;
-      case 'Log':
-        add(Log, 'test');
-        break;
-      default:
-        add([Literal, Log], 'test');
-    }
-  });
+  const registry = new Registry()
+    .resolver(/^test(?:#(.+))/, (add, match) => {
+      switch (match[1]) {
+        case 'Literal':
+          add(Literal, 'test');
+          break;
+        case 'Log':
+          add(Log, 'test');
+          break;
+        default:
+          add([Literal, Log], 'test');
+      }
+    })
+    .resolver(/^anotherlib/, (add) => {
+      add(Literal, 'anotherlib');
+    });
 
   assert({
     given: 'registry.use with a resolvable name',
     should: 'use the resolver and find the chip with unqualified name',
     actual: (await registry.use('test#Literal')).has('Literal'),
+    expected: true,
+  });
+
+  assert({
+    given: 'registry.use that would add an ambiguous chip URI',
+    should: 'fail',
+    actual: await Try(() => registry.use('anotherlib')),
+    expected: new Error('Use of ambiguous chip URI: Literal'),
+  });
+
+  assert({
+    given: 'registry.use using an identical chip',
+    should: 'still work',
+    actual: (await registry.use('test')).has('Literal'),
     expected: true,
   });
 });
