@@ -9,6 +9,7 @@ export function serializeChipInstance(chip, registry) {
   const res = {
     id: chip.id,
     chipURI:
+      // TODO use registry.name instead to get short URIs for `use` chips
       (registry && registry.qualifiedName(chip.constructor)) || chip.chipURI,
   };
 

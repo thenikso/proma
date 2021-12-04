@@ -6,13 +6,15 @@ import * as lib from './library/index.mjs';
 // that are available during editing (and hence also deserialize).
 export class Registry {
   // Map from full qualified URI to chip class.
-  #qualifiedChips;
+  #qualifiedToChip;
   // Inverese of `#qualifiedChips`. Chip classes to full qualified names.
-  #chipsQualifiers;
+  #chipToQualifier;
   // A map from a chip URI to the chip class. This will be only populated if the
   // chip is registered via `use`. If attempting to `use` a library which would
   // conflict with an existing URI in here, the `use` method will throw.
-  #useShortcuts;
+  #uriToChip;
+  // A map of `use` strings to an array of Chip classes loaded with that `use`.
+  #useToChips;
   // List of resolvers as objects containing:
   // - `test`: a regular expression matching a qualified chip name
   // - `load`: a function receiving the `add` method of this registry and the
@@ -21,10 +23,11 @@ export class Registry {
   #resolvers;
 
   constructor() {
-    this.#qualifiedChips = new Map();
-    this.#chipsQualifiers = new Map();
-    this.#useShortcuts = new Map();
+    this.#qualifiedToChip = new Map();
+    this.#chipToQualifier = new Map();
+    this.#uriToChip = new Map();
     this.#resolvers = [];
+    this.#useToChips = new Map();
   }
 
   // Add a chip to the registry. You can pass a valid Chip or an array of Chips
@@ -44,18 +47,18 @@ export class Registry {
       }
       throw new Error('chip must be a Chip');
     }
-    if (this.#chipsQualifiers.has(chip)) {
+    if (this.#chipToQualifier.has(chip)) {
       throw new Error(`Chip ${chip.URI} is already registered`);
     }
     let qualifiedName = chip.URI;
     if (qualifier) {
       qualifiedName = `${qualifier}#${qualifiedName}`;
     }
-    if (this.#qualifiedChips.has(qualifiedName)) {
+    if (this.#qualifiedToChip.has(qualifiedName)) {
       throw new Error(`Duplicate qualified name: ${qualifiedName}`);
     }
-    this.#qualifiedChips.set(qualifiedName, chip);
-    this.#chipsQualifiers.set(chip, qualifiedName);
+    this.#qualifiedToChip.set(qualifiedName, chip);
+    this.#chipToQualifier.set(chip, qualifiedName);
     return this;
   }
 
@@ -120,28 +123,36 @@ export class Registry {
   // Given a string, attempts to resolve it with a `resolver` and
   // loads in the registry all the chips returned by the resolver.
   async use(qualifiedName) {
+    const loadedChips = [];
     await this.#resolve(qualifiedName, (chip, qualifier) => {
-      if (this.#useShortcuts.has(chip.URI)) {
+      if (this.#uriToChip.has(chip.URI)) {
         throw new Error(`Use of ambiguous chip URI: ${chip.URI}`);
       }
-      this.#useShortcuts.set(chip.URI, chip);
+      this.#uriToChip.set(chip.URI, chip);
+      loadedChips.push(chip);
       return this.add(chip, qualifier);
     });
+    this.#useToChips.set(qualifiedName, loadedChips);
     // TODO also throw if nothing resolved?
     return this;
+  }
+
+  // The list of `use` strings that have been used to load chips.
+  get useList() {
+    return Array.from(this.#useToChips.keys());
   }
 
   // Returns true if there is at least one chip with the given name
   // in the registry.
   has(name) {
-    return this.#qualifiedChips.has(name) || this.#useShortcuts.has(name);
+    return this.#qualifiedToChip.has(name) || this.#uriToChip.has(name);
   }
 
   // Get the chip class in the registry with the given name.
   // If the chip is not found or the name is ambiguous, throws an error.
   // Returns either the chip or a promise resolving to the chip.
   load(name) {
-    const chip = this.#qualifiedChips.get(name) || this.#useShortcuts.get(name);
+    const chip = this.#qualifiedToChip.get(name) || this.#uriToChip.get(name);
     if (chip) {
       return chip;
     }
@@ -149,7 +160,7 @@ export class Registry {
       this.add(chip, qualifier),
     );
     const getChip = () => {
-      const chip = this.#qualifiedChips.get(name);
+      const chip = this.#qualifiedToChip.get(name);
       if (!chip) {
         throw new Error(
           `Failed to load "${name}". Maybe it is not registered or not fully qualified?`,
@@ -166,21 +177,21 @@ export class Registry {
   // If the given chip is registered, returns the qualified name
   // according to this registry.
   qualifiedName(chip) {
-    return this.#chipsQualifiers.get(chip);
+    return this.#chipToQualifier.get(chip);
   }
 
   // Returns the list of all qualified names in the registry.
   get qualifiedNames() {
-    return Array.from(this.#qualifiedChips.keys());
+    return Array.from(this.#qualifiedToChip.keys());
   }
 
   // Copy the registry to a new registry that allows changes even
   // if the original registry is locked.
   get copy() {
     const copy = new Registry();
-    copy.#qualifiedChips = new Map(this.#qualifiedChips);
-    copy.#useShortcuts = new Map(this.#useShortcuts);
-    copy.#chipsQualifiers = new Map(this.#chipsQualifiers);
+    copy.#qualifiedToChip = new Map(this.#qualifiedToChip);
+    copy.#uriToChip = new Map(this.#uriToChip);
+    copy.#chipToQualifier = new Map(this.#chipToQualifier);
     copy.#resolvers = this.#resolvers.slice();
     return copy;
   }

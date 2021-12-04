@@ -9,7 +9,7 @@ A unreal engine blueprint inspired editor for javascript.
   - [x] always use a `registry.copy` when editing something
   - [ ] add `edit.addUse`/`edit.removeUse` to modify `use` for chip
   - [ ] deserialize should add `use` to the registry.copy. NOTE that `fromJSON` must become async because partial URIs can not be constructed if `use` is not resolved first
-  - [ ] serialize should add `use`? if original chip had it? registry should know? prop not, is a chip thing
+  - [ ] serialize should add `use` and use short URIs for chips
   - [ ] update frontend to use new library
 - [ ] run proma files with example payload (how to show relevan files? like html for web?)
 - [ ] register local chips in registry?

@@ -33,7 +33,7 @@ export const Split = chip('Split', () => {
 
 export const Pass = chip('Pass', () => {
   const exec = inputFlow('exec');
-  const input = inputData('input');
+  const input = inputData('input', { canonical: true });
   const then = outputFlow('then');
   const output = outputData('output', then);
   wire(exec, then);

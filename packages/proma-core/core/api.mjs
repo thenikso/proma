@@ -420,6 +420,10 @@ function makeChipFactory($customChips, $hooks) {
         return chipInfo.loaded;
       }
 
+      static get uses() {
+        return chipInfo.registry && chipInfo.registry.useList || [];
+      }
+
       static get inputOutlets() {
         return chipInfo.inputs.slice();
       }

@@ -10,14 +10,7 @@ import {
   edit,
 } from '../../core/index.mjs';
 
-const Pass = chip('Pass', () => {
-  const exec = inputFlow('exec');
-  const input = inputData('input', { canonical: true });
-  const then = outputFlow('then');
-  const output = outputData('output', then);
-  wire(exec, then);
-  wire(input, output);
-});
+import { Pass, Log } from '../lib.mjs';
 
 const testRegistry = registry.copy.add(Pass, 'test/edit');
 
@@ -121,7 +114,7 @@ describe('[core/edit] edit sub-chips', async (assert) => {
         const then = outputFlow('then');
         const value = outputData('value');
       }),
-      testRegistry
+      testRegistry,
     )
       .addChip(Pass, ['pass'], 'Pass')
       .addConnection('exec', 'Pass.in.exec')
@@ -216,5 +209,19 @@ describe('[core/edit] edit ports', async (assert) => {
         .renameOutlet('in.value', 'exec', true);
     }),
     expected: new Error('Port with name "in.exec" already exist'),
+  });
+});
+
+describe('[core/edit] edit uses', async (assert) => {
+  testRegistry.resolver(/^use-test/, (add) => {
+    add(Log, 'use-test');
+  });
+
+  assert({
+    given: 'a `use` operation',
+    should: 'add the use',
+    actual: (await edit(chip('EditChip'), testRegistry).addUse('use-test')).Chip
+      .uses,
+    expected: ['use-test'],
   });
 });
