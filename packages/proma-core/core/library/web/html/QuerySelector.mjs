@@ -5,7 +5,7 @@ export default function install({
   outputFlow,
   outputData,
 }) {
-  return chip('QuerySelector', () => {
+  return chip('html/QuerySelector', () => {
     const target = inputData('target', { canonical: true, type: 'Element' });
     const selector = inputData('selector', {
       canonical: true,

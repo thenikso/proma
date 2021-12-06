@@ -138,11 +138,15 @@
 
   saveCurrentPlayground = function savePlayground() {
     if (!selectedEditor || !selectedFilePath || !selectedProjectName) return;
-    files[selectedFilePath] = selectedEditor.getEditedSource();
-    localStorage.setItem(
-      'project-' + selectedProjectName,
-      JSON.stringify(files),
-    );
+    try {
+      files[selectedFilePath] = selectedEditor.getEditedSource();
+      localStorage.setItem(
+        'project-' + selectedProjectName,
+        JSON.stringify(files),
+      );
+    } catch (e) {
+      console.error('Could not save', e);
+    }
   };
 
   //

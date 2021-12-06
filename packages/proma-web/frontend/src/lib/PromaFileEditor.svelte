@@ -42,17 +42,25 @@
 
   async function updateChipEditor(sourceJson) {
     // TODO better check to see if soruce changed. maybe just check URI?
-    if (chipEditor && eq(chipEditor.Chip.toJSON(), sourceJson)) {
+    if (
+      !sourceJson ||
+      (chipEditor && eq(chipEditor.Chip.toJSON(), sourceJson))
+    ) {
       return;
     }
-    sourceChip =
-      sourceJson &&
-      (await proma.fromJSON(proma.chip, sourceJson, {
+    proma
+      .fromJSON(proma.chip, sourceJson, {
         withErrors: (errors) => {
           console.error(errors);
         },
-      }));
-    chipEditor = sourceChip && proma.edit(sourceChip);
+      })
+      .then((resChip) => {
+        sourceChip = resChip;
+        chipEditor = sourceChip && proma.edit(sourceChip);
+      })
+      .catch((err) => {
+        console.error('here', err);
+      });
   }
 
   export function getEditedSource() {

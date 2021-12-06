@@ -1,5 +1,5 @@
 export default function install({ chip, inputFlow, inputData, outputFlow }) {
-  return chip('BindEvent', () => {
+  return chip('html/BindEvent', () => {
     const bindF = () => {
       target().addEventListener(type(), event());
       then();

@@ -127,7 +127,7 @@ export default () => ({
     "chips": [
       {
         "id": "lib_html_BindEvent_1",
-        "chipURI": "BindEvent",
+        "chipURI": "html/BindEvent",
         "args": [null, "click"]
       },
       { "id": "CustomEvent_1", "chipURI": "CustomEvent:event(event:Event)" },
@@ -144,7 +144,7 @@ export default () => ({
       { "id": "lib_debug_Log_6", "chipURI": "debug/Log" },
       {
         "id": "lib_html_QuerySelector_2",
-        "chipURI": "QuerySelector",
+        "chipURI": "html/QuerySelector",
         "args": [null, "button"]
       }
     ],
