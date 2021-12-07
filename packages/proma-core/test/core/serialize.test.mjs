@@ -37,6 +37,7 @@ const chipJSON = {
       kind: 'data',
       canonical: true,
       defaultValue: 3,
+      type: 'Number',
     },
     {
       name: 'conf',
@@ -177,7 +178,11 @@ describe('[core/serialize] to JSON', async (assert) => {
     should: 'serialize to JSON',
     actual: chip('TestChipSerialize', () => {
       const exec = inputFlow('exec');
-      const input = inputData('input', { canonical: true, defaultValue: 3 });
+      const input = inputData('input', {
+        canonical: true,
+        defaultValue: 3,
+        type: 'number',
+      });
       const conf = inputConfig('conf', { defaultValue: true });
 
       const pass = new Pass('pass-input');

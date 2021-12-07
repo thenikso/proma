@@ -136,6 +136,11 @@ export function serializePortInfo(portInfo) {
   if (portInfo.allowSideEffects) {
     res.allowSideEffects = portInfo.allowSideEffects;
   }
+  // Type signature
+  const typeSignature = portInfo.type && portInfo.type.signature;
+  if (typeSignature && typeSignature !== 'any') {
+    res.type = typeSignature;
+  }
   return res;
 }
 
