@@ -5,11 +5,11 @@ export default () => ({
   "target": "node",
   "in": [
     { "name": "exec", "kind": "flow" },
-    { "name": "request", "kind": "data", "canonical": true }
+    { "name": "request", "kind": "data", "canonical": true, "type": "Object" }
   ],
   "out": [
     { "name": "then", "kind": "flow" },
-    { "name": "body", "kind": "data", "computeOn": ["then"] }
+    { "name": "body", "kind": "data", "computeOn": ["then"], "type": "string" }
   ],
   "chips": [
     { "id": "OnCreate_1", "chipURI": "OnCreate:event" },

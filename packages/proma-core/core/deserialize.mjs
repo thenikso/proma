@@ -35,6 +35,7 @@ async function deserializeChip(chip, data, registry, withErrors) {
           canonical: port.canonical,
           conceiled: port.conceiled,
           defaultValue: port.defaultValue,
+          type: port.type || 'any',
         });
       }
     } catch (e) {
@@ -52,6 +53,7 @@ async function deserializeChip(chip, data, registry, withErrors) {
           ),
           inline: port.inline,
           allowSideEffects: port.allowSideEffects,
+          type: port.type || 'any',
         });
         if (port.compute) {
           portsToCompile.push(port);
