@@ -258,6 +258,8 @@ function serializeKind(definitionObject) {
   if (definitionObject.container) return definitionObject.container;
   const type = serializeSingleType(definitionObject);
   switch (type) {
+    case 'any':
+      return 'any';
     case 'Null':
       return 'null';
     case 'Void':
