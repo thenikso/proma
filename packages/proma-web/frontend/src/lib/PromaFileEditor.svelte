@@ -189,6 +189,16 @@
       on:subChip:request={handleChipRequest}
     />
 
+    <slot
+      chip={sourceChip}
+      edit={chipEditor}
+      {runLocal}
+      {runPromise}
+      {runUrl}
+      {clearRun}
+      {actionTarget}
+    />
+
     {#if newSubChipRequest}
       <Overlay
         anchor={{
@@ -209,13 +219,12 @@
         />
       </Overlay>
     {/if}
-
-    <slot {sourceChip} {runLocal} {runPromise} {runUrl} {clearRun} />
   </div>
 {/if}
 
 <style>
   .PromaFile {
+    position: relative;
     height: 100%;
   }
 </style>

@@ -25,7 +25,6 @@
 <script>
   import { page, keyMods } from '$lib/stores';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
-  import PromaRunView from '$lib/PromaRunView.svelte';
 
   $: hostId = $page.params.hostId;
   $: projectSlug = $page.params.projectSlug;
@@ -51,9 +50,9 @@
   $: selectedFileName = (selectedFilePath || '').split(/(\\|\/)/g).pop();
   $: selectedFileExt = ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
   $: selectedFileSource = atob(project?.files?.[selectedFilePath] ?? '');
-  $: selectedFileRunUrl =
-    project &&
-    `${BACKEND_ENDPOINT}/run/${project.ownerHostId}/${project.projectSlug}/${selectedFileName}`;
+  // $: selectedFileRunUrl =
+  //   project &&
+  //   `${BACKEND_ENDPOINT}/run/${project.ownerHostId}/${project.projectSlug}/${selectedFileName}`;
 
   let editor;
 
@@ -101,25 +100,7 @@
 {:then}
   <div class="Editor Editor-fileType-{selectedFileExt}">
     {#if selectedFileExt === 'proma'}
-      <PromaFileEditor
-        bind:this={editor}
-        source={selectedFileSource}
-        remoteRunUrl={selectedFileRunUrl}
-        let:runPromise
-        let:clearRun
-        let:runUrl
-        let:actionTarget
-      >
-        {#if runPromise}
-          <div class="RunPanel">
-            <PromaRunView
-              url={runUrl}
-              results={runPromise}
-              on:close={clearRun}
-            />
-          </div>
-        {/if}
-      </PromaFileEditor>
+      <PromaFileEditor bind:this={editor} source={selectedFileSource} />
     {:else}
       <div>Unsupported file type "${selectedFileExt}"</div>
     {/if}
@@ -249,31 +230,5 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-  }
-
-  /* RunPanel */
-
-  .RunPanel {
-    right: 30px;
-    top: 110px;
-    height: 100%;
-
-    box-sizing: border-box;
-    position: absolute;
-    width: 350px;
-    max-height: calc(100% - 140px);
-
-    background-color: var(
-      --proma-board--chip-selected--background-color,
-      #3e3e3e
-    );
-    border-width: 2px;
-    border-style: solid;
-    border-color: var(--proma-board--chip--border-color, #1d1d1d);
-    border-radius: 5px;
-    box-shadow: var(
-      --proma-board--chip--shadow,
-      0 2px 1px rgba(29, 29, 29, 0.8)
-    );
   }
 </style>

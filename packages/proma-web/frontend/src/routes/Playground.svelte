@@ -17,10 +17,11 @@
   import { page } from '$lib/stores/routing';
   import FileTree from '$lib/components/FileTree.svelte';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
-  import PromaRunView from '$lib/PromaRunView.svelte';
+  import PromaRunEditor from '$lib/PromaRunEditor.svelte';
   import makeBaseProject from '$lib/playground-projects/base';
   import CodeMirror from '$lib/components/CodeMirror.svelte';
   import Select from 'svelte-select/src/Select.svelte';
+  import { keyMods } from '$lib/stores/keyMods';
 
   //
   // Project Selection
@@ -296,7 +297,7 @@
         on:click={handleDownloadClick}
         disabled={!!currentDownload}
       >
-        Download
+        Build &amp; Download
       </button>
       <button type="button" class="button primary">Take survey</button>
     </div>
@@ -310,16 +311,23 @@
         let:clearRun
         let:runUrl
         let:actionTarget
+        let:chip
       >
-        {#if runPromise}
-          <div class="RunPanel">
-            <PromaRunView
-              url={runUrl}
-              results={runPromise}
-              on:close={clearRun}
-            />
-          </div>
-        {/if}
+        <div class="EditorProma-RunPanel">
+          <PromaRunEditor {chip} />
+        </div>
+        <button
+          type="button"
+          class="EditorProma-RunButton button primary"
+          on:click={() =>
+            action(
+              $keyMods.shiftKey && $keyMods.metaKey
+                ? 'PromaFile.runLocalCompiled'
+                : 'PromaFile.runLocal',
+            )({ target: actionTarget })}
+        >
+          {$keyMods.shiftKey && $keyMods.metaKey ? 'Test compiled' : 'Test'}
+        </button>
       </PromaFileEditor>
     {:else if selectedFileExt}
       <CodeMirror
@@ -427,17 +435,25 @@
     flex-direction: column;
   }
 
-  /* RunPanel */
+  /* Editor Proma */
 
-  .RunPanel {
-    right: 30px;
-    top: 110px;
-    height: 100%;
-
-    box-sizing: border-box;
+  .EditorProma-RunButton {
     position: absolute;
+    right: 10px;
+    bottom: 10px;
+    margin: 0;
+    min-width: 140px;
+  }
+
+  .EditorProma-RunPanel {
+    box-sizing: border-box;
+
+    position: absolute;
+    right: 20px;
+    top: 20px;
     width: 350px;
-    max-height: calc(100% - 140px);
+    height: 100%;
+    max-height: calc(100% - 40px);
 
     background-color: var(
       --proma-board--chip-selected--background-color,
