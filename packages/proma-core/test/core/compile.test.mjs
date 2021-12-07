@@ -32,12 +32,12 @@ describe('[core/compile] compilation regression checks', async (assert) => {
       },
       {
         id: 'lib_html_QuerySelector_1',
-        chipURI: 'proma/web#QuerySelector',
+        chipURI: 'proma/web#html/QuerySelector',
         args: [null, 'button'],
       },
       {
         id: 'lib_html_BindEvent_1',
-        chipURI: 'proma/web#BindEvent',
+        chipURI: 'proma/web#html/BindEvent',
         args: [null, 'click'],
       },
       {

@@ -87,7 +87,7 @@ describe('[core/registry] Registry.resolver/use', async (assert) => {
     given: 'registry.use that would add an ambiguous chip URI',
     should: 'fail',
     actual: await Try(() => registry.use('anotherlib')),
-    expected: new Error('Use of ambiguous chip URI: Literal'),
+    expected: new Error('Chip Literal is already registered'),
   });
 
   assert({
