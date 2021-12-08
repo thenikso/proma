@@ -139,7 +139,7 @@ export function serializePortInfo(portInfo) {
   // Type signature
   const typeSignature = portInfo.type && portInfo.type.signature;
   if (typeSignature && typeSignature !== 'any') {
-    res.type = typeSignature;
+    res.type = portInfo.type.signatureWithLabels;
   }
   return res;
 }
