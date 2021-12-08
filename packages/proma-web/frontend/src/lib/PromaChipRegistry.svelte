@@ -24,7 +24,9 @@
   let searchValue;
 
   onMount(() => {
-    searchInputEl.focus();
+    setInterval(() => {
+      searchInputEl.focus();
+    });
   });
 
   //
