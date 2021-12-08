@@ -169,9 +169,7 @@
   {#if showEditor}
     <Overlay
       anchor={containerBoundingBox}
-      on:dismiss={() => {
-        showEditor = false;
-      }}
+      on:dismiss={confirmValue}
     >
       <div
         class="editor"
