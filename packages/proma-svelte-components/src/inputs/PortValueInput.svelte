@@ -1,11 +1,13 @@
 <script>
   import { onDestroy } from 'svelte';
   import StringInput from './StringInput.svelte';
+  import JsonInput from './JsonInput.svelte';
 
   export let edit;
   export let port;
 
   let portValue = port.explicitValue;
+  let portType = port.type && port.type.definitionKind;
 
   const handlePortValueChange = ({ detail }) => {
     if (detail.port === port) {
@@ -29,8 +31,6 @@
     }
   });
 
-  // TODO switch input based on port type
-
   function handleInput({ detail }) {
     edit.setPortValue(port, detail.value);
   }
@@ -41,9 +41,17 @@
   on:keydown|stopPropagation
   on:keyup|stopPropagation
 >
-  <StringInput
-    placeholder={port.defaultValue || ''}
-    value={portValue}
-    on:input={handleInput}
-  />
+  {#if portType === 'string'}
+    <StringInput
+      placeholder={port.defaultValue || ''}
+      value={portValue}
+      on:input={handleInput}
+    />
+  {:else}
+    <JsonInput
+      placeholder={port.defaultValue || 'undefined'}
+      value={portValue}
+      on:input={handleInput}
+    />
+  {/if}
 </div>

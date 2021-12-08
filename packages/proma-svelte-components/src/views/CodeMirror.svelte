@@ -380,6 +380,7 @@
     if (first) await sleep(50);
     editor.refresh();
     first = false;
+    dispatch('ready', { editor });
   }
   function sleep(ms) {
     return new Promise((fulfil) => setTimeout(fulfil, ms));

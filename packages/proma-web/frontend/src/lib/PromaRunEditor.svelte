@@ -1,5 +1,5 @@
 <script>
-  import { StringInput, PortOutlet } from '@proma/svelte-components';
+  import { JsonInput, StringInput, PortOutlet } from '@proma/svelte-components';
 
   export let chip;
 
@@ -66,11 +66,19 @@
           {inputData.name}
         </div>
         <div class="PromaRunEditor-input-value">
-          <StringInput
-            placeholder={inputData.defaultValue || 'undefined'}
-            value={instanceInputs[inputData.name]}
-            on:input={(e) => setInput(inputData.name, e.detail.value)}
-          />
+          {#if inputData.type.definitionKinds[0] === 'string'}
+            <StringInput
+              placeholder={inputData.defaultValue || 'undefined'}
+              value={instanceInputs[inputData.name]}
+              on:input={(e) => setInput(inputData.name, e.detail.value)}
+            />
+          {:else}
+            <JsonInput
+              placeholder={inputData.defaultValue || 'undefined'}
+              value={instanceInputs[inputData.name]}
+              on:input={(e) => setInput(inputData.name, e.detail.value)}
+            />
+          {/if}
         </div>
       </div>
     {/each}

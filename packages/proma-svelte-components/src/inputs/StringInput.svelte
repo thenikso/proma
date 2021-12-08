@@ -134,6 +134,7 @@
     color: inherit;
     font-family: inherit;
     font-weight: inherit;
+    font-size: inherit;
     border: none;
     background: transparent;
     padding: 0;

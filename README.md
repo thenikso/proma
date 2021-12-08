@@ -5,8 +5,11 @@ A unreal engine blueprint inspired editor for javascript.
 ## WIP
 
 - [x] show/use relevant libs for endpoint/node .proma files
-- [ ] types for outlets
+- [x] types for outlets (serialize/deserialize)
 - [ ] run proma files with example payload (how to show relevan files? like html for web?)
+  - [x] JSON input using codemirror
+  - [ ] better types, more like rust? always require a type, no null
+  - [ ] UI
 - [ ] show main chip and sub chip properties
 - [ ] register local chips in registry?
 - [ ] add new endpoint .proma

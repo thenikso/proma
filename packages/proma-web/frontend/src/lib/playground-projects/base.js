@@ -16,7 +16,7 @@ export default () => ({
     {
       "id": "lib_debug_Log_1",
       "chipURI": "debug/Log",
-      "args": ["chip created"]
+      "args": ["\\\"chip created\\\""]
     },
     {
       "id": "lib_string_Append_1",
@@ -33,7 +33,7 @@ export default () => ({
       "chipURI": "GetPropertyAtPath",
       "args": ["query.name"]
     },
-    { "id": "lib_Equal_1", "chipURI": "Equal", "args": ["GET"] },
+    { "id": "lib_Equal_1", "chipURI": "Equal", "args": ["\\\"GET\\\""] },
     { "id": "lib_debug_Log_2", "chipURI": "debug/Log" },
     { "id": "lib_ToString_1", "chipURI": "ToString" },
     {
@@ -134,7 +134,7 @@ export default () => ({
       {
         "id": "lib_debug_Log_5",
         "chipURI": "debug/Log",
-        "args": ["clicked"]
+        "args": ["\\\"clicked\\\""]
       },
       {
         "id": "lib_network_FetchJson_3",

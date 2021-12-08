@@ -1,10 +1,48 @@
 <script context="module">
-  // TODO onMount of a overlay, hide others
-  // TODO onMound stop body events
+  const overlayContainerEl = document.createElement('div');
+  overlayContainerEl.className = 'OverlayContainer';
+  overlayContainerEl.style.position = 'fixed';
+  overlayContainerEl.style.overflow = 'hidden';
+  overlayContainerEl.style.top = '0';
+  overlayContainerEl.style.left = '0';
+  overlayContainerEl.style.width = '100vw';
+  overlayContainerEl.style.height = '100vh';
+  overlayContainerEl.style.zIndex = '999';
+
+  let dismissFunction;
+  function handleDismissOverlay(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dismissFunction) {
+      dismissFunction();
+    }
+  }
+  overlayContainerEl.addEventListener('mousewheel', handleDismissOverlay);
+  overlayContainerEl.addEventListener('mousedown', handleDismissOverlay);
+  overlayContainerEl.addEventListener('mouseup', handleDismissOverlay);
+  overlayContainerEl.addEventListener('click', handleDismissOverlay);
+
+  function showOverlay(el, dismiss) {
+    if (overlayContainerEl.firstChild) {
+      overlayContainerEl.firstChild.remove();
+    }
+    dismissFunction = dismiss;
+    overlayContainerEl.appendChild(el);
+    if (!overlayContainerEl.parentNode) {
+      document.body.appendChild(overlayContainerEl);
+    }
+  }
+
+  function hideOverlay() {
+    if (overlayContainerEl.parentNode) {
+      overlayContainerEl.remove();
+    }
+    dismissFunction = null;
+  }
 </script>
 
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
 
   export let anchor = undefined;
 
@@ -20,38 +58,30 @@
     left: ${anchor.x}px;
     `
     : '';
+
+  let overlayEl;
+
+  onMount(() => {
+    showOverlay(overlayEl, dispatchDismiss);
+    return () => {
+      hideOverlay();
+    };
+  });
 </script>
 
 <div
-  class="OverlayContainer"
-  on:mousewheel|stopPropagation|preventDefault={dispatchDismiss}
-  on:mousedown|stopPropagation={dispatchDismiss}
-  on:mouseup|stopPropagation={dispatchDismiss}
-  on:click|stopPropagation={dispatchDismiss}
+  bind:this={overlayEl}
+  class="Overlay"
+  style={overlayStyle}
+  on:mousewheel|stopPropagation
+  on:mousedown|stopPropagation
+  on:mouseup|stopPropagation
+  on:click|stopPropagation
 >
-  <div
-    class="Overlay"
-    style={overlayStyle}
-    on:mousewheel|stopPropagation
-    on:mousedown|stopPropagation
-    on:mouseup|stopPropagation
-    on:click|stopPropagation
-  >
-    <slot dismiss={dispatchDismiss} />
-  </div>
+  <slot dismiss={dispatchDismiss} />
 </div>
 
 <style>
-  .OverlayContainer {
-    position: fixed;
-    overflow: hidden;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 999;
-  }
-
   .Overlay {
     position: absolute;
   }
