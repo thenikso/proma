@@ -9,9 +9,9 @@
     "format": "prettier --write packages"
   },
   "devDependencies": {
-    "lerna": "^3.22.1",
-    "prettier": "^2.2.1",
-    "prettier-plugin-svelte": "^2.1.2"
+    "lerna": "^4.0.0",
+    "prettier": "^2.5.1",
+    "prettier-plugin-svelte": "^2.5.0"
   },
   "defaultNamespace": "@proma",
   "workspaces": [

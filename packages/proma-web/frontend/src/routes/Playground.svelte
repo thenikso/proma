@@ -11,6 +11,7 @@
 
 <script>
   import * as proma from '@proma/core';
+  import { CodeMirror } from '@proma/svelte-components';
   import jszip from 'jszip';
   import { saveAs } from 'file-saver';
   import { history } from '$lib/stores/history';
@@ -19,7 +20,6 @@
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
   import PromaRunEditor from '$lib/PromaRunEditor.svelte';
   import makeBaseProject from '$lib/playground-projects/base';
-  import CodeMirror from '$lib/components/CodeMirror.svelte';
   import Select from 'svelte-select/src/Select.svelte';
   import { keyMods } from '$lib/stores/keyMods';
 
