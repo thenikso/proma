@@ -1,39 +1,60 @@
 <script>
-  import { StringInput } from '@proma/svelte-components';
+  import { StringInput, PortOutlet } from '@proma/svelte-components';
 
   export let chip;
+
+  let instance = null;
+  let instanceInputs = {};
+  let instanceOutputs = {};
 
   $: inputDatas = chip.inputOutlets.filter((i) => !i.isFlow);
   $: inputFlows = chip.inputOutlets.filter((i) => i.isFlow);
 
   $: outputDatas = chip.outputOutlets.filter((i) => !i.isFlow);
 
-  let instanceOutputs = {};
-
-  $: instance = new chip();
-  $: if (instance) {
-    const updateInstanceOutputs = () => {
-      const res = {};
-      for (const o of outputDatas) {
-        const name = o.name;
-        res[name] = instance.out[name]();
-      }
-      instanceOutputs = res;
-    };
-
-    for (const o of chip.outputOutlets) {
-      if (o.isFlow) {
-        instance.out[o.name](() => {
-          updateInstanceOutputs();
-        });
-      }
-    }
-
-    // TODO input data should have a type and we use the proper
-    instance.in.request = { query: { name: 'nic' }, method: 'GET' };
+  // Reset instance on chip class change
+  $: if (chip) {
+    instance = null;
   }
 
-  $: console.log(instanceOutputs);
+  function setInput(name, value) {
+    if (instance) {
+      instance.in[name] = value;
+    }
+    instanceInputs = {
+      ...instanceInputs,
+      [name]: value,
+    };
+  }
+
+  function getInstance() {
+    if (!instance) {
+      // Get canonical input data values
+      const canonicalInputData = inputDatas
+        .filter((i) => i.isCanonical)
+        .map((i) => instanceInputs[i.name]);
+      // Create instance
+      instance = new chip(...canonicalInputData);
+      // Collect all output data
+      const updateInstanceOutputs = () => {
+        const res = {};
+        for (const o of outputDatas) {
+          const name = o.name;
+          res[name] = instance.out[name]();
+        }
+        instanceOutputs = res;
+      };
+      // Connect all instance output flows
+      for (const o of chip.outputOutlets) {
+        if (o.isFlow) {
+          instance.out[o.name](() => {
+            updateInstanceOutputs();
+          });
+        }
+      }
+    }
+    return instance;
+  }
 </script>
 
 <div class="PromaRunEditor">
@@ -41,13 +62,14 @@
     {#each inputDatas as inputData}
       <div class="PromaRunEditor-input">
         <div class="PromaRunEditor-input-name">
+          <PortOutlet type={inputData.type.definitionKinds[0]} />
           {inputData.name}
         </div>
         <div class="PromaRunEditor-input-value">
           <StringInput
             placeholder={inputData.defaultValue || 'undefined'}
-            value={inputData.value}
-            on:input={(e) => (inputData.value = e.detail.value)}
+            value={instanceInputs[inputData.name]}
+            on:input={(e) => setInput(inputData.name, e.detail.value)}
           />
         </div>
       </div>
@@ -58,7 +80,7 @@
         <button
           type="button"
           class="PromaRunEditor-input-flow"
-          on:click={() => instance.in[inputFlow.name]()}
+          on:click={() => getInstance().in[inputFlow.name]()}
         >
           Run "{inputFlow.name}"
         </button>

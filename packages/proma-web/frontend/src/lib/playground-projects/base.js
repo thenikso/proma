@@ -121,8 +121,8 @@ export default () => ({
     "use": ["proma/web"],
     "in": [
       { "name": "ready", "kind": "flow" },
-      { "name": "window", "kind": "data", "canonical": true },
-      { "name": "target", "kind": "data", "canonical": true }
+      { "name": "window", "kind": "data", "canonical": true, "type": "Window" },
+      { "name": "target", "kind": "data", "canonical": true, "type": "Element" }
     ],
     "chips": [
       {
