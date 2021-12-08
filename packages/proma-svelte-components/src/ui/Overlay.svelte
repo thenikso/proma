@@ -52,17 +52,23 @@
     dispatch('dismiss');
   }
 
-  $: overlayStyle = anchor
-    ? `
-    top: ${anchor.y}px;
-    left: ${anchor.x}px;
-    `
+  $: overlayPositionStyle = anchor
+    ? `top: ${anchor.y}px; left: ${anchor.x}px;`
     : '';
 
   let overlayEl;
+  let overlayFixStyle = '';
 
   onMount(() => {
     showOverlay(overlayEl, dispatchDismiss);
+    // Fix overlay position to keep it fully visible
+    const overlayRect = overlayEl.getBoundingClientRect();
+    const viewportHeight = document.documentElement.clientHeight;
+    if (overlayRect.bottom > viewportHeight) {
+      overlayFixStyle = `transform: translate(0, ${
+        viewportHeight - overlayRect.bottom
+      }px);`;
+    }
     return () => {
       hideOverlay();
     };
@@ -72,7 +78,7 @@
 <div
   bind:this={overlayEl}
   class="Overlay"
-  style={overlayStyle}
+  style={overlayPositionStyle + overlayFixStyle}
   on:mousewheel|stopPropagation
   on:mousedown|stopPropagation
   on:mouseup|stopPropagation
@@ -84,5 +90,6 @@
 <style>
   .Overlay {
     position: absolute;
+    max-height: 100vh;
   }
 </style>

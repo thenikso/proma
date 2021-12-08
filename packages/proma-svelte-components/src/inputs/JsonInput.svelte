@@ -247,7 +247,7 @@
   }
 
   .editor {
-    position: absolute;
+    position: relative;
     top: -1px;
     left: -1px;
     min-width: 200px;
