@@ -25,7 +25,7 @@
   $: placeholderString =
     typeof placeholder === 'string' ? placeholder : JSON.stringify(value);
   $: valueString =
-    typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+    typeof value === 'string' ? `"${value}"` : JSON.stringify(value, null, 2);
 
   let internalStringValue;
   let error;
@@ -53,9 +53,6 @@
     try {
       if (typeof value === 'string') {
         v = JSON.parse(value);
-        if (typeof v === 'string') {
-          v = value;
-        }
       } else {
         v = value;
       }

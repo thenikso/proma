@@ -22,14 +22,11 @@
   overlayContainerEl.addEventListener('mouseup', handleDismissOverlay);
   overlayContainerEl.addEventListener('click', handleDismissOverlay);
 
-  let originalParent;
-
   function showOverlay(el, dismiss) {
     if (overlayContainerEl.firstChild) {
       overlayContainerEl.firstChild.remove();
     }
     dismissFunction = dismiss;
-    originalParent = el.parentNode;
     overlayContainerEl.appendChild(el);
     if (!overlayContainerEl.parentNode) {
       document.body.appendChild(overlayContainerEl);
@@ -37,17 +34,9 @@
   }
 
   function hideOverlay() {
-    if (overlayContainerEl.firstChild) {
-      if (originalParent) {
-        originalParent.appendChild(overlayContainerEl.firstChild);
-      } else {
-        overlayContainerEl.firstChild.remove();
-      }
-    }
     if (overlayContainerEl.parentNode) {
       overlayContainerEl.remove();
     }
-    originalParent = null;
     dismissFunction = null;
   }
 </script>
