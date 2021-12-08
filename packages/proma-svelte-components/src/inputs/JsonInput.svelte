@@ -74,7 +74,9 @@
         internalStringValue = codeEditor.getValue();
       }
       showEditor = false;
-      const newValue = validateJson(internalStringValue);
+      const newValue = internalStringValue.trim()
+        ? validateJson(internalStringValue)
+        : undefined;
       if (!eq(newValue, value)) {
         updatingValue = true;
         value = newValue;
@@ -167,10 +169,7 @@
     {valueString || (error && error.message) || placeholderString}
   </div>
   {#if showEditor}
-    <Overlay
-      anchor={containerBoundingBox}
-      on:dismiss={confirmValue}
-    >
+    <Overlay anchor={containerBoundingBox} on:dismiss={confirmValue}>
       <div
         class="editor"
         class:error

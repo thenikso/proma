@@ -8,7 +8,11 @@ A unreal engine blueprint inspired editor for javascript.
 - [x] types for outlets (serialize/deserialize)
 - [ ] run proma files with example payload (how to show relevan files? like html for web?)
   - [x] JSON input using codemirror
-  - [ ] better types, more like rust? always require a type, no null
+  - [ ] ~~better types, more like rust? always require a type, no null~~
+  - [ ] show errors
+  - [ ] show console
+  - [ ] select html target and show it
+  - [ ] save test in metadata (or somewhere else?)
   - [ ] UI
 - [ ] show main chip and sub chip properties
 - [ ] register local chips in registry?

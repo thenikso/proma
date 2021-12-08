@@ -1,6 +1,6 @@
 <script>
   import Fuse from 'fuse.js';
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import GroupList from '$lib/components/GroupList.svelte';
   import TextWithMatches from '$lib/components/TextWithMatches.svelte';
   const dispatch = createEventDispatcher();
@@ -23,11 +23,7 @@
   let searchInputEl;
   let searchValue;
 
-  onMount(() => {
-    setInterval(() => {
-      searchInputEl.focus();
-    });
-  });
+  $: searchInputEl && searchInputEl.focus();
 
   //
   // Build context chip list
