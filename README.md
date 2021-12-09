@@ -13,6 +13,7 @@ A unreal engine blueprint inspired editor for javascript.
   - [ ] select html target and show it
   - [ ] save test in metadata (or somewhere else?)
   - [ ] UI
+- [x] bug: multiple runs of chips leak memory in `scope` if there is an error. probably wrapping all prots funcs in run and exposing the error could do it
 - [ ] show main chip and sub chip properties
 - [ ] register local chips in registry?
 - [ ] add new endpoint .proma

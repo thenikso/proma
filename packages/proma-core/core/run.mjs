@@ -251,7 +251,12 @@ class Scope {
       context.push(this);
       didAddToContext = true;
     }
-    let res = f();
+    let res, err;
+    try {
+      res = f();
+    } catch (e) {
+      err = e;
+    }
     if (typeof res === 'function') {
       res = this.wrapFunction(res);
     }
@@ -260,6 +265,9 @@ class Scope {
     }
     if (didAddToContext) {
       context.pop();
+    }
+    if (err) {
+      throw err;
     }
     return res;
   }
@@ -272,10 +280,18 @@ class Scope {
       this.push(chip);
       didChangeChip = true;
     }
-    const res = f();
+    let res, err;
+    try {
+      res = f();
+    } catch (e) {
+      err = e;
+    }
     if (didChangeChip) {
       this.pop();
       this.push(oldChip);
+    }
+    if (err) {
+      throw err;
     }
     return res;
   }
@@ -292,8 +308,16 @@ class Scope {
     const scope = this.clone();
     return function scopeWrapped(...args) {
       context.push(scope);
-      const res = func(...args);
+      let res, err;
+      try {
+        res = func(...args);
+      } catch (e) {
+        err = e;
+      }
       context.pop();
+      if (err) {
+        throw err;
+      }
       return res;
     };
   }
