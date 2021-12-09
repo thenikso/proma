@@ -39,9 +39,9 @@ createStream({ objectMode: true })
   .on('end', () => {
     console.log(
       `%ctests: ${tests}, pass: ${pass}, fail: ${fail}`,
-      'font-weight: bold',
+      'font-weight: bold;' + (fail > 0 ? ' color: #DA2D24' : ''),
     );
-    // console.timeEnd(testTimeLabel);
+    console.timeEnd(testTimeLabel);
   });
 
 const isNode = typeof window === 'undefined';
