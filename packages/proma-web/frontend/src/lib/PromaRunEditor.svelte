@@ -6,6 +6,8 @@
   let instance = null;
   let instanceInputs = {};
   let instanceOutputs = {};
+  let outputLogs = [];
+  let outputErrors = [];
 
   $: inputDatas = chip.inputOutlets.filter((i) => !i.isFlow);
   $: inputFlows = chip.inputOutlets.filter((i) => i.isFlow);
@@ -55,6 +57,54 @@
     }
     return instance;
   }
+
+  function runFlow(flowName) {
+    const releaseConsole = captureConsole();
+    Promise.resolve()
+      .then(() => {
+        const instance = getInstance();
+        const flow = instance.in[flowName];
+        if (flow) {
+          return flow();
+        }
+      })
+      .catch((err) => {
+        return err;
+      })
+      .then((err) => {
+        const { logs, errors } = releaseConsole();
+        if (err) {
+          console.error(err);
+        }
+        outputLogs = logs;
+        outputErrors = [...errors, err];
+      });
+  }
+
+  function captureConsole() {
+    const consoleLog = console.log;
+    const logs = [];
+    console.log = (...args) => {
+      logs.push(args);
+      consoleLog(...args);
+    };
+
+    const consoleError = console.error;
+    const errors = [];
+    console.error = (...args) => {
+      errors.push(args);
+      consoleError(...args);
+    };
+
+    return function releaseConsole() {
+      console.log = consoleLog;
+      console.error = consoleError;
+      return {
+        logs,
+        errors,
+      };
+    };
+  }
 </script>
 
 <div class="PromaRunEditor">
@@ -88,7 +138,7 @@
         <button
           type="button"
           class="PromaRunEditor-input-flow"
-          on:click={() => getInstance().in[inputFlow.name]()}
+          on:click={() => runFlow(inputFlow.name)}
         >
           Run "{inputFlow.name}"
         </button>
@@ -107,4 +157,24 @@
       </div>
     {/each}
   </div>
+  {#if outputLogs.length > 0}
+    <div class="Logs">
+      {outputLogs}
+    </div>
+  {/if}
+  {#if outputErrors.length > 0}
+    <div class="Errors">
+      {outputErrors}
+    </div>
+  {/if}
 </div>
+
+<style>
+  .Logs {
+    padding: 0.5rem;
+    font-family: monospace;
+    color: #d8dee4;
+    background-color: #252629;
+    border-radius: 4px;
+  }
+</style>
