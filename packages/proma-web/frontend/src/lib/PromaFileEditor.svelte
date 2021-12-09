@@ -1,20 +1,3 @@
-<script context="module">
-  import { action } from '@proma/svelte-components';
-
-  action.provide('PromaFile.runRemote', async ({ target: promaFile }) => {
-    await action('CurrentProject.save')();
-    return promaFile.runRemote();
-  });
-
-  action.provide('PromaFile.runLocal', ({ target: promaFile }) => {
-    return promaFile.runLocal();
-  });
-
-  action.provide('PromaFile.runLocalCompiled', ({ target: promaFile }) => {
-    return promaFile.runLocal(true);
-  });
-</script>
-
 <script>
   import * as proma from '@proma/core';
   import eq from 'fast-deep-equal';
@@ -27,7 +10,6 @@
 
   export let id = 'PromaFile';
   export let source;
-  export let remoteRunUrl = '';
 
   //
   // Data
@@ -68,73 +50,11 @@
   }
 
   //
-  // Running
-  //
-
-  let runPromise;
-
-  // TODO build with local test payload
-  $: runUrl = remoteRunUrl + '?name=nico';
-
-  export function runLocal(compiled) {
-    if (!sourceChip) return;
-
-    runPromise = new Promise(async (resolve) => {
-      let chipClassToUse = sourceChip;
-      if (compiled) {
-        console.log(sourceChip.compile());
-        chipClassToUse = await sourceChip.compiledClass(null, (url) => {
-          if (/fast-deep-equal/.test(url)) {
-            return eq;
-          }
-          return import(url).catch((e) => {
-            console.warn(`Could not load module: ${url}`);
-            return Promise.reject(e);
-          });
-        });
-      } else {
-        console.log(sourceChip.toJSON());
-      }
-
-      // TODO set parameters somewhere else
-      const chipInstance = new chipClassToUse({
-        httpMethod: 'GET',
-        queryStringParameters: {
-          name: 'test',
-        },
-      });
-
-      chipInstance.out.then(() => {
-        resolve({
-          result: chipInstance.out.result(),
-        });
-      });
-      chipInstance.in.exec();
-    });
-  }
-
-  export function runRemote() {
-    if (!remoteRunUrl) return;
-
-    let url = runUrl;
-
-    // TODO method, body from local test payload
-    runPromise = fetch(url).then((res) => res.json());
-    return runPromise;
-  }
-
-  export function clearRun() {
-    runPromise = null;
-  }
-
-  //
   // Shortcuts
   //
 
   const actionTarget = {
     getEditedSource,
-    runLocal,
-    runRemote,
   };
 
   const dispatchShortcut = createShortcutDispatcher([
@@ -189,15 +109,7 @@
       on:subChip:request={handleChipRequest}
     />
 
-    <slot
-      chip={sourceChip}
-      edit={chipEditor}
-      {runLocal}
-      {runPromise}
-      {runUrl}
-      {clearRun}
-      {actionTarget}
-    />
+    <slot chip={sourceChip} edit={chipEditor} {actionTarget} />
 
     {#if newSubChipRequest}
       <Overlay

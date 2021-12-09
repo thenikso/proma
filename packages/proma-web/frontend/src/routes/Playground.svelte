@@ -21,7 +21,6 @@
   import PromaRunEditor from '$lib/PromaRunEditor.svelte';
   import makeBaseProject from '$lib/playground-projects/base';
   import Select from 'svelte-select/src/Select.svelte';
-  import { keyMods } from '$lib/stores/keyMods';
 
   //
   // Project Selection
@@ -307,26 +306,13 @@
       <PromaFileEditor
         bind:this={selectedEditor}
         source={selectedFileContent}
-        let:runPromise
-        let:clearRun
-        let:runUrl
-        let:actionTarget
         let:chip
       >
         <div class="EditorProma-RunPanel">
           <PromaRunEditor {chip} />
         </div>
-        <button
-          type="button"
-          class="EditorProma-RunButton button primary"
-          on:click={() =>
-            action(
-              $keyMods.shiftKey && $keyMods.metaKey
-                ? 'PromaFile.runLocalCompiled'
-                : 'PromaFile.runLocal',
-            )({ target: actionTarget })}
-        >
-          {$keyMods.shiftKey && $keyMods.metaKey ? 'Test compiled' : 'Test'}
+        <button type="button" class="EditorProma-RunButton button primary">
+          Test
         </button>
       </PromaFileEditor>
     {:else if selectedFileExt}
@@ -439,8 +425,8 @@
 
   .EditorProma-RunButton {
     position: absolute;
-    right: 10px;
-    bottom: 10px;
+    right: 20px;
+    top: 20px;
     margin: 0;
     min-width: 140px;
   }
@@ -450,10 +436,10 @@
 
     position: absolute;
     right: 20px;
-    top: 20px;
+    top: 80px;
     width: 350px;
     height: 100%;
-    max-height: calc(100% - 40px);
+    max-height: calc(100% - 100px);
 
     background-color: var(
       --proma-board--chip-selected--background-color,

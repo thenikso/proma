@@ -20,8 +20,8 @@ shortcuts.set(
   action('ChipBoard.removeConnection'),
 );
 // TODO make this like `action('CurrentProject.save', 'PromaFile.runRemote')`
-shortcuts.set('[PromaFile] cmd+enter', action('PromaFile.runLocal'));
-shortcuts.set('[PromaFile] cmd+shift+enter', action('PromaFile.runLocalCompiled'));
+// shortcuts.set('[PromaFile] cmd+enter', action('PromaFile.runLocal'));
+// shortcuts.set('[PromaFile] cmd+shift+enter', action('PromaFile.runLocalCompiled'));
 
 let shortcutsInitialized = false;
 
