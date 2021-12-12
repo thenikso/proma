@@ -25,14 +25,8 @@
 
   initShortcuts();
 
-  function handleMousewheel(e) {
-    e.preventDefault();
-  }
-
   window.login = login;
   window.logout = logout;
 </script>
-
-<svelte:body on:mousewheel|nonpassive={handleMousewheel} />
 
 <Router {routes} />

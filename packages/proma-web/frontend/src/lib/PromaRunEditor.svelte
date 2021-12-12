@@ -137,7 +137,7 @@
       <div class="PromaRunEditor-input">
         <button
           type="button"
-          class="PromaRunEditor-input-flow"
+          class="button PromaRunEditor-input-flow"
           on:click={() => runFlow(inputFlow.name)}
         >
           Run "{inputFlow.name}"

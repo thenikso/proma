@@ -1,4 +1,4 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import { history } from './history';
 
 export const routes = writable([]);
@@ -30,6 +30,16 @@ export const page = derived(
     set(null);
   },
 );
+
+page.push = function push(params) {
+  const newPage = Object.assign({}, get(page), params);
+  history.push(newPage.toString());
+};
+
+page.replace = function replace(params) {
+  const newPage = Object.assign({}, get(page), params);
+  history.replace(newPage.toString());
+};
 
 function makeMatch(pattern, loose = false) {
   const { regexp, keys } = regexparam(pattern, loose);

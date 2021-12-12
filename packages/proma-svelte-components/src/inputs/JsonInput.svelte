@@ -181,6 +181,9 @@
           }}
           on:ready={({ detail }) => {
             detail.editor.focus();
+            setTimeout(() => {
+              detail.editor.setCursor(detail.editor.lineCount(), 0);
+            });
           }}
           on:change={debounce(() => {
             if (updatingValue || !codeEditor) return;

@@ -26,7 +26,7 @@
   // Project Selection
   //
 
-  let selectedProjectName = $page.query.project;
+  $: selectedProjectName = $page.query.project;
   $: selectedProjectDataString =
     selectedProjectName &&
     localStorage.getItem('project-' + selectedProjectName);
@@ -121,7 +121,7 @@
   // File Selection
   //
 
-  let selectedFilePath = $page.query.file;
+  $: selectedFilePath = $page.query.file;
 
   $: selectedFileContent = selectedFilePath && files[selectedFilePath];
   $: selectedFileExt = selectedFileContent && getFileExt(selectedFilePath);
@@ -155,7 +155,7 @@
 
   $: fileNames = Object.keys(files);
 
-  let expandedFolders = selectedFilePath ? [selectedFilePath] : [];
+  $: expandedFolders = selectedFilePath ? [selectedFilePath] : [];
 
   function handleFileSelect(e) {
     const { file, folder } = e.detail;
@@ -174,21 +174,35 @@
   }
 
   //
+  // Tool selection
+  //
+
+  const VALID_TOOLS = {
+    proma: ['test'],
+  };
+
+  $: selectedTool = (VALID_TOOLS[selectedFileExt] || []).includes(
+    $page.fragment,
+  )
+    ? $page.fragment
+    : '';
+
+  //
   // Url update
   //
 
   $: {
-    let url = window.location.pathname;
-    let andChar = '?';
+    const query = {};
     if (selectedProjectName) {
-      url += andChar + 'project=' + selectedProjectName;
-      andChar = '&';
+      query.project = selectedProjectName;
     }
     if (selectedFilePath) {
-      url += andChar + 'file=' + selectedFilePath;
+      query.file = selectedFilePath;
     }
-    history.replace(url);
+    page.push({ query });
   }
+
+  $: page.replace({ fragment: selectedTool });
 
   //
   // Download project
@@ -308,12 +322,21 @@
         source={selectedFileContent}
         let:chip
       >
-        <div class="EditorProma-RunPanel">
-          <PromaRunEditor {chip} />
-        </div>
-        <button type="button" class="EditorProma-RunButton button primary">
-          Test
-        </button>
+        {#if selectedTool}
+          <div class="ToolsPanel">
+            <div class="ToolsTabs">TODO tabs</div>
+            <div class="ToolsBody">
+              {#if selectedTool === 'test'}
+                <PromaRunEditor {chip} />
+              {/if}
+            </div>
+          </div>
+        {/if}
+        <button
+          type="button"
+          class="RunButton button primary"
+          on:click={() => (selectedTool = 'test')}>Test</button
+        >
       </PromaFileEditor>
     {:else if selectedFileExt}
       <CodeMirror
@@ -404,7 +427,7 @@
 
   .FileExplorer {
     flex-grow: 1;
-    overflow: hidden;
+    overflow: auto;
 
     box-sizing: border-box;
     width: calc(100% - 16px);
@@ -423,7 +446,7 @@
 
   /* Editor Proma */
 
-  .EditorProma-RunButton {
+  .RunButton {
     position: absolute;
     right: 20px;
     top: 20px;
@@ -431,8 +454,11 @@
     min-width: 140px;
   }
 
-  .EditorProma-RunPanel {
+  .ToolsPanel {
     box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
 
     position: absolute;
     right: 20px;
@@ -453,5 +479,11 @@
       --proma-board--chip--shadow,
       0 2px 1px rgba(29, 29, 29, 0.8)
     );
+  }
+
+  .ToolsBody {
+    flex-grow: 1;
+    padding: 8px;
+    overflow: auto;
   }
 </style>
