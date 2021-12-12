@@ -309,7 +309,7 @@ function makeChipFactory($customChips, $hooks) {
         if (parentChipInfo instanceof ChipInfo) {
           parentChipInfo.addChip(this);
         }
-        // Run `constructed`
+        // Run `onCreate` hooks
         else if (
           $hooks &&
           $hooks.onCreate &&

@@ -229,6 +229,7 @@ class EditableChipInfo {
     }
 
     if (isChipClass(chipToAdd)) {
+      // FIX here we run the `onCreate` hook which is not ok when editing
       chipToAdd = new chipToAdd(...(canonicalValues || []));
     }
     if (chipToAdd instanceof this.Chip) {

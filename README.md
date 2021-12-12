@@ -13,7 +13,9 @@ A unreal engine blueprint inspired editor for javascript.
   - [ ] select html target and show it
   - [ ] save test in metadata (or somewhere else?)
   - [ ] UI
-- [x] bug: multiple runs of chips leak memory in `scope` if there is an error. probably wrapping all prots funcs in run and exposing the error could do it
+  - [ ] show chip errors in board (capture in port run and add as port property)
+- [x] bug: multiple runs of chips leak memory in `scope` if there is an error.
+- [ ] fix: in api.mjs#318 we run the onCreate when the chip is created even when deserializing chips.. that's not ok! we should only run them when instantiating the "out facing" chip.
 - [ ] show main chip and sub chip properties
 - [ ] register local chips in registry?
 - [ ] add new endpoint .proma

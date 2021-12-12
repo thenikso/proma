@@ -1,5 +1,5 @@
 <script>
-  export let type = 'exec';
+  export let type = 'exec'; // NOTE this is more like "kind" than "type"
   export let connected = false;
 </script>
 
@@ -7,7 +7,6 @@
   <svg
     class="Outlet OutletType-exec"
     class:OutletConnected={connected}
-    style="display: block; cursor: crosshair;"
     width="14px"
     height="14px"
     viewBox="0 0 14 14"
@@ -27,7 +26,6 @@
   <svg
     class="Outlet OutletType-{type}"
     class:OutletConnected={connected}
-    style="display: block; cursor: crosshair;"
     width="14px"
     height="14px"
     viewBox="0 0 14 14"
@@ -56,5 +54,41 @@
 
   .Outlet.OutletConnected .OutletSocket {
     fill: currentColor;
+  }
+
+  .Outlet {
+    color: var(--proma-board--type-any, #00a7ef);
+  }
+
+  .Outlet.OutletType-exec {
+    color: var(--proma-board--type-exec, #e7e7e7);
+  }
+
+  .Outlet.OutletType-string {
+    color: var(--proma-board--type-string, #55d67c);
+  }
+
+  .Outlet.OutletType-number {
+    color: var(--proma-board--type-number, #57acee);
+  }
+
+  .Outlet.OutletType-boolean {
+    color: var(--proma-board--type-boolean, #eeac57);
+  }
+
+  .Outlet.OutletType-object {
+    color: var(--proma-board--type-object, #ac57ee);
+  }
+
+  .Outlet.OutletType-array {
+    color: var(--proma-board--type-array, #bf7df2);
+  }
+
+  .Outlet.OutletType-tuple {
+    color: var(--proma-board--type-tuple, #cd82a3);
+  }
+
+  .Outlet.OutletType-function {
+    color: var(--proma-board--type-function, #d6557c);
   }
 </style>

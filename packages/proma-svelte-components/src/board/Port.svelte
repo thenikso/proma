@@ -126,38 +126,10 @@
   }
 
   .Port .PortOutlet {
-    color: var(--proma-board--type-any, #00a7ef);
+    cursor: crosshair;
   }
 
-  .Port-type-exec .PortOutlet {
-    color: var(--proma-board--type-exec, #e7e7e7);
-  }
-
-  .Port-type-string .PortOutlet {
-    color: var(--proma-board--type-string, #55d67c);
-  }
-
-  .Port-type-number .PortOutlet {
-    color: var(--proma-board--type-number, #57acee);
-  }
-
-  .Port-type-boolean .PortOutlet {
-    color: var(--proma-board--type-boolean, #eeac57);
-  }
-
-  .Port-type-object .PortOutlet {
-    color: var(--proma-board--type-object, #ac57ee);
-  }
-
-  .Port-type-array .PortOutlet {
-    color: var(--proma-board--type-array, #bf7df2);
-  }
-
-  .Port-type-tuple .PortOutlet {
-    color: var(--proma-board--type-tuple, #cd82a3);
-  }
-
-  .Port-type-function .PortOutlet {
-    color: var(--proma-board--type-function, #d6557c);
+  .Port .PortOutlet > :global(svg) {
+    display: block;
   }
 </style>

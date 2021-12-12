@@ -249,7 +249,7 @@
     height: 100px;
     overflow: hidden;
 
-    border: 1px solid var(--proma-input--border-color, #383839);
+    border: 1px solid var(--proma-input--focus--border-color, #257bfb);
     border-radius: 5px;
   }
 
