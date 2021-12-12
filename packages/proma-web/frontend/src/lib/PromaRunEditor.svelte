@@ -8,14 +8,20 @@
   let instanceOutputs = {};
   let outputLogs = [];
   let outputErrors = [];
+  let selectedFlow;
 
   $: inputDatas = chip.inputOutlets.filter((i) => !i.isFlow);
   $: inputFlows = chip.inputOutlets.filter((i) => i.isFlow);
 
   $: outputDatas = chip.outputOutlets.filter((i) => !i.isFlow);
 
-  // Reset instance on chip class change
+  // Reset instance on chip class change or flow reset
   $: if (chip) {
+    selectedFlow = '';
+    instance = null;
+  }
+
+  $: if (!selectedFlow) {
     instance = null;
   }
 
@@ -59,6 +65,7 @@
   }
 
   function runFlow(flowName) {
+    selectedFlow = flowName;
     const releaseConsole = captureConsole();
     Promise.resolve()
       .then(() => {
@@ -108,68 +115,131 @@
 </script>
 
 <div class="PromaRunEditor">
-  <div class="Inputs">
-    {#each inputDatas as inputData}
-      <div class="PromaRunEditor-input">
-        <div class="PromaRunEditor-input-name">
-          <PortOutlet type={inputData.type.definitionKinds[0]} />
-          {inputData.name}
-        </div>
-        <div class="PromaRunEditor-input-value">
-          {#if inputData.type.definitionKinds[0] === 'string'}
-            <StringInput
-              placeholder={inputData.defaultValue || 'undefined'}
-              value={instanceInputs[inputData.name]}
-              on:input={(e) => setInput(inputData.name, e.detail.value)}
-            />
-          {:else}
-            <JsonInput
-              placeholder={inputData.defaultValue || 'undefined'}
-              value={instanceInputs[inputData.name]}
-              on:input={(e) => setInput(inputData.name, e.detail.value)}
-            />
-          {/if}
-        </div>
-      </div>
-    {/each}
-
-    {#each inputFlows as inputFlow}
-      <div class="PromaRunEditor-input">
+  {#if selectedFlow}
+    <div class="Outputs">
+      <div class="flow-input">
         <button
           type="button"
-          class="button PromaRunEditor-input-flow"
-          on:click={() => runFlow(inputFlow.name)}
+          class="back button outline"
+          title="Change input values"
+          on:click={() => (selectedFlow = '')}>◀</button
         >
-          Run "{inputFlow.name}"
+        <button
+          type="button"
+          class="flow button"
+          on:click={() => runFlow(selectedFlow)}
+        >
+          Re-run "{selectedFlow}"
         </button>
       </div>
-    {/each}
-  </div>
-  <div class="Outputs">
-    {#each outputDatas as outputData}
-      <div class="PromaRunEditor-output">
-        <div class="PromaRunEditor-output-name">
-          {outputData.name}
+
+      {#each outputDatas as outputData}
+        <div class="output">
+          <div class="label">
+            <span class="name">{outputData.name}</span>
+          </div>
+          <div class="value">
+            {instanceOutputs[outputData.name] || 'undefined'}
+          </div>
         </div>
-        <div class="PromaRunEditor-output-value">
-          {instanceOutputs[outputData.name] || 'undefined'}
-        </div>
-      </div>
-    {/each}
-  </div>
-  {#if outputLogs.length > 0}
-    <div class="Logs">
-      {outputLogs}
+      {/each}
     </div>
-  {/if}
-  {#if outputErrors.length > 0}
-    <div class="Errors">
-      {outputErrors}
+    {#if outputLogs.length > 0}
+      <div class="Logs">
+        {outputLogs}
+      </div>
+    {/if}
+    {#if outputErrors.length > 0}
+      <div class="Errors">
+        {outputErrors}
+      </div>
+    {/if}
+  {:else}
+    <div class="Inputs">
+      {#each inputDatas as inputData}
+        <div class="input">
+          <div class="label">
+            <PortOutlet type={inputData.type.definitionKinds[0]} />
+            <span class="name">{inputData.name}</span>
+          </div>
+          <div class="value">
+            {#if inputData.type.definitionKinds[0] === 'string'}
+              <StringInput
+                placeholder={inputData.defaultValue || 'undefined'}
+                value={instanceInputs[inputData.name]}
+                on:input={(e) => setInput(inputData.name, e.detail.value)}
+              />
+            {:else}
+              <JsonInput
+                placeholder={inputData.defaultValue || 'undefined'}
+                value={instanceInputs[inputData.name]}
+                on:input={(e) => setInput(inputData.name, e.detail.value)}
+              />
+            {/if}
+          </div>
+        </div>
+      {/each}
+
+      {#each inputFlows as inputFlow}
+        <div class="flow-input">
+          <button
+            type="button"
+            class="flow button"
+            on:click={() => runFlow(inputFlow.name)}
+          >
+            Run "{inputFlow.name}"
+          </button>
+        </div>
+      {/each}
     </div>
   {/if}
 </div>
 
 <style>
+  .input {
+    margin: 8px 0;
+  }
+
+  .input > .label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .input > .label > .name {
+    display: block;
+    padding-left: 8px;
+  }
+
+  .input > .value {
+    padding-left: 20px;
+  }
+
+  .flow-input {
+    display: flex;
+  }
+
+  .flow-input > .flow.button {
+    flex-grow: 1;
+    text-align: left;
+  }
+
+  .flow-input > .back.button {
+    margin-right: 8px;
+    padding-right: 12px;
+  }
+
+  .output {
+    margin: 8px 0;
+  }
+
+  .output > .value {
+    padding: 0.5rem;
+    font-family: monospace;
+    border-radius: 4px;
+    border: 1px solid #d8dee4;
+  }
+
   .Logs {
     padding: 0.5rem;
     font-family: monospace;
