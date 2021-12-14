@@ -97,7 +97,17 @@ export default () => ({
         "y": -25,
         "out_then_variadicSize": 2
       }
-    }
+    },
+    "tests": [
+      {
+        "data": {
+          "request": {
+            "query": { "name": "nico" },
+            "method": "GET"
+          }
+        }
+      }
+    ]
   }
 }
 `,

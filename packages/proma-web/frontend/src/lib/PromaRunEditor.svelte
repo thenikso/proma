@@ -1,5 +1,7 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
   import { JsonInput, StringInput, PortOutlet } from '@proma/svelte-components';
+  const dispatch = createEventDispatcher();
 
   export let chip;
 
@@ -10,20 +12,38 @@
   let outputErrors = [];
   let selectedFlow;
 
+  function dispatchTestChange(data, flow) {
+    dispatch('testChange', {
+      test: { data, flow },
+    });
+  }
+
+  $: metadataTest = chip?.metadata?.tests?.[0];
+
   $: inputDatas = chip.inputOutlets.filter((i) => !i.isFlow);
   $: inputFlows = chip.inputOutlets.filter((i) => i.isFlow);
-
   $: outputDatas = chip.outputOutlets.filter((i) => !i.isFlow);
 
   // Reset instance on chip class change or flow reset
   $: if (chip) {
-    selectedFlow = '';
-    instance = null;
+    if (metadataTest) {
+      getInstance();
+      if (metadataTest.flow) {
+        runFlow(metadataTest.flow);
+      } else {
+        selectedFlow = '';
+      }
+    } else {
+      instance = null;
+      selectedFlow = '';
+    }
   }
 
   $: if (!selectedFlow) {
     instance = null;
   }
+
+  $: dispatchTestChange(instanceInputs, selectedFlow);
 
   function setInput(name, value) {
     if (instance) {
@@ -58,6 +78,14 @@
           instance.out[o.name](() => {
             updateInstanceOutputs();
           });
+        }
+      }
+      // Set saved instance inputs
+      if (metadataTest) {
+        for (const i of inputDatas) {
+          if (typeof metadataTest.data?.[i.name] !== 'undefined') {
+            setInput(i.name, metadataTest.data[i.name]);
+          }
         }
       }
     }

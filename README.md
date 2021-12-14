@@ -7,9 +7,7 @@ A unreal engine blueprint inspired editor for javascript.
 - [x] show/use relevant libs for endpoint/node .proma files
 - [x] types for outlets (serialize/deserialize)
 - [x] run proma files with example payload (how to show relevan files? like html for web?)
-- [ ] save test in metadata (or somewhere else?)
-  - [x] change current metadata to have `board`, `chips` and `tests`
-  - [ ] save test as `{ inputs: { portName: 'value' }, flow: 'name' }`
+- [x] save test in metadata (or somewhere else?)
 - [ ] show instance values when hovering port (and test is being run)
 - [ ] show chip errors in board (capture in port run and add as port property)
 - [ ] select html target and show it when testing

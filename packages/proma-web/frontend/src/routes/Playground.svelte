@@ -327,7 +327,15 @@
             <div class="ToolsTabs">TODO tabs</div>
             <div class="ToolsBody">
               {#if selectedTool === 'test'}
-                <PromaRunEditor {chip} />
+                <PromaRunEditor
+                  {chip}
+                  on:testChange={(e) => {
+                    chip.metadata = {
+                      ...chip.metadata,
+                      tests: [e.detail.test],
+                    };
+                  }}
+                />
               {/if}
             </div>
           </div>
