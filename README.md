@@ -6,18 +6,16 @@ A unreal engine blueprint inspired editor for javascript.
 
 - [x] show/use relevant libs for endpoint/node .proma files
 - [x] types for outlets (serialize/deserialize)
-- [ ] run proma files with example payload (how to show relevan files? like html for web?)
-  - [x] JSON input using codemirror
-  - [ ] show errors
-  - [ ] show console
-  - [ ] select html target and show it
-  - [ ] save test in metadata (or somewhere else?)
-  - [ ] UI
-  - [ ] show chip errors in board (capture in port run and add as port property)
-- [x] bug: multiple runs of chips leak memory in `scope` if there is an error.
-- [ ] fix: in api.mjs#318 we run the onCreate when the chip is created even when deserializing chips.. that's not ok! we should only run them when instantiating the "out facing" chip.
+- [x] run proma files with example payload (how to show relevan files? like html for web?)
+- [ ] save test in metadata (or somewhere else?)
+  - [x] change current metadata to have `board`, `chips` and `tests`
+  - [ ] save test as `{ inputs: { portName: 'value' }, flow: 'name' }`
+- [ ] show instance values when hovering port (and test is being run)
+- [ ] show chip errors in board (capture in port run and add as port property)
+- [ ] select html target and show it when testing
+- [ ] fix: in `api.mjs#318` we run the onCreate when the chip is created even when deserializing chips.. that's not ok! we should only run them when instantiating the "out facing" chip. basically "sub-chips" should put their oncreate/destroy to the main chip (as it's done when compiling)
 - [ ] show main chip and sub chip properties
-- [ ] register local chips in registry?
+- [ ] register local chips in registry / custom chip macros
 - [ ] add new endpoint .proma
 - [ ] `fromJSON` now is a promise so `withErrors` should also have registry misses errors and maybe even allow the user to resolve errors if possible
 - [ ] DOM node chip? basically you enter html with `{port}` and we return an updating DOM (created, updated then ports + element)

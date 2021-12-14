@@ -104,7 +104,10 @@
 
   function updateChipMetadata(metadata) {
     if (edit) {
-      chip.metadata = metadata;
+      chip.metadata = {
+        ...chip.metadata,
+        board: metadata,
+      };
     }
     dispatchMetadataChange({ chip, metadata });
   }
@@ -117,21 +120,22 @@
   }
 
   function cloneMetadata(chip) {
+    const metadata = chip?.metadata?.board;
     return {
-      ...(chip?.metadata ?? {}),
+      ...(metadata ?? {}),
       $: {
         panX: 0,
         panY: 0,
         zoom: 1,
-        ...(chip?.metadata?.$ ?? {}),
-        selected: [...(chip?.metadata?.$?.selected || [])],
+        ...(metadata?.$ ?? {}),
+        selected: [...(metadata?.$?.selected || [])],
       },
-      $in: { x: -400, y: 0, ...(chip?.metadata?.$in ?? {}) },
-      $out: { x: -400, y: 0, ...(chip?.metadata?.$out ?? {}) },
+      $in: { x: -400, y: 0, ...(metadata?.$in ?? {}) },
+      $out: { x: -400, y: 0, ...(metadata?.$out ?? {}) },
       ...Object.fromEntries(
         chip.chips.map((c, i) => [
           c.id,
-          { x: 0, y: 100 * i, ...(chip?.metadata?.[c.id] ?? {}) },
+          { x: 0, y: 100 * i, ...(metadata?.[c.id] ?? {}) },
         ]),
       ),
     };

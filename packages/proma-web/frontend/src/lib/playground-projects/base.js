@@ -78,23 +78,25 @@ export default () => ({
     { "source": "in.request", "sink": "lib_GetProperty_1.in.target" }
   ],
   "metadata": {
-    "$": { "panX": -228, "panY": -203, "zoom": 1, "selected": [] },
-    "$in": { "x": -755, "y": 5 },
-    "$out": { "x": 610, "y": 0 },
-    "OnCreate_1": { "x": -380, "y": -215 },
-    "lib_debug_Log_1": { "x": -130, "y": -195 },
-    "lib_string_Append_1": { "x": -65, "y": 70, "in_input_variadicSize": 2 },
-    "lib_network_FetchJson_1": { "x": 835, "y": 290 },
-    "lib_GetPropertyAtPath_1": { "x": -495, "y": 100 },
-    "lib_GetProperty_1": { "x": -840, "y": 330 },
-    "lib_Equal_1": { "x": -470, "y": 325 },
-    "lib_debug_Log_2": { "x": 560, "y": 195 },
-    "lib_ToString_1": { "x": -160, "y": 360 },
-    "lib_string_Append_2": { "x": 105, "y": 325, "in_input_variadicSize": 2 },
-    "lib_flowControl_Sequence_1": {
-      "x": 240,
-      "y": -25,
-      "out_then_variadicSize": 2
+    "board": {
+      "$": { "panX": -228, "panY": -203, "zoom": 1, "selected": [] },
+      "$in": { "x": -755, "y": 5 },
+      "$out": { "x": 610, "y": 0 },
+      "OnCreate_1": { "x": -380, "y": -215 },
+      "lib_debug_Log_1": { "x": -130, "y": -195 },
+      "lib_string_Append_1": { "x": -65, "y": 70, "in_input_variadicSize": 2 },
+      "lib_network_FetchJson_1": { "x": 835, "y": 290 },
+      "lib_GetPropertyAtPath_1": { "x": -495, "y": 100 },
+      "lib_GetProperty_1": { "x": -840, "y": 330 },
+      "lib_Equal_1": { "x": -470, "y": 325 },
+      "lib_debug_Log_2": { "x": 560, "y": 195 },
+      "lib_ToString_1": { "x": -160, "y": 360 },
+      "lib_string_Append_2": { "x": 105, "y": 325, "in_input_variadicSize": 2 },
+      "lib_flowControl_Sequence_1": {
+        "x": 240,
+        "y": -25,
+        "out_then_variadicSize": 2
+      }
     }
   }
 }
@@ -174,17 +176,19 @@ export default () => ({
       { "source": "in.target", "sink": "lib_html_QuerySelector_2.in.target" }
     ],
     "metadata": {
-      "$": { "panX": 211, "panY": -114, "zoom": 1, "selected": [] },
-      "$in": { "x": -725, "y": -20 },
-      "$out": { "x": -400, "y": 0 },
-      "lib_html_QuerySelector_1": { "x": -495, "y": 105 },
-      "lib_html_BindEvent_1": { "x": -33.5, "y": 55 },
-      "CustomEvent_1": { "x": -265, "y": 355 },
-      "OnCreate_3": { "x": -260.5, "y": -87 },
-      "lib_debug_Log_5": { "x": 16.5, "y": 416 },
-      "lib_network_FetchJson_3": { "x": 380, "y": 420 },
-      "lib_debug_Log_6": { "x": 764, "y": 473.5 },
-      "lib_html_QuerySelector_2": { "x": -505, "y": 70 }
+      "board": {
+        "$": { "panX": 211, "panY": -114, "zoom": 1, "selected": [] },
+        "$in": { "x": -725, "y": -20 },
+        "$out": { "x": -400, "y": 0 },
+        "lib_html_QuerySelector_1": { "x": -495, "y": 105 },
+        "lib_html_BindEvent_1": { "x": -33.5, "y": 55 },
+        "CustomEvent_1": { "x": -265, "y": 355 },
+        "OnCreate_3": { "x": -260.5, "y": -87 },
+        "lib_debug_Log_5": { "x": 16.5, "y": 416 },
+        "lib_network_FetchJson_3": { "x": 380, "y": 420 },
+        "lib_debug_Log_6": { "x": 764, "y": 473.5 },
+        "lib_html_QuerySelector_2": { "x": -505, "y": 70 }
+      }
     }
   }`,
   'index.js': `const fs = require('fs');
