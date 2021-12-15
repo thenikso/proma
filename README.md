@@ -9,6 +9,10 @@ A unreal engine blueprint inspired editor for javascript.
 - [x] run proma files with example payload (how to show relevan files? like html for web?)
 - [x] save test in metadata (or somewhere else?)
 - [ ] show instance values when hovering port (and test is being run)
+  - [x] add `$runValue` to all intermediate run ports
+  - [ ] create `debug` function to debug a chip instance
+  - [ ] create `Tooltip` to show debug values when hovering a port
+  - [ ] reset all `$runValue` when re-running/editing a chip/connections to avoid zombie values
 - [ ] show chip errors in board (capture in port run and add as port property)
 - [ ] select html target and show it when testing
 - [x] fix: in `api.mjs#318` we run the onCreate when the chip is created even when deserializing chips.. that's not ok! we should only run them when instantiating the "out facing" chip. basically "sub-chips" should put their oncreate/destroy to the main chip (as it's done when compiling) use the context to determine if we are at the top?

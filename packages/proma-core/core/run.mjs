@@ -29,7 +29,8 @@ export function makePortRun(portInfo, isOutlet) {
         if (isOutlet) {
           const chip = scope.chip;
           assertInfo(chip, portInfo.chipInfo);
-          return chip.in[portInfo.name]();
+          port.$runValue = chip.in[portInfo.name]()
+          return port.$runValue;
         }
 
         // Variadic
@@ -40,6 +41,7 @@ export function makePortRun(portInfo, isOutlet) {
               res[i] = scope.withReplace(p.chip, p);
             }
           });
+          port.$runValue = res;
           return res;
         }
 
@@ -47,19 +49,19 @@ export function makePortRun(portInfo, isOutlet) {
         if (parentChip && parentChip !== port.chip) {
           const conn = info(parentChip).getConnectedPorts(port, parentChip)[0];
           if (conn) {
-            const value = scope.withReplace(conn.chip, conn);
-            checkValueType(port, value);
-            return value;
+            port.$runValue = scope.withReplace(conn.chip, conn);
+            checkValueType(port, port.$runValue);
+            return port.$runValue;
           }
         }
 
-        const portValue = port.value;
+        port.$runValue = port.value;
 
-        if (portValue instanceof ExternalReference) {
-          return portValue.value;
+        if (port.$runValue instanceof ExternalReference) {
+          port.$runValue = port.$runValue.value;
         }
 
-        return portValue;
+        return port.$runValue;
       };
     } else {
       // input flow
@@ -139,9 +141,9 @@ export function makePortRun(portInfo, isOutlet) {
         // Connections
         const conn = info(port.chip).getConnectedPorts(port, port.chip)[0];
         if (conn) {
-          const value = scope.with(port.chip, conn);
-          checkValueType(port, value);
-          return value;
+          port.$runValue = scope.with(port.chip, conn);
+          checkValueType(port, port.$runValue);
+          return port.$runValue;
         }
 
         // Value
