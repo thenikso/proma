@@ -18,6 +18,12 @@
     });
   }
 
+  function dispatchNewInstance(instance) {
+    dispatch('newInstance', {
+      instance,
+    });
+  }
+
   $: metadataTest = chip?.metadata?.tests?.[0];
 
   $: inputDatas = chip.inputOutlets.filter((i) => !i.isFlow);
@@ -27,11 +33,10 @@
   // Reset instance on chip class change or flow reset
   $: if (chip) {
     if (metadataTest) {
-      getInstance();
+      instanceInputs = { ...(metadataTest.data || {}) };
       if (metadataTest.flow) {
+        getInstance();
         runFlow(metadataTest.flow);
-      } else {
-        selectedFlow = '';
       }
     } else {
       instance = null;
@@ -44,6 +49,7 @@
   }
 
   $: dispatchTestChange(instanceInputs, selectedFlow);
+  $: dispatchNewInstance(instance);
 
   function setInput(name, value) {
     if (instance) {
@@ -81,11 +87,9 @@
         }
       }
       // Set saved instance inputs
-      if (metadataTest) {
-        for (const i of inputDatas) {
-          if (typeof metadataTest.data?.[i.name] !== 'undefined') {
-            setInput(i.name, metadataTest.data[i.name]);
-          }
+      for (const i of inputDatas) {
+        if (typeof instanceInputs[i.name] !== 'undefined') {
+          instance.in[i.name] = instanceInputs[i.name];
         }
       }
     }
@@ -174,7 +178,11 @@
     </div>
     {#if outputLogs.length > 0}
       <div class="Logs">
-        {outputLogs}
+        {#each outputLogs as log}
+          <div class="log">
+            {log}
+          </div>
+        {/each}
       </div>
     {/if}
     {#if outputErrors.length > 0}
