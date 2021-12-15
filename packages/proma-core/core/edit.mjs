@@ -1,4 +1,4 @@
-import { info, assert } from './utils.mjs';
+import { context, info, assert } from './utils.mjs';
 import { Chip, isChipClass } from './chip.mjs';
 import { PortOutlet } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
@@ -229,8 +229,16 @@ class EditableChipInfo {
     }
 
     if (isChipClass(chipToAdd)) {
-      // FIX here we run the `onCreate` hook which is not ok when editing
-      chipToAdd = new chipToAdd(...(canonicalValues || []));
+      context.push(chipInfo);
+      try {
+        chipToAdd = new chipToAdd(...(canonicalValues || []));
+      } catch (e) {
+        context.pop();
+        throw e;
+      }
+      context.pop();
+    } else {
+      chipInfo.addChip(chipToAdd);
     }
     if (chipToAdd instanceof this.Chip) {
       throw new Error('Can not add same chip');
@@ -238,10 +246,9 @@ class EditableChipInfo {
     if (id) {
       chipToAdd.id = id;
     }
-    while (chipInfo.getChip(chipToAdd.id)) {
+    while (chipInfo.getChip(chipToAdd.id) !== chipToAdd) {
       chipToAdd.id = info(chipToAdd).makeChipId();
     }
-    chipInfo.addChip(chipToAdd);
     this.dispatch('chip:add', {
       subject: 'chip',
       operation: 'add',

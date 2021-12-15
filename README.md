@@ -11,7 +11,7 @@ A unreal engine blueprint inspired editor for javascript.
 - [ ] show instance values when hovering port (and test is being run)
 - [ ] show chip errors in board (capture in port run and add as port property)
 - [ ] select html target and show it when testing
-- [ ] fix: in `api.mjs#318` we run the onCreate when the chip is created even when deserializing chips.. that's not ok! we should only run them when instantiating the "out facing" chip. basically "sub-chips" should put their oncreate/destroy to the main chip (as it's done when compiling)
+- [x] fix: in `api.mjs#318` we run the onCreate when the chip is created even when deserializing chips.. that's not ok! we should only run them when instantiating the "out facing" chip. basically "sub-chips" should put their oncreate/destroy to the main chip (as it's done when compiling) use the context to determine if we are at the top?
 - [ ] show main chip and sub chip properties
 - [ ] register local chips in registry / custom chip macros
 - [ ] add new endpoint .proma
