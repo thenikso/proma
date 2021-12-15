@@ -10,6 +10,7 @@
 
   export let id = 'PromaFile';
   export let source;
+  export let instance = undefined;
 
   //
   // Data
@@ -106,6 +107,7 @@
     <ChipBoardView
       chip={sourceChip}
       edit={chipEditor}
+      {instance}
       on:subChip:request={handleChipRequest}
     />
 

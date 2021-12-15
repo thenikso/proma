@@ -177,6 +177,8 @@
   // Tool selection
   //
 
+  let promaChipInstance;
+
   const VALID_TOOLS = {
     proma: ['test'],
   };
@@ -321,6 +323,7 @@
         bind:this={selectedEditor}
         source={selectedFileContent}
         let:chip
+        instance={promaChipInstance}
       >
         {#if selectedTool}
           <div class="ToolsPanel">
@@ -329,6 +332,7 @@
               {#if selectedTool === 'test'}
                 <PromaRunEditor
                   {chip}
+                  bind:instance={promaChipInstance}
                   on:testChange={(e) => {
                     chip.metadata = {
                       ...chip.metadata,

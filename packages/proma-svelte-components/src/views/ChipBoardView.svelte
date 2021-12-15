@@ -29,7 +29,7 @@
   export let id = 'ChipBoard';
   export let chip;
   export let edit;
-  // export let instance = null;
+  export let instance = undefined;
 
   //
   // Dispatchers

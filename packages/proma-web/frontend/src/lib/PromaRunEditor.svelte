@@ -5,7 +5,7 @@
 
   export let chip;
 
-  let instance = null;
+  export let instance = undefined;
   let instanceInputs = {};
   let instanceOutputs = {};
   let outputLogs = [];
@@ -18,8 +18,8 @@
     });
   }
 
-  function dispatchNewInstance(instance) {
-    dispatch('newInstance', {
+  function dispatchInstanceChange(instance) {
+    dispatch('instanceChange', {
       instance,
     });
   }
@@ -35,13 +35,16 @@
     if (metadataTest) {
       instanceInputs = { ...(metadataTest.data || {}) };
       if (metadataTest.flow) {
-        getInstance();
         runFlow(metadataTest.flow);
       }
     } else {
       instance = null;
       selectedFlow = '';
+      instanceInputs = {};
     }
+    instanceOutputs = {};
+    outputLogs = [];
+    outputErrors = [];
   }
 
   $: if (!selectedFlow) {
@@ -49,7 +52,7 @@
   }
 
   $: dispatchTestChange(instanceInputs, selectedFlow);
-  $: dispatchNewInstance(instance);
+  $: dispatchInstanceChange(instance);
 
   function setInput(name, value) {
     if (instance) {
