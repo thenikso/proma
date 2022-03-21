@@ -1,4 +1,4 @@
-import { context, info, assertInfo, assert } from './utils.mjs';
+import { context, info, assertInfo } from './utils.mjs';
 import { ExternalReference } from './external.mjs';
 import recast from '../vendor/recast.mjs';
 
@@ -113,6 +113,7 @@ export function makePortRun(portInfo, isOutlet) {
         // A trick to only compute this port when computeOn is active if the
         // `$runValue` is set to one of the PortInfo computing this port
         // That is set in `outputFlowPort`.
+        // FIX what is this? use a proper flag
         if (
           portInfo.computeOn &&
           portInfo.computeOn.length > 0 &&
@@ -131,10 +132,12 @@ export function makePortRun(portInfo, isOutlet) {
           }
           const computed = scope.with(port.chip, portInfo.compute);
           // Cache "once" inlined outputs
-          if (portInfo.inline === 'once') {
-            checkValueType(port, computed);
-            port.$runValue = computed;
-          }
+          // if (portInfo.inline === 'once') {
+          //   checkValueType(port, computed);
+          // }
+          // FIX this was supposed to be a cache for "once" but we always want a
+          // run value...
+          port.$runValue = computed;
           return computed;
         }
 

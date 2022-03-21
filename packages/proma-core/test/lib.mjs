@@ -39,3 +39,16 @@ export const Pass = chip('Pass', () => {
   wire(exec, then);
   wire(input, output);
 });
+
+export const Add = chip('Add', () => {
+  const input = inputData('input', {
+    variadic: '{letter}',
+    type: 'Number',
+    canonical: true,
+  });
+
+  outputData('output', {
+    compute: () => input().reduce((a, b) => a + b, 0),
+    type: 'Number',
+  });
+});

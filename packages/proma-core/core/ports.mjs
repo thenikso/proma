@@ -27,6 +27,7 @@ export class Port extends Function {
     Object.defineProperties(self, {
       chip: {
         enumerable: true,
+        // TODO make this weak?
         value: chip,
       },
       name: {
