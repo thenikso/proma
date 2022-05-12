@@ -1,0 +1,1 @@
+<div>board detail</div>

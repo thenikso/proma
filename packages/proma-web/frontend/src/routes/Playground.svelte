@@ -19,6 +19,7 @@
   import FileTree from '$lib/components/FileTree.svelte';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
   import PromaRunEditor from '$lib/PromaRunEditor.svelte';
+  import PromaBoardDetails from '$lib/PromaBoardDetails.svelte';
   import makeBaseProject from '$lib/playground-projects/base';
   import Select from 'svelte-select/src/Select.svelte';
 
@@ -180,7 +181,7 @@
   let promaChipInstance;
 
   const VALID_TOOLS = {
-    proma: ['test'],
+    proma: ['info', 'test'],
   };
 
   $: selectedTool = (VALID_TOOLS[selectedFileExt] || []).includes(
@@ -322,14 +323,28 @@
       <PromaFileEditor
         bind:this={selectedEditor}
         source={selectedFileContent}
-        let:chip
         instance={promaChipInstance}
+        let:chip
+        let:selectedChips
       >
         {#if selectedTool}
           <div class="ToolsPanel">
-            <div class="ToolsTabs">TODO tabs</div>
+            <div class="ToolsTabs">
+              <button type="button" on:click={() => (selectedTool = 'info')}>
+                info
+              </button>
+              <button type="button" on:click={() => (selectedTool = 'test')}>
+                test
+              </button>
+            </div>
             <div class="ToolsBody">
-              {#if selectedTool === 'test'}
+              {#if selectedTool === 'info'}
+                {#if selectedChips.length > 0}
+                  <div>TODO sub-chip info here</div>
+                {:else}
+                  <PromaBoardDetails />
+                {/if}
+              {:else if selectedTool === 'test'}
                 <PromaRunEditor
                   {chip}
                   bind:instance={promaChipInstance}

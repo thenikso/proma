@@ -29,7 +29,7 @@
   export let id = 'ChipBoard';
   export let chip;
   export let edit;
-  export let instance = undefined;
+  // export let instance = undefined;
 
   //
   // Dispatchers
@@ -165,6 +165,10 @@
     });
 
     // Save selection in metadata
+    saveMetadataSelected();
+  }
+
+  function saveMetadataSelected(selectedChipIds) {
     metadata.$.selected = selectedChipIds;
   }
 

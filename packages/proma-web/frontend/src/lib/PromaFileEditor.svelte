@@ -20,6 +20,7 @@
 
   let sourceChip;
   let chipEditor;
+  let selectedChips = [];
 
   $: updateChipEditor(sourceJson);
 
@@ -94,11 +95,15 @@
   }
 
   //
-  // Event handler
+  // Event handlers
   //
 
   function handleChipRequest(e) {
     newSubChipRequest = e.detail;
+  }
+
+  function handleSelectionChange(e) {
+    selectedChips = e.detail.chips.slice();
   }
 </script>
 
@@ -109,9 +114,10 @@
       edit={chipEditor}
       {instance}
       on:subChip:request={handleChipRequest}
+      on:selection:change={handleSelectionChange}
     />
 
-    <slot chip={sourceChip} edit={chipEditor} {actionTarget} />
+    <slot chip={sourceChip} edit={chipEditor} {actionTarget} {selectedChips} />
 
     {#if newSubChipRequest}
       <Overlay

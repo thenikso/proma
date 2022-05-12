@@ -8,9 +8,15 @@ A unreal engine blueprint inspired editor for javascript.
 - [x] types for outlets (serialize/deserialize)
 - [x] run proma files with example payload (how to show relevan files? like html for web?)
 - [x] save test in metadata (or somewhere else?)
-- [ ] show main chip and sub chip properties
-- [ ] register local chips in registry / custom chip macros
+- [ ] show main chip  properties
+  - [ ] edit input ports
+  - [ ] edit ouptut ports
+  - [ ] edit use array
+  - [ ] edit board uri
+- [ ] show sub chip properties
 - [ ] add new endpoint .proma
+- [ ] register local chips in registry / custom chip macros
+- [ ] `:type({ example: string })` chips to build typed data. might need improved type library. could wrap functions to assert types at runtime, force casting on input data to build objects.
 - [ ] show instance values when hovering port (and test is being run)
   - [x] add `$runValue` to all intermediate run ports
   - [x] create `debug` function to debug a chip instance
