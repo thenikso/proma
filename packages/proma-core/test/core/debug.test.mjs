@@ -31,7 +31,7 @@ const TestChip = chip('TestChip', () => {
   wire(pass.out.then, then);
 });
 
-describe.only('[core/debug] debug chip instances', async (assert) => {
+describe('[core/debug] debug chip instances', async (assert) => {
   function withTestDebugger(f) {
     const testChip = new TestChip();
     testChip.id = 'TestChip';

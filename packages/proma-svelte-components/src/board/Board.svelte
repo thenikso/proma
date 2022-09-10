@@ -530,6 +530,7 @@
     dragging = null;
     grab = false;
     newWireWhenDraggingFromPort = null;
+    selectionRect = null;
 
     boardEl.removeEventListener('mousemove', handleDragPort);
     boardEl.removeEventListener('mousemove', handleDragChip);

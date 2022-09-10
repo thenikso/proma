@@ -284,7 +284,7 @@
   <div class="Sidebar">
     <div class="PreviewTitle">
       <div class="spacer" />
-      <h1>Proma <span class="sub">Concept</span></h1>
+      <h1>Proma <span class="sub">Experiment</span></h1>
     </div>
     <div class="ProjectsExplorer">
       <Select
@@ -342,7 +342,7 @@
                 {#if selectedChips.length > 0}
                   <div>TODO sub-chip info here</div>
                 {:else}
-                  <PromaBoardDetails />
+                  <PromaBoardDetails {chip} />
                 {/if}
               {:else if selectedTool === 'test'}
                 <PromaRunEditor

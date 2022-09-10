@@ -43,10 +43,12 @@
 
   function confirmValue() {
     try {
-      const newValue = validate ? validate(internalValue) : internalValue;
-      if (newValue !== value) {
+      if (validate) {
+        validate(internalValue);
+      }
+      if (internalValue !== value) {
         updatingValue = true;
-        value = newValue;
+        value = internalValue;
         dispatchInput({ value });
       }
     } catch (e) {
@@ -95,6 +97,7 @@
 
 <style>
   .StringInput {
+    position: relative;
     color: var(--proma-input--color, white);
     background-color: var(--proma-input--background, #57575773);
     border: 1px solid var(--proma-input--border-color, #383839);
@@ -140,5 +143,34 @@
     padding: 0;
     margin: 0;
     outline: unset;
+  }
+
+  .error {
+    position: absolute;
+    background-color: #FFF2F2;
+    color: #AF5F66;
+    padding: 2px 5px;
+    border: 1px solid #AF5F66;
+    border-radius: 4px;
+    top: 1px;
+    right: 1px;
+    max-width: 30%;
+    max-height: calc(100% - 2px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    z-index: 1;
+
+    transition-property: max-width, max-height;
+    transition-duration: var(--proma-board-transition-duration, 0.25s);
+    transition-timing-function: var(
+      --proma-board-transition-timing-function,
+      ease
+    );
+  }
+
+  .error:hover {
+    max-width: 100%;
+    max-height: 300%;
+    z-index: 10;
   }
 </style>

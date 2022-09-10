@@ -4,6 +4,7 @@ import { PortOutlet } from './ports.mjs';
 import { PlaceholderChip } from './placeholder.mjs';
 import { registry as defaultRegistry } from './registry.mjs';
 import { event, switchChip, externalGet } from './api.mjs';
+import { type } from './types.mjs';
 
 const VALID_CUSTOM_CHIPS = {
   event,
@@ -424,6 +425,25 @@ class EditableChipInfo {
   removeOutlet(port) {}
   removeInputOutlet(name) {}
   removeOutputOutlet(name) {}
+
+  setOutletType(port, newType) {
+    const chipInfo = info(this);
+    if (!(port instanceof PortOutlet)) {
+      port = chipInfo.getPort(port);
+    }
+    if (!port.isOutlet) {
+      throw new Error(`Can only set chip outlet type, got "${port}"`);
+    }
+    if (!port.isData) {
+      throw new Error(`Can only set data type for data outlets, got "${port}"`);
+    }
+    const portInfo = info(port);
+    if (portInfo.chipInfo !== chipInfo) {
+      throw new Error('Port outlet is not owned by chip');
+    }
+    port.type = type(newType);
+    return this;
+  }
 
   //
   // Ports (of sub-chips)

@@ -72,10 +72,7 @@
   <h4>ID</h4>
   <StringInput
     value={subChip.id}
-    validate={(value) => {
-      edit.setChipId(subChip, value, true);
-      return value;
-    }}
+    validate={(value) => edit.setChipId(subChip, value, true)}
     on:input={(e) => edit.setChipId(subChip, e.detail.value)}
   />
 </div>

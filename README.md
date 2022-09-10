@@ -9,12 +9,15 @@ A unreal engine blueprint inspired editor for javascript.
 - [x] run proma files with example payload (how to show relevan files? like html for web?)
 - [x] save test in metadata (or somewhere else?)
 - [ ] show main chip  properties
-  - [ ] edit input ports
+  - [ ] edit input ports (name, type, remove, add exe, add data, reorder)
   - [ ] edit ouptut ports
-  - [ ] edit use array
+  - [ ] edit "use" array
   - [ ] edit board uri
 - [ ] show sub chip properties
 - [ ] add new endpoint .proma
+- [ ] NEW IDEA: events should be compiled as `EventTarget` events. hooks can be triggered or compiled as now by the wrapper.
+- [ ] NOTE chips should be subclassed to allow different sub chips. ie a function subchip can not have events
+- [ ] rename wrapper to `ChipWrapper` or similar
 - [ ] register local chips in registry / custom chip macros
 - [ ] `:type({ example: string })` chips to build typed data. might need improved type library. could wrap functions to assert types at runtime, force casting on input data to build objects.
 - [ ] show instance values when hovering port (and test is being run)
@@ -36,3 +39,4 @@ A unreal engine blueprint inspired editor for javascript.
 - need a way to change imports/other props of proma files (maybe later)
 - preview of current file
 - hold a preview to use it in a different file (ie: hold html preview to drag drop refs in proma script)
+- _NEW_ redesign compiler to use a default builder class for a node so that we can create subclasses of that for things like events to be build in a different way

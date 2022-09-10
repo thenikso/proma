@@ -227,6 +227,7 @@
     inputOutlets = stableChip.inputOutlets;
     outputOutlets = stableChip.outputOutlets;
     connections = stableChip.connections;
+    updatePortsKey++;
   }
 
   function editOnPortVariadicCount({ detail }) {
