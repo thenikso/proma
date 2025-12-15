@@ -10,12 +10,12 @@
     "serve": "serve frontend/public -s",
     "dev:backend": "serverless offline start",
     "dev:frontend": "node frontend/esbuild.mjs -w -s",
-    "dev": "yarn dev:frontend | yarn dev:backend",
+    "dev": "pnpm dev:frontend | pnpm dev:backend",
     "build:backend": "serverless package",
     "build:frontend": "node frontend/esbuild.mjs",
     "deploy:backend": "serverless deploy",
     "deploy:frontend": "serverless client build && serverless client deploy --no-confirm",
-    "deploy": "yarn deploy:backend && yarn deploy:frontend"
+    "deploy": "pnpm deploy:backend && pnpm deploy:frontend"
   },
   "devDependencies": {
     "@proma/core": "^0.1.0",
