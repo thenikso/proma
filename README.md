@@ -2,6 +2,8 @@
 
 A visual programming language for JavaScript inspired by Unreal Engine Blueprints. Proma enables node-based visual scripting that compiles to executable JavaScript.
 
+![playground-screenshot](./proma-playground-screenshot.jpg)
+
 ## Overview
 
 Proma is a monorepo project consisting of three main packages:
