@@ -10,6 +10,8 @@ import installFlowControl from './flowControl.mjs';
 import installAppend from './string/Append.mjs';
 // debug
 import installLog from './debug/Log.mjs';
+// async
+import installAsync from './async.mjs';
 
 export default function installLib(proma) {
   return {
@@ -26,5 +28,6 @@ export default function installLib(proma) {
     debug: {
       Log: installLog(proma),
     },
+    async: installAsync(proma),
   };
 }
