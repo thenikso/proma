@@ -27,8 +27,8 @@ export class Chip {
 
     const inputPorts = chipInfo.inputs.map((p) => new Port(this, info(p)));
     const inputs = new PortList(this, inputPorts);
-    const ouptutPorts = chipInfo.outputs.map((p) => new Port(this, info(p)));
-    const outputs = new PortList(this, ouptutPorts);
+    const outputPorts = chipInfo.outputs.map((p) => new Port(this, info(p)));
+    const outputs = new PortList(this, outputPorts);
 
     Object.defineProperties(this, {
       id: {

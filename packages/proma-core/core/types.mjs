@@ -461,7 +461,7 @@ function makeMatchFunctionContainer(definitionObject, customTypes) {
 
 function makeCheckAll(definitions, customTypes) {
   const checks = definitions.map((d) => makeCheck(d, customTypes));
-  if (checks.lenght === 1) {
+  if (checks.length === 1) {
     return checks[0];
   }
   return (data) => checks.some((check) => check(data));
