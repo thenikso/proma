@@ -15,6 +15,7 @@ import './core/validate.test.mjs';
 import './core/lib/utils.test.mjs';
 import './core/lib/flowControl.test.mjs';
 import './core/lib/async.test.mjs';
+import './core/lib/state.test.mjs';
 
 import './programs/hooks.test.mjs';
 import './programs/outputs.test.mjs';
