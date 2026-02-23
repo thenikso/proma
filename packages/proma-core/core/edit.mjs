@@ -422,9 +422,53 @@ class EditableChipInfo {
 
   moveOutlet(port, beforePort) {}
 
-  removeOutlet(port) {}
-  removeInputOutlet(name) {}
-  removeOutputOutlet(name) {}
+  removeOutlet(port) {
+    const chipInfo = info(this);
+    if (typeof port === 'string') {
+      port = chipInfo.getPort(port);
+    }
+    if (!(port instanceof PortOutlet)) {
+      throw new Error('Can only remove chip outlets');
+    }
+    const portInfo = info(port);
+    if (portInfo.chipInfo !== chipInfo) {
+      throw new Error('Port outlet is not owned by chip');
+    }
+    // Remove all connections involving this outlet
+    this.removeConnection(port);
+    // Remove from inputs or outputs array
+    const list = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
+    const idx = list.indexOf(port);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+    }
+    this.dispatch('outlet:remove', {
+      subject: 'outlet',
+      operation: 'remove',
+      outlet: port,
+      side: portInfo.isInput ? 'input' : 'output',
+      kind: portInfo.isFlow ? 'flow' : 'data',
+    });
+    return this;
+  }
+
+  removeInputOutlet(name) {
+    const chipInfo = info(this);
+    const port = chipInfo.getInputPortOutlet(name);
+    if (!port) {
+      throw new Error(`No input outlet named "${name}"`);
+    }
+    return this.removeOutlet(port);
+  }
+
+  removeOutputOutlet(name) {
+    const chipInfo = info(this);
+    const port = chipInfo.getOutputPortOutlet(name);
+    if (!port) {
+      throw new Error(`No output outlet named "${name}"`);
+    }
+    return this.removeOutlet(port);
+  }
 
   setOutletType(port, newType) {
     const chipInfo = info(this);
