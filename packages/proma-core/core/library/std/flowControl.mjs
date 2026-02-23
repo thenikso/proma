@@ -114,11 +114,32 @@ export default function install({
 
   const Switch = switchChip('flowControl/Switch');
 
+  const TryCatch = chip('flowControl/TryCatch', () => {
+    const exec = inputFlow('exec', {
+      execute: () => {
+        try {
+          tryBody();
+        } catch (err) {
+          error(err);
+          catchBody();
+        } finally {
+          finallyBody();
+        }
+      },
+    });
+
+    const tryBody = outputFlow('tryBody');
+    const catchBody = outputFlow('catchBody');
+    const finallyBody = outputFlow('finallyBody');
+    const error = outputData('error');
+  });
+
   return {
     If,
     Sequence,
     ForLoop,
     WhileLoop,
     Switch,
+    TryCatch,
   };
 }
