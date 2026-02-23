@@ -12,6 +12,8 @@ import installAppend from './string/Append.mjs';
 import installLog from './debug/Log.mjs';
 // async
 import installAsync from './async.mjs';
+// state
+import installState from './state.mjs';
 
 export default function installLib(proma) {
   return {
@@ -29,5 +31,6 @@ export default function installLib(proma) {
       Log: installLog(proma),
     },
     async: installAsync(proma),
+    state: installState(proma),
   };
 }
