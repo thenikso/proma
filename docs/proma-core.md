@@ -171,9 +171,12 @@ Required canonical ports (`canonical: 'required'`) must be declared before optio
 
 #### Conceiled Ports
 
-Conceiled ports restrict external connectivity:
-- `conceiled: true` -- Port cannot be connected from outside but its value can be set
-- `conceiled: 'hidden'` -- Port is completely inaccessible from the outside. Used for internal state or config.
+Conceiled ports are used to expose user-settable parameters that cannot receive connections from other ports. They restrict external connectivity while allowing direct value assignment:
+
+- `conceiled: true` -- Port cannot be wired from outside, but its value can be set directly (typically via constructor for canonical ports). Skipped in validation since they must have a default value.
+- `conceiled: 'hidden'` -- Port is completely inaccessible from the outside. Used for internal state or configuration.
+
+Typical use case: a chip that accepts configuration parameters that users can set but that should not be connected to other port outputs.
 
 The `inputConfig()` API helper creates a canonical + conceiled port:
 

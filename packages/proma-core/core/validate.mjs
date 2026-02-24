@@ -36,7 +36,8 @@ export function validate(chipClassOrInstance) {
 
 /**
  * Check for sub-chip input data ports that have no connection, no explicit value,
- * no default value, and are not conceiled.
+ * and no default value. Conceiled ports are skipped since they are user-settable and
+ * must have a default value.
  */
 function checkDisconnectedInputs(chipInfo, diagnostics) {
   // Collect all ports that appear as sinks in sinkConnection
@@ -54,7 +55,7 @@ function checkDisconnectedInputs(chipInfo, diagnostics) {
       const port = subChip.in[portOutlet.name];
       if (!port) continue;
 
-      // Skip conceiled ports — they get values directly, not via connections
+      // Skip conceiled ports — they are user-settable and should have defaults
       if (port.isConceiled) continue;
 
       // Check if connected
@@ -115,36 +116,11 @@ function checkUnreachableChips(chipInfo, diagnostics) {
 }
 
 /**
- * For non-flowless chips, check that output flow ports of sub-chips
- * are connected (i.e., execution doesn't terminate unexpectedly).
+ * For non-flowless chips, check that output flow ports of sub-chips are connected.
+ * A dangling output flow port means execution would stop unexpectedly.
  *
- * Output flow ports of sub-chips are SINKS in the parent connection map
- * (they receive execution flow from somewhere — wait, actually let me re-check).
- *
- * In addConnection: for a sub-chip Port with isOutput=true, isFlow=true:
- *   isSink = isFlow XOR isInput = true XOR false = true → it IS a sink.
- *   isOutlet = false (it's a Port, not a PortOutlet/PortInfo)
- *   infoA.isSource ^ isOutletA = false ^ false = false → source = portB, sink = portA
- * So the sub-chip's output flow port is a SINK.
- *
- * A "dangling" output flow = a sub-chip output flow port that does NOT appear
- * as a key in sinkConnection (meaning nothing connects INTO it from a source).
- *
- * Wait — that doesn't model flow correctly. In execution flow:
- * A -> B means: when A finishes executing, B starts. So A's output flow "fires"
- * into B's input flow. In the connection map, since A's output flow is a sink
- * and B's input flow is a source, the connection is:
- *   source = B's input flow port
- *   sink = A's output flow port
- * So sinkConnection.get(A.out.flow) = B.in.flow
- *
- * A "dangling" output flow port of sub-chip A means:
- * A.out.flow does NOT appear in sinkConnection (no next chip to execute).
- *
- * HOWEVER, the chip's own output flow outlets are also sinks (from sub-chip perspective).
- * Those are stored as PortInfo objects (not Port instances) in sinkConnection.
- *
- * For dangling check: skip if it's a flowless chip.
+ * Sub-chip output flow ports are sinks in the connection map (appear as keys in
+ * sinkConnection). A "dangling" flow port is one that does not appear as a key.
  */
 function checkDanglingFlowOutputs(chipInfo, diagnostics) {
   if (chipInfo.isFlowless) return;
@@ -178,37 +154,12 @@ function checkDanglingFlowOutputs(chipInfo, diagnostics) {
 }
 
 /**
- * For a chip with input flow outlets, check that at least one of those outlets
- * is connected to something (i.e., execution can enter the chip).
+ * For a chip with input flow outlets, check that at least one is connected to a
+ * sub-chip. Without this, execution cannot enter the chip body.
  *
- * Input flow outlets of the chip are SOURCES (PortInfo stored in sourceConnections).
- * They connect to sub-chip input flow ports (also sources).
- *
- * Actually: chip input flow outlets (PortInfo) can connect to sub-chip input
- * flow ports (Port). In the connection map at the parent level, when connecting
- * a chip outlet to a sub-chip port:
- *   - The outlet PortInfo has isInput=true, isFlow=true → isSource=true, isOutlet=true
- *   - infoA.isSource ^ isOutletA = true ^ true = false → source = portB (sub-chip port)
- *   - The sub-chip's input flow Port has isSource=true → but isOutlet=false
- *   - sink = portA (the outlet PortInfo)
- *
- * Wait, that means the chip's input flow outlet is the SINK and the sub-chip's
- * input flow port is the SOURCE when connecting an outlet to a sub-chip port?
- * That seems inverted but let me check the condition again:
- *   if ((isOutletA ^ infoA.isInput) === (isOutletB ^ infoB.isInput))
- *   throw 'Can not wire ports of the same input/output side'
- *
- * For outlet (isInput=true) connected to sub-chip port (isInput=true):
- *   (true ^ true) === (false ^ true) → 0 === 1 → false → no error, valid
- *
- *   infoA.isSource ^ isOutletA = true ^ true = false
- *   → source = portB (sub-chip's input flow Port), sink = portA (outlet PortInfo)
- *
- * So: sinkConnection.get(inputFlowOutletPortInfo) = subChip.in.flow (Port)
- * And: sourceConnections.get(subChip.in.flow) = [inputFlowOutletPortInfo]
- *
- * For "no entry flow": chip has input flow outlets but none of them appear
- * as keys in sinkConnection (meaning they're not connected to any sub-chip).
+ * Input flow outlets are PortInfo keys in sinkConnection when they connect to
+ * sub-chip input flow ports. If none of them appear in sinkConnection, the chip
+ * has no execution entry point.
  */
 function checkMissingFlowEntry(chipInfo, diagnostics) {
   if (chipInfo.isFlowless) return;
@@ -294,10 +245,10 @@ function checkDataCycles(chipInfo, diagnostics) {
       const sinkChipInfo = info(sinkChip);
       if (sinkChipInfo) {
         // All output data ports of this chip could be downstream
-        for (const outletOutlet of sinkChipInfo.outputs) {
-          const outPortInfo = info(outletOutlet);
+        for (const outputPortlet of sinkChipInfo.outputs) {
+          const outPortInfo = info(outputPortlet);
           if (!outPortInfo.isData) continue;
-          const outPort = sinkChip.out[outletOutlet.name];
+          const outPort = sinkChip.out[outputPortlet.name];
           if (outPort && dfs(outPort)) {
             return true;
           }
