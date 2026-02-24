@@ -551,6 +551,126 @@ describe('[core/history] undo/redo of setOutletType', async (assert) => {
   });
 });
 
+describe('[core/history] undo/redo of setPortExecute', async (assert) => {
+  assert({
+    given: 'setPortExecute is called then undone',
+    should: 'have canUndo=false and canRedo=true',
+    actual: (() => {
+      const editor = makeEditChipWithPorts();
+      editor.setPortExecute('exec', '() => 42');
+      editor.undo();
+      return { canUndo: editor.canUndo, canRedo: editor.canRedo };
+    })(),
+    expected: { canUndo: false, canRedo: true },
+  });
+
+  assert({
+    given: 'setPortExecute is called, undone, then redone',
+    should: 'have canUndo=true and canRedo=false',
+    actual: (() => {
+      const editor = makeEditChipWithPorts();
+      editor.setPortExecute('exec', '() => 42');
+      editor.undo();
+      editor.redo();
+      return { canUndo: editor.canUndo, canRedo: editor.canRedo };
+    })(),
+    expected: { canUndo: true, canRedo: false },
+  });
+
+  assert({
+    given: 'setPortExecute undo fires a replaying event',
+    should: 'dispatch port:execute with replaying: true',
+    actual: (() => {
+      const editor = makeEditChipWithPorts();
+      editor.setPortExecute('exec', '() => 42');
+      let replayDetail = null;
+      editor.on('port:execute', (e) => {
+        replayDetail = e.detail;
+      });
+      editor.undo();
+      return replayDetail?.replaying === true;
+    })(),
+    expected: true,
+  });
+});
+
+describe('[core/history] undo/redo of setPortCompute', async (assert) => {
+  assert({
+    given: 'setPortCompute is called then undone',
+    should: 'have canUndo=false and canRedo=true',
+    actual: (() => {
+      const editor = makeEditChipWithPorts();
+      editor.setPortCompute('out', '() => 42');
+      editor.undo();
+      return { canUndo: editor.canUndo, canRedo: editor.canRedo };
+    })(),
+    expected: { canUndo: false, canRedo: true },
+  });
+
+  assert({
+    given: 'setPortCompute is called, undone, then redone',
+    should: 'have canUndo=true and canRedo=false',
+    actual: (() => {
+      const editor = makeEditChipWithPorts();
+      editor.setPortCompute('out', '() => 42');
+      editor.undo();
+      editor.redo();
+      return { canUndo: editor.canUndo, canRedo: editor.canRedo };
+    })(),
+    expected: { canUndo: true, canRedo: false },
+  });
+});
+
+describe('[core/history] replaying: true in event details during undo/redo', async (assert) => {
+  assert({
+    given: 'a chip is added then undone',
+    should: 'fire chip:remove with replaying: true',
+    actual: (() => {
+      const editor = makeEditChip();
+      editor.addChip(new Pass('p'), 'myChip');
+      let replayDetail = null;
+      editor.on('chip:remove', (e) => {
+        replayDetail = e.detail;
+      });
+      editor.undo();
+      return replayDetail?.replaying === true;
+    })(),
+    expected: true,
+  });
+
+  assert({
+    given: 'a chip is added, undone, then redone',
+    should: 'fire chip:add with replaying: true on redo',
+    actual: (() => {
+      const editor = makeEditChip();
+      editor.addChip(new Pass('p'), 'myChip');
+      editor.undo();
+      let replayDetail = null;
+      editor.on('chip:add', (e) => {
+        replayDetail = e.detail;
+      });
+      editor.redo();
+      return replayDetail?.replaying === true;
+    })(),
+    expected: true,
+  });
+
+  assert({
+    given: 'a normal (non-replay) operation',
+    should: 'not have replaying: true in event detail',
+    actual: (() => {
+      const editor = makeEditChip();
+      let detail = null;
+      editor.on('chip:add', (e) => {
+        detail = e.detail;
+      });
+      editor.addChip(new Pass('p'), 'myChip');
+      return detail?.replaying;
+    })(),
+    expected: undefined,
+  });
+});
+
 describe('[core/history] undo/redo of removeChip with connections', async (assert) => {
   assert({
     given: 'a chip with connections is removed then undone',
