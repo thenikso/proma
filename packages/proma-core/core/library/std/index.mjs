@@ -6,6 +6,8 @@ import installToString from './ToString.mjs';
 import installEqual from './Equal.mjs';
 // flowControl
 import installFlowControl from './flowControl.mjs';
+// array
+import installArray from './array.mjs';
 // string
 import installAppend from './string/Append.mjs';
 // debug
@@ -27,6 +29,7 @@ export default function installLib(proma) {
       Append: installAppend(proma),
     },
     flowControl: installFlowControl(proma),
+    array: installArray(proma),
     debug: {
       Log: installLog(proma),
     },
