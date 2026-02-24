@@ -210,7 +210,8 @@
 
   function editOnChip(e) {
     if (e.detail.operation === 'id') {
-      stableChip.metadata[e.detail.id] = stableChip.metadata[e.detail.data.oldId];
+      stableChip.metadata[e.detail.id] =
+        stableChip.metadata[e.detail.data.oldId];
       delete stableChip.metadata[e.detail.data.oldId];
     }
     innerChips = stableChip.chips;
@@ -452,7 +453,9 @@
           {#if innerChip.in.length > 0}
             <Inputs>
               {#each innerChip.in as port}
-                {#if !port.variadic}
+                {#if port.isConcealed}
+                  <!-- Concealed port, do not render for now -->
+                {:else if !port.variadic}
                   <Port
                     name={port.name}
                     type={getPortType(port)}
@@ -483,7 +486,9 @@
           {#if innerChip.out.length > 0}
             <Outputs>
               {#each innerChip.out as port}
-                {#if !port.variadic}
+                {#if port.isConcealed}
+                  <!-- Concealed port, do not render for now -->
+                {:else if !port.variadic}
                   <Port
                     name={port.name}
                     type={getPortType(port)}
