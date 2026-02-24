@@ -24,6 +24,10 @@ export class EditHistory {
     return this._redoStack.length;
   }
 
+  get isReplaying() {
+    return this._replaying;
+  }
+
   undo() {
     if (!this.canUndo) return this;
     const command = this._undoStack.pop();

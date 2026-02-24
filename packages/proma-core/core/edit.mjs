@@ -126,7 +126,6 @@ class EditableChipInfo {
     // History
     //
     const history = new EditHistory();
-    let replaying = false;
 
     Object.defineProperties(this, {
       on: {
@@ -163,7 +162,7 @@ class EditableChipInfo {
       dispatch: {
         value: function dispatch(eventName, detail) {
           // Auto-record when undo/redo closures are embedded and not replaying
-          if (!replaying && detail?.undo && detail?.redo) {
+          if (!history.isReplaying && detail?.undo && detail?.redo) {
             history._record({
               description: eventName,
               execute: detail.redo,
@@ -199,24 +198,14 @@ class EditableChipInfo {
       history: { value: history, enumerable: true },
       undo: {
         value: () => {
-          replaying = true;
-          try {
-            history.undo();
-          } finally {
-            replaying = false;
-          }
+          history.undo();
           return self;
         },
         enumerable: true,
       },
       redo: {
         value: () => {
-          replaying = true;
-          try {
-            history.redo();
-          } finally {
-            replaying = false;
-          }
+          history.redo();
           return self;
         },
         enumerable: true,
