@@ -9,7 +9,10 @@ export default function install({
     const exec = inputFlow('exec', {
       execute: async () => {
         try {
-          const value = await promise();
+          const p = typeof promise === 'function' ? promise() : promise;
+          const awaited =
+            p && typeof p.then === 'function' ? p : Promise.resolve(p);
+          const value = await awaited;
           result(value);
           then();
         } catch (err) {
