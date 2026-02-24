@@ -221,6 +221,35 @@ describe('[core/history] undo/redo of renameOutlet', async (assert) => {
   });
 });
 
+describe('[core/history] undo/redo of moveOutlet', async (assert) => {
+  assert({
+    given: 'an outlet is moved then undone',
+    should: 'restore the original order',
+    actual: (() => {
+      const editor = withHistory(makeEditChipWithPorts());
+      editor.moveOutlet('in.value', 'in.exec');
+      editor.undo();
+      const inputs = editor.Chip.toJSON().in;
+      return inputs.map((p) => p.name);
+    })(),
+    expected: ['exec', 'value'],
+  });
+
+  assert({
+    given: 'an outlet is moved, undone, then redone',
+    should: 'restore the moved order',
+    actual: (() => {
+      const editor = withHistory(makeEditChipWithPorts());
+      editor.moveOutlet('in.value', 'in.exec');
+      editor.undo();
+      editor.redo();
+      const inputs = editor.Chip.toJSON().in;
+      return inputs.map((p) => p.name);
+    })(),
+    expected: ['value', 'exec'],
+  });
+});
+
 describe('[core/history] undo/redo of addConnection/removeConnection', async (assert) => {
   assert({
     given: 'a connection is added then undone',

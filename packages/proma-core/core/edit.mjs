@@ -420,7 +420,61 @@ class EditableChipInfo {
     return this;
   }
 
-  moveOutlet(port, beforePort) {}
+  moveOutlet(port, beforePort) {
+    const chipInfo = info(this);
+    if (typeof port === 'string') {
+      port = chipInfo.getPort(port);
+    }
+    if (!(port instanceof PortOutlet)) {
+      throw new Error('Can only move chip outlets');
+    }
+    const portInfo = info(port);
+    if (portInfo.chipInfo !== chipInfo) {
+      throw new Error('Port outlet is not owned by chip');
+    }
+    const list = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
+
+    if (beforePort !== undefined) {
+      if (typeof beforePort === 'string') {
+        beforePort = chipInfo.getPort(beforePort);
+      }
+      if (!(beforePort instanceof PortOutlet)) {
+        throw new Error('beforePort must be a chip outlet');
+      }
+      const beforePortInfo = info(beforePort);
+      if (beforePortInfo.chipInfo !== chipInfo) {
+        throw new Error('beforePort outlet is not owned by chip');
+      }
+      if (beforePortInfo.isInput !== portInfo.isInput) {
+        throw new Error('Cannot move outlet across sides (input/output)');
+      }
+      if (beforePort === port) {
+        return this;
+      }
+    }
+
+    // Remove from current position
+    const idx = list.indexOf(port);
+    list.splice(idx, 1);
+
+    // Insert before beforePort, or append to end
+    if (beforePort === undefined) {
+      list.push(port);
+    } else {
+      const beforeIdx = list.indexOf(beforePort);
+      list.splice(beforeIdx, 0, port);
+    }
+
+    this.dispatch('outlet:move', {
+      subject: 'outlet',
+      operation: 'move',
+      outlet: port,
+      beforeOutlet: beforePort ?? null,
+      side: portInfo.isInput ? 'input' : 'output',
+      kind: portInfo.isFlow ? 'flow' : 'data',
+    });
+    return this;
+  }
 
   removeOutlet(port) {
     const chipInfo = info(this);

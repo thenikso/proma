@@ -342,6 +342,10 @@ editor.addOutputDataOutlet('result');
 // Rename an outlet (dot-path: 'in.name' or 'out.name')
 editor.renameOutlet('in.value', 'input');
 
+// Move an outlet (reorder within its side — input or output)
+editor.moveOutlet('in.value', 'in.exec'); // move 'value' before 'exec'
+editor.moveOutlet('out.result');          // move 'result' to the end
+
 // Remove an outlet (also removes its connections)
 editor.removeInputOutlet('input');
 editor.removeOutputOutlet('result');
@@ -416,8 +420,8 @@ editor.history.clear();
 ```
 
 Tracked operations: `addChip`, `removeChip`, `setChipId`, `renameOutlet`,
-`addConnection`, `removeConnection`, `setPortValue`, `setPortVariadicCount`,
-and all `add*Outlet` methods.
+`moveOutlet`, `addConnection`, `removeConnection`, `setPortValue`,
+`setPortVariadicCount`, and all `add*Outlet` methods.
 
 ### Debugging
 

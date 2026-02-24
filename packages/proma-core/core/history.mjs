@@ -264,6 +264,47 @@ export function withHistory(editor) {
       return proxy;
     },
 
+    moveOutlet(port, beforePort) {
+      const chipInfo = info(editor);
+
+      // Resolve port before the call so we can capture its current position
+      let resolvedPort = port;
+      if (typeof resolvedPort === 'string') {
+        resolvedPort = chipInfo.getPort(resolvedPort);
+      }
+
+      // Capture old "before": the element right after port in its list
+      let oldBeforeOutlet = undefined;
+      if (resolvedPort instanceof PortOutlet) {
+        const portInfo = info(resolvedPort);
+        const list = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
+        const currentIdx = list.indexOf(resolvedPort);
+        oldBeforeOutlet = list[currentIdx + 1];
+      }
+
+      // Resolve beforePort reference
+      let resolvedBefore = beforePort;
+      if (typeof resolvedBefore === 'string') {
+        resolvedBefore = chipInfo.getPort(resolvedBefore);
+      }
+
+      editor.moveOutlet(port, beforePort);
+
+      const capturedPort = resolvedPort;
+      const capturedBefore = resolvedBefore;
+      const capturedOldBefore = oldBeforeOutlet;
+      history._record({
+        description: 'moveOutlet',
+        execute() {
+          editor.moveOutlet(capturedPort, capturedBefore);
+        },
+        undo() {
+          editor.moveOutlet(capturedPort, capturedOldBefore);
+        },
+      });
+      return proxy;
+    },
+
     renameOutlet(outlet, newName, dryRun) {
       let oldName = null;
       const onRename = (event) => {
@@ -518,6 +559,10 @@ export function withHistory(editor) {
       if (key === 'canRedo') return history.canRedo;
       if (key === 'history') return history;
       if (key in methods) return methods[key];
+      // Non-configurable data properties (like `Chip`) must be returned as-is;
+      // wrapping them in a function violates the proxy invariant.
+      const desc = Object.getOwnPropertyDescriptor(target, key);
+      if (desc && !desc.configurable && !desc.writable) return desc.value;
       const value = target[key];
       if (typeof value === 'function') {
         return (...args) => {

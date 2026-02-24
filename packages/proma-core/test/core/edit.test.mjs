@@ -307,6 +307,125 @@ describe('[core/edit] removeOutlet', async (assert) => {
   });
 });
 
+describe('[core/edit] moveOutlet', async (assert) => {
+  assert({
+    given: 'moveOutlet moves an input outlet before another (PortOutlet refs)',
+    should: 'reorder the inputs array',
+    actual: (() => {
+      const chipInfo = edit(
+        chip('EditChip', () => {
+          inputFlow('exec');
+          inputData('value');
+        }),
+      );
+      const execOutlet = chipInfo.getPort('in.exec');
+      const valueOutlet = chipInfo.getPort('in.value');
+      return chipInfo.moveOutlet(valueOutlet, execOutlet).Chip.toJSON();
+    })(),
+    expected: {
+      URI: 'EditChip',
+      in: [
+        { name: 'value', kind: 'data' },
+        { name: 'exec', kind: 'flow' },
+      ],
+    },
+  });
+
+  assert({
+    given: 'moveOutlet moves an input outlet before another (dot-path strings)',
+    should: 'reorder the inputs array',
+    actual: edit(
+      chip('EditChip', () => {
+        inputFlow('exec');
+        inputData('value');
+      }),
+    )
+      .moveOutlet('in.value', 'in.exec')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      in: [
+        { name: 'value', kind: 'data' },
+        { name: 'exec', kind: 'flow' },
+      ],
+    },
+  });
+
+  assert({
+    given: 'moveOutlet with no beforePort',
+    should: 'move the outlet to the end',
+    actual: edit(
+      chip('EditChip', () => {
+        inputFlow('exec');
+        inputData('value');
+      }),
+    )
+      .moveOutlet('in.exec')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      in: [
+        { name: 'value', kind: 'data' },
+        { name: 'exec', kind: 'flow' },
+      ],
+    },
+  });
+
+  assert({
+    given: 'moveOutlet moves an output outlet before another',
+    should: 'reorder the outputs array',
+    actual: edit(
+      chip('EditChip', () => {
+        outputFlow('then');
+        outputData('result');
+      }),
+    )
+      .moveOutlet('out.result', 'out.then')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      out: [
+        { name: 'result', kind: 'data' },
+        { name: 'then', kind: 'flow' },
+      ],
+    },
+  });
+
+  assert({
+    given: 'moveOutlet with port === beforePort',
+    should: 'be a no-op',
+    actual: edit(
+      chip('EditChip', () => {
+        inputFlow('exec');
+        inputData('value');
+      }),
+    )
+      .moveOutlet('in.exec', 'in.exec')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      in: [
+        { name: 'exec', kind: 'flow' },
+        { name: 'value', kind: 'data' },
+      ],
+    },
+  });
+
+  assert({
+    given: 'moveOutlet with beforePort on wrong side',
+    should: 'throw',
+    actual: Try(() => {
+      edit(
+        chip('EditChip', () => {
+          inputFlow('exec');
+          outputFlow('then');
+        }),
+      ).moveOutlet('in.exec', 'out.then');
+    }),
+    expected: new Error('Cannot move outlet across sides (input/output)'),
+  });
+});
+
 describe('[core/edit] edit uses', async (assert) => {
   testRegistry
     .resolver(/^use-log/, (add) => {
