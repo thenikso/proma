@@ -210,8 +210,8 @@
 
   function editOnChip(e) {
     if (e.detail.operation === 'id') {
-      stableChip.metadata[e.detail.id] = stableChip.metadata[e.detail.oldId];
-      delete stableChip.metadata[e.detail.oldId];
+      stableChip.metadata[e.detail.id] = stableChip.metadata[e.detail.data.oldId];
+      delete stableChip.metadata[e.detail.data.oldId];
     }
     innerChips = stableChip.chips;
     connections = stableChip.connections;
@@ -231,8 +231,8 @@
   }
 
   function editOnPortVariadicCount({ detail }) {
-    variadicPorts[variadicRefName(detail.port)] = Array.from(
-      detail.port.variadic,
+    variadicPorts[variadicRefName(detail.data.port)] = Array.from(
+      detail.data.port.variadic,
     );
     connections = stableChip.connections;
   }

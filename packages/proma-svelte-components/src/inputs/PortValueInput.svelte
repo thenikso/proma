@@ -47,6 +47,12 @@
       value={portValue}
       on:input={handleInput}
     />
+	{:else if portType === 'number'}
+		<StringInput
+			placeholder={port.defaultValue !== undefined ? String(port.defaultValue) : ''}
+			value={portValue !== undefined ? String(portValue) : ''}
+			on:input={handleInput}
+		/>
   {:else}
     <JsonInput
       placeholder={port.defaultValue || 'undefined'}
