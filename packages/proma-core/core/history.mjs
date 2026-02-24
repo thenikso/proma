@@ -8,6 +8,7 @@ export class EditHistory {
     this._redoStack = [];
     this._groupStack = [];
     this._inGroup = false;
+    this._replaying = false;
   }
 
   get canUndo() {
@@ -29,7 +30,12 @@ export class EditHistory {
   undo() {
     if (!this.canUndo) return this;
     const command = this._undoStack.pop();
-    command.undo();
+    this._replaying = true;
+    try {
+      command.undo();
+    } finally {
+      this._replaying = false;
+    }
     this._redoStack.push(command);
     return this;
   }
@@ -37,7 +43,12 @@ export class EditHistory {
   redo() {
     if (!this.canRedo) return this;
     const command = this._redoStack.pop();
-    command.execute();
+    this._replaying = true;
+    try {
+      command.execute();
+    } finally {
+      this._replaying = false;
+    }
     this._undoStack.push(command);
     return this;
   }
@@ -81,8 +92,10 @@ export class EditHistory {
   }
 
   _record(command) {
-    // Clear redo stack when a new command is recorded
-    this._redoStack = [];
+    // Only clear redo stack when not inside a group (endGroup handles it for the outer)
+    if (!this._inGroup) {
+      this._redoStack = [];
+    }
     if (this._inGroup && this._groupStack.length > 0) {
       this._groupStack[this._groupStack.length - 1].push(command);
     } else {
@@ -92,10 +105,33 @@ export class EditHistory {
   }
 }
 
+// Methods that trigger auto-grouping (wrap in beginGroup/endGroup so
+// multi-event operations become one undo entry).
+const GROUPED_METHODS = new Set([
+  'addChip',
+  'removeChip',
+  'addInputFlowOutlet',
+  'addInputDataOutlet',
+  'addOutputFlowOutlet',
+  'addOutputDataOutlet',
+  'removeOutlet',
+  'removeInputOutlet',
+  'removeOutputOutlet',
+  'moveOutlet',
+  'renameOutlet',
+  'setChipId',
+  'setChipLabel',
+  'setOutletType',
+  'addConnection',
+  'removeConnection',
+  'setPortValue',
+  'setPortVariadicCount',
+]);
+
 /**
  * Wraps an editor instance with undo/redo history tracking.
- * Returns a proxy that intercepts edit method calls and records
- * inverse commands for undo/redo.
+ * Uses an event-driven approach: listens to editor events and builds
+ * undo/redo commands from event details automatically.
  *
  * @param {object} editor - An EditableChipInfo instance
  * @returns {object} - A proxy around the editor with history support
@@ -103,453 +139,238 @@ export class EditHistory {
 export function withHistory(editor) {
   const history = new EditHistory(editor);
 
-  // Helper to get all connections involving a port or chip
-  function getConnectionsForPort(port) {
-    const chipInfo = info(editor);
-    const connections = [];
-    for (const [sink, source] of chipInfo.sinkConnection.entries()) {
-      if (sink === port || source === port ||
-          (sink instanceof PortOutlet && info(sink) === port) ||
-          (source instanceof PortOutlet && info(source) === port)) {
-        connections.push({ source, sink });
-      }
-    }
-    return connections;
-  }
-
-  function getConnectionsForChip(chip) {
-    const chipInfo = info(editor);
-    const connections = [];
-    for (const [sink, source] of chipInfo.sinkConnection.entries()) {
-      const sinkChip = sink instanceof PortOutlet ? null : sink.chip;
-      const sourceChip = source instanceof PortOutlet ? null : source.chip;
-      if (sinkChip === chip || sourceChip === chip) {
-        connections.push({ source, sink });
-      }
-    }
-    return connections;
-  }
-
-  // Intercept specific methods on the editor
-  const methods = {
-    addChip(...args) {
-      let addedChip = null;
-      const onAdd = (event) => {
-        addedChip = event.detail.chip;
-      };
-      editor.on('chip:add', onAdd);
-      editor.addChip(...args);
-      editor.off('chip:add', onAdd);
-
-      if (addedChip) {
-        const chip = addedChip;
-        history._record({
-          description: 'addChip',
-          execute() {
-            // Re-add chip for redo
-            const chipInfoOuter = info(editor);
-            chipInfoOuter.addChip(chip);
-            editor.dispatch('chip:add', {
-              subject: 'chip',
-              operation: 'add',
-              chip,
-            });
-          },
-          undo() {
-            editor.removeChip(chip);
-          },
-        });
-      }
-      return proxy;
-    },
-
-    removeChip(chip) {
-      const chipInfo = info(editor);
-      if (typeof chip === 'string') {
-        chip = chipInfo.getChip(chip);
-      }
-      if (!chip) {
-        editor.removeChip(chip);
-        return proxy;
-      }
-
-      // Capture chip state before removal
-      const chipToRemove = chip;
-      const chipId = chip.id;
-      const connectionsToRestore = getConnectionsForChip(chip);
-
-      // Capture port values for input data ports
-      const portValues = [];
-      const chipInfoInner = info(chip);
-      if (chipInfoInner) {
-        for (const portOutlet of chipInfoInner.inputs) {
-          const portInfo = info(portOutlet);
-          if (portInfo.isData) {
-            // Find the corresponding port instance on the chip
-            const portInstance = chip['in'][portOutlet.name];
-            if (portInstance && portInstance.explicitValue !== undefined) {
-              portValues.push({ portName: portOutlet.name, value: portInstance.explicitValue });
-            }
-          }
-        }
-      }
-
-      editor.removeChip(chip);
-
-      history._record({
-        description: 'removeChip',
+  // Event → command builder map
+  const eventCommandBuilders = {
+    'chip:add'(detail) {
+      const { chip } = detail;
+      return {
+        description: 'chip:add',
         execute() {
-          editor.removeChip(chipToRemove);
+          const chipInfoOuter = info(editor);
+          chipInfoOuter.addChip(chip);
+          editor.dispatch('chip:add', { subject: 'chip', operation: 'add', chip });
         },
         undo() {
-          // Re-add the chip
+          editor.removeChip(chip);
+        },
+      };
+    },
+
+    'chip:remove'(detail) {
+      const { chip, connections, portValues } = detail;
+      return {
+        description: 'chip:remove',
+        execute() {
+          editor.removeChip(chip);
+        },
+        undo() {
           const chipInfoOuter = info(editor);
-          chipInfoOuter.addChip(chipToRemove);
-          // Restore the chip id if it changed
-          if (chipToRemove.id !== chipId) {
-            chipToRemove.id = chipId;
-          }
-          editor.dispatch('chip:add', {
-            subject: 'chip',
-            operation: 'add',
-            chip: chipToRemove,
-          });
+          chipInfoOuter.addChip(chip);
+          editor.dispatch('chip:add', { subject: 'chip', operation: 'add', chip });
           // Restore connections
-          for (const conn of connectionsToRestore) {
+          for (const conn of (connections || [])) {
             try {
               editor.addConnection(conn.source, conn.sink);
             } catch (e) {
-              // Connection may already exist or be invalid, skip
+              // skip invalid
             }
           }
           // Restore port values
-          for (const { portName, value } of portValues) {
+          for (const { portName, value } of (portValues || [])) {
             try {
-              const portInstance = chipToRemove['in'][portName];
-              if (portInstance) {
-                portInstance.explicitValue = value;
-              }
+              const portInstance = chip['in'][portName];
+              if (portInstance) portInstance.explicitValue = value;
             } catch (e) {
               // ignore
             }
           }
         },
-      });
-      return proxy;
-    },
-
-    setChipId(chip, id, dryRun) {
-      let oldId = null;
-      const onId = (event) => {
-        oldId = event.detail.oldId;
       };
-      editor.on('chip:id', onId);
-      editor.setChipId(chip, id, dryRun);
-      editor.off('chip:id', onId);
-
-      if (oldId !== null && !dryRun) {
-        const chipRef = typeof chip === 'string' ? info(editor).getChip(id) : chip;
-        const capturedOldId = oldId;
-        const capturedNewId = id;
-        history._record({
-          description: 'setChipId',
-          execute() {
-            editor.setChipId(chipRef, capturedNewId);
-          },
-          undo() {
-            editor.setChipId(chipRef, capturedOldId);
-          },
-        });
-      }
-      return proxy;
     },
 
-    moveOutlet(port, beforePort) {
-      const chipInfo = info(editor);
+    'chip:id'(detail) {
+      const { chip, id, oldId } = detail;
+      return {
+        description: 'chip:id',
+        execute() { editor.setChipId(chip, id); },
+        undo() { editor.setChipId(chip, oldId); },
+      };
+    },
 
-      // Resolve port before the call so we can capture its current position
-      let resolvedPort = port;
-      if (typeof resolvedPort === 'string') {
-        resolvedPort = chipInfo.getPort(resolvedPort);
-      }
+    'chip:label'(detail) {
+      const { chip, label, oldLabel } = detail;
+      return {
+        description: 'chip:label',
+        execute() { editor.setChipLabel(chip, label); },
+        undo() { editor.setChipLabel(chip, oldLabel); },
+      };
+    },
 
-      // Capture old "before": the element right after port in its list
-      let oldBeforeOutlet = undefined;
-      if (resolvedPort instanceof PortOutlet) {
-        const portInfo = info(resolvedPort);
-        const list = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
-        const currentIdx = list.indexOf(resolvedPort);
-        oldBeforeOutlet = list[currentIdx + 1];
-      }
-
-      // Resolve beforePort reference
-      let resolvedBefore = beforePort;
-      if (typeof resolvedBefore === 'string') {
-        resolvedBefore = chipInfo.getPort(resolvedBefore);
-      }
-
-      editor.moveOutlet(port, beforePort);
-
-      const capturedPort = resolvedPort;
-      const capturedBefore = resolvedBefore;
-      const capturedOldBefore = oldBeforeOutlet;
-      history._record({
-        description: 'moveOutlet',
+    'outlet:add:input:flow'(detail) {
+      const { outlet } = detail;
+      return {
+        description: 'outlet:add:input:flow',
         execute() {
-          editor.moveOutlet(capturedPort, capturedBefore);
+          const chipInfoOuter = info(editor);
+          chipInfoOuter.inputs.push(outlet);
+          editor.dispatch('outlet:add:input:flow', {
+            subject: 'outlet', operation: 'add', side: 'input', kind: 'flow', outlet,
+          });
+        },
+        undo() { editor.removeOutlet(outlet); },
+      };
+    },
+
+    'outlet:add:input:data'(detail) {
+      const { outlet } = detail;
+      return {
+        description: 'outlet:add:input:data',
+        execute() {
+          const chipInfoOuter = info(editor);
+          chipInfoOuter.inputs.push(outlet);
+          editor.dispatch('outlet:add:input:data', {
+            subject: 'outlet', operation: 'add', side: 'input', kind: 'data', outlet,
+          });
+        },
+        undo() { editor.removeOutlet(outlet); },
+      };
+    },
+
+    'outlet:add:output:flow'(detail) {
+      const { outlet } = detail;
+      return {
+        description: 'outlet:add:output:flow',
+        execute() {
+          const chipInfoOuter = info(editor);
+          chipInfoOuter.outputs.push(outlet);
+          editor.dispatch('outlet:add:output:flow', {
+            subject: 'outlet', operation: 'add', side: 'output', kind: 'flow', outlet,
+          });
+        },
+        undo() { editor.removeOutlet(outlet); },
+      };
+    },
+
+    'outlet:add:output:data'(detail) {
+      const { outlet } = detail;
+      return {
+        description: 'outlet:add:output:data',
+        execute() {
+          const chipInfoOuter = info(editor);
+          chipInfoOuter.outputs.push(outlet);
+          editor.dispatch('outlet:add:output:data', {
+            subject: 'outlet', operation: 'add', side: 'output', kind: 'data', outlet,
+          });
+        },
+        undo() { editor.removeOutlet(outlet); },
+      };
+    },
+
+    'outlet:remove'(detail) {
+      const { outlet, index, side, kind } = detail;
+      return {
+        description: 'outlet:remove',
+        execute() { editor.removeOutlet(outlet); },
+        undo() {
+          const chipInfoOuter = info(editor);
+          const list = side === 'input' ? chipInfoOuter.inputs : chipInfoOuter.outputs;
+          const insertAt = Math.min(index, list.length);
+          list.splice(insertAt, 0, outlet);
+          const eventName = `outlet:add:${side}:${kind}`;
+          editor.dispatch(eventName, {
+            subject: 'outlet', operation: 'add', side, kind, outlet,
+          });
+        },
+      };
+    },
+
+    'outlet:rename'(detail) {
+      const { outlet, name, oldName } = detail;
+      return {
+        description: 'outlet:rename',
+        execute() { editor.renameOutlet(outlet, name); },
+        undo() { editor.renameOutlet(outlet, oldName); },
+      };
+    },
+
+    'outlet:move'(detail) {
+      const { outlet, beforeOutlet, oldBeforeOutlet } = detail;
+      return {
+        description: 'outlet:move',
+        execute() { editor.moveOutlet(outlet, beforeOutlet ?? undefined); },
+        undo() { editor.moveOutlet(outlet, oldBeforeOutlet ?? undefined); },
+      };
+    },
+
+    'outlet:type'(detail) {
+      const { outlet, type, oldType } = detail;
+      return {
+        description: 'outlet:type',
+        execute() { editor.setOutletType(outlet, type); },
+        undo() { editor.setOutletType(outlet, oldType); },
+      };
+    },
+
+    'connection:add'(detail) {
+      const { source, sink } = detail;
+      return {
+        description: 'connection:add',
+        execute() { editor.addConnection(source, sink); },
+        undo() { editor.removeConnection(source, sink); },
+      };
+    },
+
+    'connection:remove'(detail) {
+      const { connections } = detail;
+      if (!connections || connections.length === 0) return null;
+      return {
+        description: 'connection:remove',
+        execute() {
+          for (const conn of connections) {
+            editor.removeConnection(conn.source, conn.sink);
+          }
         },
         undo() {
-          editor.moveOutlet(capturedPort, capturedOldBefore);
+          for (const conn of connections) {
+            try {
+              editor.addConnection(conn.source, conn.sink);
+            } catch (e) {
+              // skip
+            }
+          }
         },
-      });
-      return proxy;
-    },
-
-    renameOutlet(outlet, newName, dryRun) {
-      let oldName = null;
-      const onRename = (event) => {
-        oldName = event.detail.oldName;
       };
-      editor.on('outlet:rename', onRename);
-      editor.renameOutlet(outlet, newName, dryRun);
-      editor.off('outlet:rename', onRename);
-
-      if (oldName !== null && !dryRun) {
-        const chipInfo = info(editor);
-        // Resolve the outlet reference after rename
-        const outletRef = chipInfo.getPort(newName);
-        const capturedOldName = oldName;
-        const capturedNewName = newName;
-        history._record({
-          description: 'renameOutlet',
-          execute() {
-            editor.renameOutlet(outletRef, capturedNewName);
-          },
-          undo() {
-            editor.renameOutlet(outletRef, capturedOldName);
-          },
-        });
-      }
-      return proxy;
     },
 
-    addConnection(portA, portB) {
-      let capturedSource = null;
-      let capturedSink = null;
-      const onAdd = (event) => {
-        capturedSource = event.detail.source;
-        capturedSink = event.detail.sink;
+    'port:value'(detail) {
+      const { port, value, oldValue } = detail;
+      return {
+        description: 'port:value',
+        execute() { editor.setPortValue(port, value); },
+        undo() { editor.setPortValue(port, oldValue); },
       };
-      editor.on('connection:add', onAdd);
-      editor.addConnection(portA, portB);
-      editor.off('connection:add', onAdd);
-
-      if (capturedSource !== null) {
-        const source = capturedSource;
-        const sink = capturedSink;
-        history._record({
-          description: 'addConnection',
-          execute() {
-            editor.addConnection(source, sink);
-          },
-          undo() {
-            editor.removeConnection(source, sink);
-          },
-        });
-      }
-      return proxy;
     },
 
-    removeConnection(portA, portB) {
-      // Capture the connections before removal
-      const chipInfo = info(editor);
-      let removedConnections = [];
-
-      if (portA instanceof PortOutlet) {
-        removedConnections = getConnectionsForPort(info(portA));
-      } else if (portA) {
-        removedConnections = getConnectionsForPort(portA);
-      }
-
-      editor.removeConnection(portA, portB);
-
-      if (removedConnections.length > 0) {
-        const connections = removedConnections.slice();
-        history._record({
-          description: 'removeConnection',
-          execute() {
-            for (const conn of connections) {
-              editor.removeConnection(conn.source, conn.sink);
-            }
-          },
-          undo() {
-            for (const conn of connections) {
-              try {
-                editor.addConnection(conn.source, conn.sink);
-              } catch (e) {
-                // Connection may already exist, skip
-              }
-            }
-          },
-        });
-      }
-      return proxy;
-    },
-
-    setPortValue(port, value) {
-      let oldValue = undefined;
-      let capturedPort = null;
-      const onValue = (event) => {
-        oldValue = event.detail.oldValue;
-        capturedPort = event.detail.port;
+    'port:variadicCount'(detail) {
+      const { port, variadicCount, oldVariadicCount } = detail;
+      return {
+        description: 'port:variadicCount',
+        execute() { editor.setPortVariadicCount(port, variadicCount); },
+        undo() { editor.setPortVariadicCount(port, oldVariadicCount); },
       };
-      editor.on('port:value', onValue);
-      editor.setPortValue(port, value);
-      editor.off('port:value', onValue);
-
-      if (capturedPort !== null) {
-        const portRef = capturedPort;
-        const capturedOldValue = oldValue;
-        const capturedNewValue = value;
-        history._record({
-          description: 'setPortValue',
-          execute() {
-            editor.setPortValue(portRef, capturedNewValue);
-          },
-          undo() {
-            editor.setPortValue(portRef, capturedOldValue);
-          },
-        });
-      }
-      return proxy;
-    },
-
-    setPortVariadicCount(port, variadicCount) {
-      let oldVariadicCount = undefined;
-      let capturedPort = null;
-      const onCount = (event) => {
-        oldVariadicCount = event.detail.oldVariadicCount;
-        capturedPort = event.detail.port;
-      };
-      editor.on('port:variadicCount', onCount);
-      editor.setPortVariadicCount(port, variadicCount);
-      editor.off('port:variadicCount', onCount);
-
-      if (capturedPort !== null) {
-        const portRef = capturedPort;
-        const capturedOld = oldVariadicCount;
-        const capturedNew = typeof variadicCount === 'string'
-          ? capturedOld + parseInt(variadicCount)
-          : variadicCount;
-        history._record({
-          description: 'setPortVariadicCount',
-          execute() {
-            editor.setPortVariadicCount(portRef, capturedNew);
-          },
-          undo() {
-            editor.setPortVariadicCount(portRef, capturedOld);
-          },
-        });
-      }
-      return proxy;
-    },
-
-    addInputFlowOutlet(name, config) {
-      let addedOutlet = null;
-      const onAdd = (event) => {
-        addedOutlet = event.detail.outlet;
-      };
-      editor.on('outlet:add:input:flow', onAdd);
-      editor.addInputFlowOutlet(name, config);
-      editor.off('outlet:add:input:flow', onAdd);
-
-      if (addedOutlet) {
-        const outlet = addedOutlet;
-        history._record({
-          description: 'addInputFlowOutlet',
-          execute() {
-            // redo: re-add the outlet
-          },
-          undo() {
-            editor.removeOutlet(outlet);
-          },
-        });
-      }
-      return proxy;
-    },
-
-    addInputDataOutlet(name, config) {
-      let addedOutlet = null;
-      const onAdd = (event) => {
-        addedOutlet = event.detail.outlet;
-      };
-      editor.on('outlet:add:input:data', onAdd);
-      editor.addInputDataOutlet(name, config);
-      editor.off('outlet:add:input:data', onAdd);
-
-      if (addedOutlet) {
-        const outlet = addedOutlet;
-        history._record({
-          description: 'addInputDataOutlet',
-          execute() {
-            // redo: re-add the outlet
-          },
-          undo() {
-            editor.removeOutlet(outlet);
-          },
-        });
-      }
-      return proxy;
-    },
-
-    addOutputFlowOutlet(name) {
-      let addedOutlet = null;
-      const onAdd = (event) => {
-        addedOutlet = event.detail.outlet;
-      };
-      editor.on('outlet:add:output:flow', onAdd);
-      editor.addOutputFlowOutlet(name);
-      editor.off('outlet:add:output:flow', onAdd);
-
-      if (addedOutlet) {
-        const outlet = addedOutlet;
-        history._record({
-          description: 'addOutputFlowOutlet',
-          execute() {
-            // redo: re-add the outlet
-          },
-          undo() {
-            editor.removeOutlet(outlet);
-          },
-        });
-      }
-      return proxy;
-    },
-
-    addOutputDataOutlet(name, config) {
-      let addedOutlet = null;
-      const onAdd = (event) => {
-        addedOutlet = event.detail.outlet;
-      };
-      editor.on('outlet:add:output:data', onAdd);
-      editor.addOutputDataOutlet(name, config);
-      editor.off('outlet:add:output:data', onAdd);
-
-      if (addedOutlet) {
-        const outlet = addedOutlet;
-        history._record({
-          description: 'addOutputDataOutlet',
-          execute() {
-            // redo: re-add the outlet
-          },
-          undo() {
-            editor.removeOutlet(outlet);
-          },
-        });
-      }
-      return proxy;
     },
   };
+
+  // Listen to all events and record commands
+  editor.on('*', (event) => {
+    if (history._replaying) return;
+    const builder = eventCommandBuilders[event.type];
+    if (!builder) return;
+    const command = builder(event.detail);
+    if (command) {
+      history._record(command);
+    }
+  });
 
   const proxy = new Proxy(editor, {
     get(target, key) {
@@ -558,21 +379,26 @@ export function withHistory(editor) {
       if (key === 'canUndo') return history.canUndo;
       if (key === 'canRedo') return history.canRedo;
       if (key === 'history') return history;
-      if (key in methods) return methods[key];
-      // Non-configurable data properties (like `Chip`) must be returned as-is;
-      // wrapping them in a function violates the proxy invariant.
+      // Non-configurable data properties (like `Chip`) must be returned as-is
       const desc = Object.getOwnPropertyDescriptor(target, key);
       if (desc && !desc.configurable && !desc.writable) return desc.value;
       const value = target[key];
-      if (typeof value === 'function') {
+      if (typeof value !== 'function') return value;
+      if (GROUPED_METHODS.has(key)) {
         return (...args) => {
-          const result = value.apply(target, args);
-          // If the original method returns `this` (the editor), return proxy instead
-          if (result === target) return proxy;
-          return result;
+          history.beginGroup();
+          try {
+            const result = value.apply(target, args);
+            return result === target ? proxy : result;
+          } finally {
+            history.endGroup();
+          }
         };
       }
-      return value;
+      return (...args) => {
+        const result = value.apply(target, args);
+        return result === target ? proxy : result;
+      };
     },
   });
 

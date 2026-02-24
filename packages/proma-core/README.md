@@ -419,9 +419,10 @@ editor.undo(); // undoes all three operations at once
 editor.history.clear();
 ```
 
-Tracked operations: `addChip`, `removeChip`, `setChipId`, `renameOutlet`,
-`moveOutlet`, `addConnection`, `removeConnection`, `setPortValue`,
-`setPortVariadicCount`, and all `add*Outlet` methods.
+Tracked operations: `addChip`, `removeChip`, `setChipId`, `setChipLabel`,
+`renameOutlet`, `moveOutlet`, `removeOutlet`, `removeInputOutlet`,
+`removeOutputOutlet`, `setOutletType`, `addConnection`, `removeConnection`,
+`setPortValue`, `setPortVariadicCount`, and all `add*Outlet` methods.
 
 ### Debugging
 

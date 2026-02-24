@@ -390,3 +390,184 @@ describe('[core/history] clear', async (assert) => {
     expected: { undoCount: 0, redoCount: 0 },
   });
 });
+
+describe('[core/history] undo/redo of add*Outlet (fix redo bug)', async (assert) => {
+  assert({
+    given: 'an input flow outlet is added, undone, then redone',
+    should: 're-add the outlet',
+    actual: (() => {
+      const editor = withHistory(makeEditChip());
+      editor.addInputFlowOutlet('myFlow');
+      editor.undo();
+      editor.redo();
+      return editor.Chip.toJSON().in.some((p) => p.name === 'myFlow');
+    })(),
+    expected: true,
+  });
+
+  assert({
+    given: 'an input data outlet is added, undone, then redone',
+    should: 're-add the outlet',
+    actual: (() => {
+      const editor = withHistory(makeEditChip());
+      editor.addInputDataOutlet('myData');
+      editor.undo();
+      editor.redo();
+      return editor.Chip.toJSON().in.some((p) => p.name === 'myData');
+    })(),
+    expected: true,
+  });
+
+  assert({
+    given: 'an output flow outlet is added, undone, then redone',
+    should: 're-add the outlet',
+    actual: (() => {
+      const editor = withHistory(makeEditChip());
+      editor.addOutputFlowOutlet('myOut');
+      editor.undo();
+      editor.redo();
+      return editor.Chip.toJSON().out.some((p) => p.name === 'myOut');
+    })(),
+    expected: true,
+  });
+
+  assert({
+    given: 'an output data outlet is added, undone, then redone',
+    should: 're-add the outlet',
+    actual: (() => {
+      const editor = withHistory(makeEditChip());
+      editor.addOutputDataOutlet('myOutData');
+      editor.undo();
+      editor.redo();
+      return editor.Chip.toJSON().out.some((p) => p.name === 'myOutData');
+    })(),
+    expected: true,
+  });
+});
+
+describe('[core/history] undo/redo of removeOutlet', async (assert) => {
+  assert({
+    given: 'an outlet is removed then undone',
+    should: 'restore the outlet at the same index',
+    actual: (() => {
+      const editor = withHistory(makeEditChipWithPorts());
+      editor.removeInputOutlet('value');
+      editor.undo();
+      const inputs = editor.Chip.toJSON().in;
+      return inputs.map((p) => p.name);
+    })(),
+    expected: ['exec', 'value'],
+  });
+
+  assert({
+    given: 'an outlet is removed, undone, then redone',
+    should: 'remove the outlet again',
+    actual: (() => {
+      const editor = withHistory(makeEditChipWithPorts());
+      editor.removeInputOutlet('value');
+      editor.undo();
+      editor.redo();
+      const inputs = editor.Chip.toJSON().in;
+      return inputs.map((p) => p.name);
+    })(),
+    expected: ['exec'],
+  });
+
+  assert({
+    given: 'an output outlet is removed then undone',
+    should: 'restore the outlet',
+    actual: (() => {
+      const editor = withHistory(makeEditChipWithPorts());
+      editor.removeOutputOutlet('out');
+      editor.undo();
+      const outputs = editor.Chip.toJSON().out;
+      return outputs.map((p) => p.name);
+    })(),
+    expected: ['then', 'out'],
+  });
+});
+
+describe('[core/history] undo/redo of setChipLabel', async (assert) => {
+  assert({
+    given: 'a chip label is set then undone',
+    should: 'restore the original label',
+    actual: (() => {
+      const baseEditor = makeEditChip();
+      const chipInstance = new Pass('p');
+      baseEditor.addChip(chipInstance, 'myChip');
+      const originalLabel = chipInstance.label;
+      const editor = withHistory(baseEditor);
+      editor.setChipLabel(chipInstance, 'My Label');
+      editor.undo();
+      return chipInstance.label === originalLabel;
+    })(),
+    expected: true,
+  });
+
+  assert({
+    given: 'a chip label is set, undone, then redone',
+    should: 'restore the new label',
+    actual: (() => {
+      const baseEditor = makeEditChip();
+      const chipInstance = new Pass('p');
+      baseEditor.addChip(chipInstance, 'myChip');
+      const editor = withHistory(baseEditor);
+      editor.setChipLabel(chipInstance, 'My Label');
+      editor.undo();
+      editor.redo();
+      return chipInstance.label;
+    })(),
+    expected: 'My Label',
+  });
+});
+
+describe('[core/history] undo/redo of setOutletType', async (assert) => {
+  assert({
+    given: 'an outlet type is set then undone',
+    should: 'restore no type',
+    actual: (() => {
+      const editor = withHistory(makeEditChipWithPorts());
+      const outlet = editor.getPort('value');
+      const originalType = outlet.type;
+      editor.setOutletType(outlet, 'Number');
+      editor.undo();
+      return outlet.type === originalType;
+    })(),
+    expected: true,
+  });
+
+  assert({
+    given: 'an outlet type is set, undone, then redone',
+    should: 'restore the new type',
+    actual: (() => {
+      const editor = withHistory(makeEditChipWithPorts());
+      const outlet = editor.getPort('value');
+      editor.setOutletType(outlet, 'Number');
+      editor.undo();
+      editor.redo();
+      return editor.getPort('value').type?.signature;
+    })(),
+    expected: 'Number',
+  });
+});
+
+describe('[core/history] undo/redo of removeChip with connections', async (assert) => {
+  assert({
+    given: 'a chip with connections is removed then undone',
+    should: 'restore the chip and its connections',
+    actual: (() => {
+      const editor = withHistory(makeEditChipWithPorts());
+      const chipInstance = new Pass('p');
+      editor.addChip(chipInstance, 'inner');
+      // Connect the outlet to the chip port
+      editor.addConnection('exec', chipInstance['in']['exec']);
+      editor.removeChip(chipInstance);
+      editor.undo();
+      return {
+        chipCount: editor.allChips().length,
+        hasConn: editor.hasConnections(editor.getPort('exec')),
+      };
+    })(),
+    expected: { chipCount: 1, hasConn: true },
+  });
+});

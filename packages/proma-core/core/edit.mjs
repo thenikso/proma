@@ -266,35 +266,44 @@ class EditableChipInfo {
     if (!(chip instanceof Chip) && !(chip instanceof PlaceholderChip)) {
       throw new Error('No chip to remove');
     }
-    chipInfo.chips.splice(chipInfo.chips.indexOf(chip), 1);
     // Placeholder chip removal
     if (chip instanceof PlaceholderChip) {
       // Remove chip loader, this will prevent it to resolve and replace itself
       // in the chips array
       chipInfo.chipLoaders.delete(chip);
     }
-    // Remove all connections to/from the chip
-    for (const [key, value] of chipInfo.sinkConnection.entries()) {
-      if (key.chip === chip || value.chip === chip) {
-        chipInfo.sinkConnection.delete(key);
-      }
-    }
-    for (let [key, values] of chipInfo.sourceConnections.entries()) {
-      if (key.chip === chip) {
-        chipInfo.sourceConnections.delete(key);
-      } else if (values.some((v) => v.chip === chip)) {
-        values = values.filter((v) => v.chip !== chip);
-        if (values.length === 0) {
-          chipInfo.sourceConnections.delete(key);
-        } else {
-          chipInfo.sourceConnections.set(key, values);
+    // Capture port values before removal
+    const portValues = [];
+    const chipInfoInner = info(chip);
+    if (chipInfoInner) {
+      for (const portOutlet of chipInfoInner.inputs) {
+        const portInfo = info(portOutlet);
+        if (portInfo.isData) {
+          const portInstance = chip['in'][portOutlet.name];
+          if (portInstance && portInstance.explicitValue !== undefined) {
+            portValues.push({ portName: portOutlet.name, value: portInstance.explicitValue });
+          }
         }
       }
     }
+    // Collect connections to/from chip before removal (fired as connection:remove events)
+    const connectionsToRemove = [];
+    for (const [sink, source] of chipInfo.sinkConnection.entries()) {
+      if (sink.chip === chip || source.chip === chip) {
+        connectionsToRemove.push({ source, sink });
+      }
+    }
+    // Remove connections via removeConnection so events fire
+    for (const conn of connectionsToRemove) {
+      this.removeConnection(conn.source, conn.sink);
+    }
+    chipInfo.chips.splice(chipInfo.chips.indexOf(chip), 1);
     this.dispatch('chip:remove', {
       subject: 'chip',
       operation: 'remove',
       chip,
+      connections: connectionsToRemove,
+      portValues,
     });
     return this;
   }
@@ -328,7 +337,15 @@ class EditableChipInfo {
     const chipInfo = info(this);
     chip = chipInfo.getChip(chip);
     assert(chip, 'Provided sub-chip is not in the Chip body');
+    const oldLabel = chip.label;
     chip.label = label;
+    this.dispatch('chip:label', {
+      subject: 'chip',
+      operation: 'label',
+      chip,
+      label,
+      oldLabel,
+    });
     return this;
   }
 
@@ -455,6 +472,7 @@ class EditableChipInfo {
 
     // Remove from current position
     const idx = list.indexOf(port);
+    const oldBeforeOutlet = list[idx + 1] ?? null;
     list.splice(idx, 1);
 
     // Insert before beforePort, or append to end
@@ -470,6 +488,7 @@ class EditableChipInfo {
       operation: 'move',
       outlet: port,
       beforeOutlet: beforePort ?? null,
+      oldBeforeOutlet,
       side: portInfo.isInput ? 'input' : 'output',
       kind: portInfo.isFlow ? 'flow' : 'data',
     });
@@ -500,6 +519,7 @@ class EditableChipInfo {
       subject: 'outlet',
       operation: 'remove',
       outlet: port,
+      index: idx,
       side: portInfo.isInput ? 'input' : 'output',
       kind: portInfo.isFlow ? 'flow' : 'data',
     });
@@ -539,7 +559,15 @@ class EditableChipInfo {
     if (portInfo.chipInfo !== chipInfo) {
       throw new Error('Port outlet is not owned by chip');
     }
-    port.type = type(newType);
+    const oldType = portInfo.type;
+    portInfo.type = newType !== undefined ? type(newType) : undefined;
+    this.dispatch('outlet:type', {
+      subject: 'outlet',
+      operation: 'type',
+      outlet: port,
+      type: port.type,
+      oldType,
+    });
     return this;
   }
 
@@ -700,6 +728,42 @@ class EditableChipInfo {
     if (portB instanceof PortOutlet) {
       portB = info(portB);
     }
+    // Collect connections before deletion
+    const connections = [];
+    if (portA) {
+      const sinkTarget = chipInfo.sinkConnection.get(portA);
+      if (!portB && sinkTarget) {
+        connections.push({ source: sinkTarget, sink: portA });
+      } else if (portB && sinkTarget === portB) {
+        connections.push({ source: portB, sink: portA });
+      }
+      const aConns = chipInfo.sourceConnections.get(portA);
+      if (aConns) {
+        if (portB) {
+          if (aConns.includes(portB)) {
+            connections.push({ source: portA, sink: portB });
+          }
+        } else {
+          for (const otherPort of aConns) {
+            connections.push({ source: portA, sink: otherPort });
+          }
+        }
+      }
+    }
+    if (portB) {
+      const sinkTarget = chipInfo.sinkConnection.get(portB);
+      if (sinkTarget === portA) {
+        if (!connections.some((c) => c.source === portA && c.sink === portB)) {
+          connections.push({ source: portA, sink: portB });
+        }
+      }
+      const bConns = chipInfo.sourceConnections.get(portB);
+      if (bConns && bConns.includes(portA)) {
+        if (!connections.some((c) => c.source === portB && c.sink === portA)) {
+          connections.push({ source: portB, sink: portA });
+        }
+      }
+    }
     // Delete from sinkConnection
     if (!portB || chipInfo.sinkConnection.get(portA) === portB) {
       chipInfo.sinkConnection.delete(portA);
@@ -735,8 +799,7 @@ class EditableChipInfo {
     this.dispatch('connection:remove', {
       subject: 'connection',
       operation: 'remove',
-      // TODO report removed connections
-      // connections,
+      connections,
     });
     return this;
   }
