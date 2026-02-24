@@ -82,7 +82,10 @@ describe('[core/history] undoCount/redoCount state', async (assert) => {
       const editor = makeEditChip();
       editor.addChip(new Pass('a'));
       editor.addChip(new Pass('b'));
-      return { undoCount: editor.history.undoCount, redoCount: editor.history.redoCount };
+      return {
+        undoCount: editor.history.undoCount,
+        redoCount: editor.history.redoCount,
+      };
     })(),
     expected: { undoCount: 2, redoCount: 0 },
   });
@@ -95,7 +98,10 @@ describe('[core/history] undoCount/redoCount state', async (assert) => {
       editor.addChip(new Pass('a'));
       editor.addChip(new Pass('b'));
       editor.undo();
-      return { undoCount: editor.history.undoCount, redoCount: editor.history.redoCount };
+      return {
+        undoCount: editor.history.undoCount,
+        redoCount: editor.history.redoCount,
+      };
     })(),
     expected: { undoCount: 1, redoCount: 1 },
   });
@@ -378,7 +384,10 @@ describe('[core/history] clear', async (assert) => {
       editor.addChip(new Pass('b'));
       editor.undo();
       editor.history.clear();
-      return { undoCount: editor.history.undoCount, redoCount: editor.history.redoCount };
+      return {
+        undoCount: editor.history.undoCount,
+        redoCount: editor.history.redoCount,
+      };
     })(),
     expected: { undoCount: 0, redoCount: 0 },
   });

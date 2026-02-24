@@ -79,7 +79,7 @@ function collectConnectionsForPort(chipInfo, portInfo) {
   const connections = [];
   const sinkTarget = chipInfo.sinkConnection.get(portInfo);
   if (sinkTarget) connections.push({ source: sinkTarget, sink: portInfo });
-  for (const sink of (chipInfo.sourceConnections.get(portInfo) || []))
+  for (const sink of chipInfo.sourceConnections.get(portInfo) || [])
     connections.push({ source: portInfo, sink });
   return connections;
 }
@@ -164,7 +164,11 @@ class EditableChipInfo {
         value: function dispatch(eventName, detail) {
           // Auto-record when undo/redo closures are embedded and not replaying
           if (!replaying && detail?.undo && detail?.redo) {
-            history._record({ description: eventName, execute: detail.redo, undo: detail.undo });
+            history._record({
+              description: eventName,
+              execute: detail.redo,
+              undo: detail.undo,
+            });
           }
           const names = eventName.split(':');
           let partialName = '';
@@ -192,11 +196,15 @@ class EditableChipInfo {
       },
       canUndo: { get: () => history.canUndo, enumerable: true },
       canRedo: { get: () => history.canRedo, enumerable: true },
-      history:  { value: history, enumerable: true },
+      history: { value: history, enumerable: true },
       undo: {
         value: () => {
           replaying = true;
-          try { history.undo(); } finally { replaying = false; }
+          try {
+            history.undo();
+          } finally {
+            replaying = false;
+          }
           return self;
         },
         enumerable: true,
@@ -204,7 +212,11 @@ class EditableChipInfo {
       redo: {
         value: () => {
           replaying = true;
-          try { history.redo(); } finally { replaying = false; }
+          try {
+            history.redo();
+          } finally {
+            replaying = false;
+          }
           return self;
         },
         enumerable: true,
@@ -317,9 +329,21 @@ class EditableChipInfo {
     const undo = () => this.removeChip(chip);
     const redo = () => {
       chipInfo.addChip(chip);
-      this.dispatch('chip:add', { subject: 'chip', operation: 'add', data: { chip }, undo, redo });
+      this.dispatch('chip:add', {
+        subject: 'chip',
+        operation: 'add',
+        data: { chip },
+        undo,
+        redo,
+      });
     };
-    this.dispatch('chip:add', { subject: 'chip', operation: 'add', data: { chip }, undo, redo });
+    this.dispatch('chip:add', {
+      subject: 'chip',
+      operation: 'add',
+      data: { chip },
+      undo,
+      redo,
+    });
     return this;
   }
 
@@ -346,7 +370,10 @@ class EditableChipInfo {
         if (portInfo.isData) {
           const portInstance = chip['in'][portOutlet.name];
           if (portInstance && portInstance.explicitValue !== undefined) {
-            portValues.push({ portName: portOutlet.name, value: portInstance.explicitValue });
+            portValues.push({
+              portName: portOutlet.name,
+              value: portInstance.explicitValue,
+            });
           }
         }
       }
@@ -371,7 +398,9 @@ class EditableChipInfo {
         data: { chip },
       });
       for (const conn of connectionsToRemove) {
-        try { this.addConnection(conn.source, conn.sink); } catch (e) {}
+        try {
+          this.addConnection(conn.source, conn.sink);
+        } catch (e) {}
       }
       for (const { portName, value } of portValues) {
         try {
@@ -452,13 +481,23 @@ class EditableChipInfo {
     const redo = () => {
       chipInfo.inputs.push(outlet);
       this.dispatch('outlet:add:input:flow', {
-        subject: 'outlet', operation: 'add', side: 'input', kind: 'flow',
-        data: { outlet }, undo, redo,
+        subject: 'outlet',
+        operation: 'add',
+        side: 'input',
+        kind: 'flow',
+        data: { outlet },
+        undo,
+        redo,
       });
     };
     this.dispatch('outlet:add:input:flow', {
-      subject: 'outlet', operation: 'add', side: 'input', kind: 'flow',
-      data: { outlet }, undo, redo,
+      subject: 'outlet',
+      operation: 'add',
+      side: 'input',
+      kind: 'flow',
+      data: { outlet },
+      undo,
+      redo,
     });
     return this;
   }
@@ -470,13 +509,23 @@ class EditableChipInfo {
     const redo = () => {
       chipInfo.inputs.push(outlet);
       this.dispatch('outlet:add:input:data', {
-        subject: 'outlet', operation: 'add', side: 'input', kind: 'data',
-        data: { outlet }, undo, redo,
+        subject: 'outlet',
+        operation: 'add',
+        side: 'input',
+        kind: 'data',
+        data: { outlet },
+        undo,
+        redo,
       });
     };
     this.dispatch('outlet:add:input:data', {
-      subject: 'outlet', operation: 'add', side: 'input', kind: 'data',
-      data: { outlet }, undo, redo,
+      subject: 'outlet',
+      operation: 'add',
+      side: 'input',
+      kind: 'data',
+      data: { outlet },
+      undo,
+      redo,
     });
     return this;
   }
@@ -488,13 +537,23 @@ class EditableChipInfo {
     const redo = () => {
       chipInfo.outputs.push(outlet);
       this.dispatch('outlet:add:output:flow', {
-        subject: 'outlet', operation: 'add', side: 'output', kind: 'flow',
-        data: { outlet }, undo, redo,
+        subject: 'outlet',
+        operation: 'add',
+        side: 'output',
+        kind: 'flow',
+        data: { outlet },
+        undo,
+        redo,
       });
     };
     this.dispatch('outlet:add:output:flow', {
-      subject: 'outlet', operation: 'add', side: 'output', kind: 'flow',
-      data: { outlet }, undo, redo,
+      subject: 'outlet',
+      operation: 'add',
+      side: 'output',
+      kind: 'flow',
+      data: { outlet },
+      undo,
+      redo,
     });
     return this;
   }
@@ -506,13 +565,23 @@ class EditableChipInfo {
     const redo = () => {
       chipInfo.outputs.push(outlet);
       this.dispatch('outlet:add:output:data', {
-        subject: 'outlet', operation: 'add', side: 'output', kind: 'data',
-        data: { outlet }, undo, redo,
+        subject: 'outlet',
+        operation: 'add',
+        side: 'output',
+        kind: 'data',
+        data: { outlet },
+        undo,
+        redo,
       });
     };
     this.dispatch('outlet:add:output:data', {
-      subject: 'outlet', operation: 'add', side: 'output', kind: 'data',
-      data: { outlet }, undo, redo,
+      subject: 'outlet',
+      operation: 'add',
+      side: 'output',
+      kind: 'data',
+      data: { outlet },
+      undo,
+      redo,
     });
     return this;
   }
@@ -641,10 +710,16 @@ class EditableChipInfo {
       const l = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
       l.splice(Math.min(idx, l.length), 0, port);
       for (const conn of removedConnections) {
-        try { this.addConnection(conn.source, conn.sink); } catch (e) {}
+        try {
+          this.addConnection(conn.source, conn.sink);
+        } catch (e) {}
       }
       this.dispatch(`outlet:add:${side}:${kind}`, {
-        subject: 'outlet', operation: 'add', side, kind, data: { outlet: port },
+        subject: 'outlet',
+        operation: 'add',
+        side,
+        kind,
+        data: { outlet: port },
       });
     };
     const redo = () => this.removeOutlet(port);
@@ -962,7 +1037,9 @@ class EditableChipInfo {
     }
     const undo = () => {
       for (const c of connections) {
-        try { this.addConnection(c.source, c.sink); } catch (e) {}
+        try {
+          this.addConnection(c.source, c.sink);
+        } catch (e) {}
       }
     };
     const redo = () => {
