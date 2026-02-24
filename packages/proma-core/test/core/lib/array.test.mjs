@@ -40,7 +40,9 @@ describe('[core/lib/array] Map', async (assert) => {
         m.in.mappedValue = m.out.element() * 2;
       });
       let result;
-      m.out.completed(() => { result = m.out.output(); });
+      m.out.completed(() => {
+        result = m.out.output();
+      });
       m.in.exec();
       return result;
     })(),
@@ -58,7 +60,9 @@ describe('[core/lib/array] Filter', async (assert) => {
         f.in.condition = f.out.element() > 2;
       });
       let result;
-      f.out.completed(() => { result = f.out.output(); });
+      f.out.completed(() => {
+        result = f.out.output();
+      });
       f.in.exec();
       return result;
     })(),
@@ -76,7 +80,9 @@ describe('[core/lib/array] Reduce', async (assert) => {
         r.in.result = r.out.accumulator() + r.out.element();
       });
       let result;
-      r.out.completed(() => { result = r.out.output(); });
+      r.out.completed(() => {
+        result = r.out.output();
+      });
       r.in.exec();
       return result;
     })(),
@@ -92,7 +98,9 @@ describe('[core/lib/array] Reduce', async (assert) => {
         r.in.result = r.out.accumulator() + r.out.element();
       });
       let result;
-      r.out.completed(() => { result = r.out.output(); });
+      r.out.completed(() => {
+        result = r.out.output();
+      });
       r.in.exec();
       return result;
     })(),

@@ -656,8 +656,8 @@ function makeInputFlowSourceCompiler(portInfo) {
       if (!isOutlet(portInstance, outterScope)) {
         const [chip, ...scope] = outterScope;
         const parentChip = scope[0];
-        const connCount = info(parentChip).getConnectedPorts(portInstance)
-          .length;
+        const connCount =
+          info(parentChip).getConnectedPorts(portInstance).length;
         if (connCount > 1) {
           return codeWrapper.compileFunctionInlet(
             portInstance,
@@ -944,8 +944,8 @@ function makeOutputDataSourceCompiler(portInfo) {
       else if (outterScope.length > 1) {
         const [chip, ...scope] = outterScope;
         const parentChip = scope[0];
-        const connCount = info(parentChip).getConnectedPorts(portInstance)
-          .length;
+        const connCount =
+          info(parentChip).getConnectedPorts(portInstance).length;
         shouldInline = connCount <= 1;
       } else {
         shouldInline = true;

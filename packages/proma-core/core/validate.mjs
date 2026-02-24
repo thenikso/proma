@@ -20,7 +20,14 @@ export function validate(chipClassOrInstance) {
   }
 
   if (!chipInfo) {
-    return [{ level: 'error', code: 'invalid-chip', message: 'Invalid chip', path: '' }];
+    return [
+      {
+        level: 'error',
+        code: 'invalid-chip',
+        message: 'Invalid chip',
+        path: '',
+      },
+    ];
   }
 
   const diagnostics = [];

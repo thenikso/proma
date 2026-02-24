@@ -249,5 +249,6 @@ export class Registry {
 export const registry = new Registry()
   .resolver(/^proma\/std(?:#(.+))?$/, (add) => add(lib.std, 'proma/std'))
   .resolver(/^proma\/web(?:#(.+))?$/, (add) => add(lib.web, 'proma/web'))
-  .resolver(/^proma\/node(?:#(.+))?$/, (add) => add(lib.node, 'proma/node'))
-  .lock;
+  .resolver(/^proma\/node(?:#(.+))?$/, (add) =>
+    add(lib.node, 'proma/node'),
+  ).lock;

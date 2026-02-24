@@ -147,7 +147,9 @@ export class Port extends Function {
   }
 
   get value() {
-    return this.explicitValue !== undefined ? this.explicitValue : this.defaultValue;
+    return this.explicitValue !== undefined
+      ? this.explicitValue
+      : this.defaultValue;
   }
 
   toJSON() {

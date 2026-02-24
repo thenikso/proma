@@ -29,7 +29,7 @@ export function makePortRun(portInfo, isOutlet) {
         if (isOutlet) {
           const chip = scope.chip;
           assertInfo(chip, portInfo.chipInfo);
-          port.$runValue = chip.in[portInfo.name]()
+          port.$runValue = chip.in[portInfo.name]();
           return port.$runValue;
         }
 

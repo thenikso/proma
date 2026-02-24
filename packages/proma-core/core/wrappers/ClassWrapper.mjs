@@ -464,9 +464,9 @@ export default class ClassWrapper {
                     }}`).program.body[0].expression.body.body[0],
                     // Update output ports with `computeOn` connected to this
                     // flow outlet
-                    ...(
-                      compiledUpdatesOnPorts[portOutlet.name] || []
-                    ).map((b) => expressionStatement(b)),
+                    ...(compiledUpdatesOnPorts[portOutlet.name] || []).map(
+                      (b) => expressionStatement(b),
+                    ),
                     // TODO add output updates here
                     expressionStatement(
                       callExpression(

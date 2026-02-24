@@ -63,7 +63,14 @@ logger.exec();
 ### Connecting Chips Together
 
 ```javascript
-import { chip, inputFlow, outputFlow, inputData, outputData, wire } from '@proma/core';
+import {
+  chip,
+  inputFlow,
+  outputFlow,
+  inputData,
+  outputData,
+  wire,
+} from '@proma/core';
 
 const ChipA = chip('ChipA', () => {
   const exec = inputFlow('exec', () => {
@@ -165,6 +172,7 @@ console.log(name()); // Gets the current value
 ```
 
 Options:
+
 - `canonical: true` - Makes this a constructor parameter
 - `type` - Specify the expected type
 - `variadic: true` - Accept variable number of inputs
@@ -203,16 +211,16 @@ Proma has a rich type system:
 import { types } from '@proma/core';
 
 // Primitive types
-types.string
-types.number
-types.boolean
-types.any
+types.string;
+types.number;
+types.boolean;
+types.any;
 
 // Complex types
-types.object({ name: types.string, age: types.number })
-types.array(types.number)
-types.tuple([types.string, types.number])
-types.function([types.number], types.string) // args, return
+types.object({ name: types.string, age: types.number });
+types.array(types.number);
+types.tuple([types.string, types.number]);
+types.function([types.number], types.string); // args, return
 
 // Using types in ports
 const num = inputData('num', { type: types.number });
@@ -236,6 +244,7 @@ registry.register('mylib#MyChip', MyChip);
 ```
 
 Built-in libraries:
+
 - `proma/std` - Standard utilities
 - `proma/web` - Browser APIs
 - `proma/node` - Node.js APIs
@@ -344,7 +353,7 @@ editor.renameOutlet('in.value', 'input');
 
 // Move an outlet (reorder within its side — input or output)
 editor.moveOutlet('in.value', 'in.exec'); // move 'value' before 'exec'
-editor.moveOutlet('out.result');          // move 'result' to the end
+editor.moveOutlet('out.result'); // move 'result' to the end
 
 // Remove an outlet (also removes its connections)
 editor.removeInputOutlet('input');
@@ -353,8 +362,8 @@ editor.removeOutputOutlet('result');
 editor.removeOutlet('in.exec');
 
 // Add a sub-chip — accepts a chip instance, class, or registry URI
-editor.addChip(new SomeChip('arg'), 'myId');   // instance, optional id
-editor.addChip(SomeChip, ['arg'], 'myId');      // class + canonical args + id
+editor.addChip(new SomeChip('arg'), 'myId'); // instance, optional id
+editor.addChip(SomeChip, ['arg'], 'myId'); // class + canonical args + id
 editor.addChip('mylib#SomeChip', ['arg'], 'myId'); // URI
 
 // Remove a sub-chip (by instance or id string)
@@ -461,11 +470,13 @@ Validation checks for:
 - **data-cycle** (error) — Circular data dependency detected between chips
 
 The `validate()` function accepts:
+
 - A chip class: `validate(MyChip)`
 - A chip instance: `validate(new MyChip())`
 - A ChipInfo object: `validate(info(MyChip))`
 
 Returns an array of diagnostic objects with:
+
 - `level` — `"warning"` or `"error"`
 - `code` — The diagnostic code (one of the above)
 - `message` — Human-readable description
@@ -531,7 +542,7 @@ const Timer = event('Timer', () => {
     },
     teardown: (ctx) => {
       clearInterval(ctx.intervalId);
-    }
+    },
   };
 });
 
@@ -551,10 +562,10 @@ import { switchChip, inputData, outputFlow } from '@proma/core';
 const NumberSwitch = switchChip('NumberSwitch', {
   discriminator: () => inputData('value', { canonical: true }),
   cases: {
-    'zero': (value) => value() === 0,
-    'positive': (value) => value() > 0,
-    'negative': (value) => value() < 0
-  }
+    zero: (value) => value() === 0,
+    positive: (value) => value() > 0,
+    negative: (value) => value() < 0,
+  },
 });
 
 const sw = new NumberSwitch(5);
@@ -614,16 +625,16 @@ Every chip has a `$info` property with metadata:
 ```javascript
 const chip = MyChip();
 
-chip.$info.name          // Chip name
-chip.$info.uri           // Chip URI (if registered)
-chip.$info.inputs        // Map of input ports
-chip.$info.outputs       // Map of output ports
-chip.$info.subChips      // Map of sub-chips
-chip.$info.connections   // Array of connections
-chip.$info.metadata      // Custom metadata (e.g., position)
+chip.$info.name; // Chip name
+chip.$info.uri; // Chip URI (if registered)
+chip.$info.inputs; // Map of input ports
+chip.$info.outputs; // Map of output ports
+chip.$info.subChips; // Map of sub-chips
+chip.$info.connections; // Array of connections
+chip.$info.metadata; // Custom metadata (e.g., position)
 
 // Serialization
-chip.$info.toJSON()      // Serialize to JSON
+chip.$info.toJSON(); // Serialize to JSON
 ```
 
 ## Building
@@ -643,6 +654,7 @@ pnpm dev
 ```
 
 The package builds to:
+
 - `dist/index.mjs` - ES module
 - `dist/index.js` - UMD module (for browsers)
 

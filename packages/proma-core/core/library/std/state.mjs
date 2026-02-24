@@ -32,7 +32,9 @@ export default function install({
 
     // Internal state storage
     const _value = outputData('_value', { concealed: 'hidden' });
-    const _previousValue = outputData('_previousValue', { concealed: 'hidden' });
+    const _previousValue = outputData('_previousValue', {
+      concealed: 'hidden',
+    });
   });
 
   // Gate: Only fires "then" if condition is true when exec is called

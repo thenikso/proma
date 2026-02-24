@@ -116,7 +116,11 @@ describe('[core/debug] debug chip instances', async (assert) => {
       testChip.in.input = 5;
       const d = debug(testChip);
 
-      const watcher = d.watch(['$.in.input', '$.out.output', 'Add_1.out.output']);
+      const watcher = d.watch([
+        '$.in.input',
+        '$.out.output',
+        'Add_1.out.output',
+      ]);
 
       testChip.out.then(() => {
         testChip.out.output();

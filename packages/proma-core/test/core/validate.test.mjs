@@ -52,15 +52,18 @@ describe('[core/validate] valid chip', async (assert) => {
 });
 
 describe('[core/validate] disconnected-input', async (assert) => {
-  const ChipWithDisconnected = chip('test/validate/ChipWithDisconnected', () => {
-    const exec = inputFlow('exec');
-    const then = outputFlow('then');
-    const pass = new Pass();
-    pass.id = 'pass';
-    // Wire exec and flow, but NOT the data port pass.in.input
-    wire(exec, pass.in.exec);
-    wire(pass.out.then, then);
-  });
+  const ChipWithDisconnected = chip(
+    'test/validate/ChipWithDisconnected',
+    () => {
+      const exec = inputFlow('exec');
+      const then = outputFlow('then');
+      const pass = new Pass();
+      pass.id = 'pass';
+      // Wire exec and flow, but NOT the data port pass.in.input
+      wire(exec, pass.in.exec);
+      wire(pass.out.then, then);
+    },
+  );
 
   assert({
     given: 'a sub-chip input data port with no connection, value, or default',
@@ -122,13 +125,16 @@ describe('[core/validate] unreachable-chip', async (assert) => {
 });
 
 describe('[core/validate] dangling-flow', async (assert) => {
-  const ChipWithDanglingFlow = chip('test/validate/ChipWithDanglingFlow', () => {
-    const exec = inputFlow('exec');
-    const log = new Log('hello');
-    log.id = 'log';
-    wire(exec, log.in.exec);
-    // log.out.then is not connected anywhere — dangling
-  });
+  const ChipWithDanglingFlow = chip(
+    'test/validate/ChipWithDanglingFlow',
+    () => {
+      const exec = inputFlow('exec');
+      const log = new Log('hello');
+      log.id = 'log';
+      wire(exec, log.in.exec);
+      // log.out.then is not connected anywhere — dangling
+    },
+  );
 
   assert({
     given: 'a sub-chip output flow port not connected',

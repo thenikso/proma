@@ -156,9 +156,8 @@ export function switchChip(name, type = 'any') {
           const caseDiscr = tools.compile(casePort, scope, codeWrapper, tools);
           let caseBlock = tools.compile(thenPort, scope, codeWrapper, tools);
           if (!tools.recast.types.namedTypes.Statement.check(caseBlock)) {
-            caseBlock = tools.recast.types.builders.expressionStatement(
-              caseBlock,
-            );
+            caseBlock =
+              tools.recast.types.builders.expressionStatement(caseBlock);
           }
           switchCases.push(
             tools.recast.types.builders.switchCase(caseDiscr, [
@@ -174,9 +173,8 @@ export function switchChip(name, type = 'any') {
           tools,
         );
         if (!tools.recast.types.namedTypes.Statement.check(defaultCaseBlock)) {
-          defaultCaseBlock = tools.recast.types.builders.expressionStatement(
-            defaultCaseBlock,
-          );
+          defaultCaseBlock =
+            tools.recast.types.builders.expressionStatement(defaultCaseBlock);
         }
         if (defaultCaseBlock) {
           switchCases.push(
@@ -421,7 +419,7 @@ function makeChipFactory($customChips, $hooks) {
       }
 
       static get uses() {
-        return chipInfo.registry && chipInfo.registry.useList || [];
+        return (chipInfo.registry && chipInfo.registry.useList) || [];
       }
 
       static get inputOutlets() {

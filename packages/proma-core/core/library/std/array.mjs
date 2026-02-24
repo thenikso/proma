@@ -1,5 +1,10 @@
-export default function install({ chip, inputFlow, inputData, outputFlow, outputData }) {
-
+export default function install({
+  chip,
+  inputFlow,
+  inputData,
+  outputFlow,
+  outputData,
+}) {
   const ForEach = chip('array/ForEach', () => {
     const exec = inputFlow('exec', {
       execute: () => {
@@ -61,7 +66,10 @@ export default function install({ chip, inputFlow, inputData, outputFlow, output
       },
     });
     const array = inputData('array', { canonical: true });
-    const condition = inputData('condition', { defaultValue: false, type: 'boolean' });
+    const condition = inputData('condition', {
+      defaultValue: false,
+      type: 'boolean',
+    });
     const body = outputFlow('body');
     const completed = outputFlow('completed');
     const element = outputData('element');

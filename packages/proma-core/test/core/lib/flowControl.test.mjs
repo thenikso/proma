@@ -490,7 +490,9 @@ describe('[core/lib/flowControl] TryCatch', async (assert) => {
     actual: (() => {
       const tc = new library.std.flowControl.TryCatch();
       const log = [];
-      tc.out.tryBody(() => { throw new Error('oops'); });
+      tc.out.tryBody(() => {
+        throw new Error('oops');
+      });
       tc.out.catchBody(() => log.push('catch:' + tc.out.error().message));
       tc.out.finallyBody(() => log.push('finally'));
       tc.in.exec();
@@ -505,7 +507,9 @@ describe('[core/lib/flowControl] TryCatch', async (assert) => {
     actual: (() => {
       const tc = new library.std.flowControl.TryCatch();
       const log = [];
-      tc.out.tryBody(() => { throw new Error('test'); });
+      tc.out.tryBody(() => {
+        throw new Error('test');
+      });
       tc.out.finallyBody(() => log.push('finally'));
       tc.in.exec();
       return log;
@@ -639,6 +643,8 @@ describe('[core/lib/flowControl] Switch', async (assert) => {
             value: () => {}
           });
         }
-      }`, [1, 1, 2, 'default']),
+      }`,
+      [1, 1, 2, 'default'],
+    ),
   });
 });
