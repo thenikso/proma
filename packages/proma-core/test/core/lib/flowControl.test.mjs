@@ -468,6 +468,52 @@ describe('[core/lib/flowControl] WhileLoop', async (assert) => {
   });
 });
 
+describe('[core/lib/flowControl] TryCatch', async (assert) => {
+  assert({
+    given: 'a TryCatch with no errors',
+    should: 'fire tryBody and finallyBody but not catchBody',
+    actual: (() => {
+      const tc = new library.std.flowControl.TryCatch();
+      const log = [];
+      tc.out.tryBody(() => log.push('try'));
+      tc.out.catchBody(() => log.push('catch'));
+      tc.out.finallyBody(() => log.push('finally'));
+      tc.in.exec();
+      return log;
+    })(),
+    expected: ['try', 'finally'],
+  });
+
+  assert({
+    given: 'a TryCatch where tryBody throws',
+    should: 'fire catchBody with error and finallyBody',
+    actual: (() => {
+      const tc = new library.std.flowControl.TryCatch();
+      const log = [];
+      tc.out.tryBody(() => { throw new Error('oops'); });
+      tc.out.catchBody(() => log.push('catch:' + tc.out.error().message));
+      tc.out.finallyBody(() => log.push('finally'));
+      tc.in.exec();
+      return log;
+    })(),
+    expected: ['catch:oops', 'finally'],
+  });
+
+  assert({
+    given: 'a TryCatch with no catchBody handler',
+    should: 'still fire finallyBody after error',
+    actual: (() => {
+      const tc = new library.std.flowControl.TryCatch();
+      const log = [];
+      tc.out.tryBody(() => { throw new Error('test'); });
+      tc.out.finallyBody(() => log.push('finally'));
+      tc.in.exec();
+      return log;
+    })(),
+    expected: ['finally'],
+  });
+});
+
 describe('[core/lib/flowControl] Switch', async (assert) => {
   assert({
     given: 'a Switch usage',
