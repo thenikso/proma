@@ -363,6 +363,12 @@ editor.removeChip('myId');
 // Rename a sub-chip's id
 editor.setChipId('myId', 'newId');
 
+// Set a display label on a sub-chip
+editor.setChipLabel(chipInstance, 'My Node');
+
+// Set the data type of a data outlet
+editor.setOutletType('in.value', 'Number');
+
 // Add / remove connections (ports addressed as 'in.name', 'out.name',
 // or 'chipId.in.name', 'chipId.out.name' for sub-chips)
 editor.addConnection('exec', 'myId.in.exec');
