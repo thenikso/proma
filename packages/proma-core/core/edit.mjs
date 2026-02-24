@@ -5,6 +5,7 @@ import { PlaceholderChip } from './placeholder.mjs';
 import { registry as defaultRegistry } from './registry.mjs';
 import { event, switchChip, externalGet } from './api.mjs';
 import { type } from './types.mjs';
+import { EditHistory } from './history.mjs';
 
 const VALID_CUSTOM_CHIPS = {
   event,
@@ -62,6 +63,50 @@ function getSharedEvents(chipInfo, eventName) {
   return [...(sharedEvents.get(eventName) || [])];
 }
 
+// Private helpers for compound operations — remove connections without firing
+// individual connection:remove events that would each create undo entries.
+
+function collectConnectionsForChip(chipInfo, chip) {
+  const connections = [];
+  for (const [sink, source] of chipInfo.sinkConnection.entries()) {
+    if (sink.chip === chip || source.chip === chip)
+      connections.push({ source, sink });
+  }
+  return connections;
+}
+
+function collectConnectionsForPort(chipInfo, portInfo) {
+  const connections = [];
+  const sinkTarget = chipInfo.sinkConnection.get(portInfo);
+  if (sinkTarget) connections.push({ source: sinkTarget, sink: portInfo });
+  for (const sink of chipInfo.sourceConnections.get(portInfo) || [])
+    connections.push({ source: portInfo, sink });
+  return connections;
+}
+
+function removeConnectionsFromMaps(chipInfo, connections) {
+  for (const { source, sink } of connections) {
+    chipInfo.sinkConnection.delete(sink);
+    const sinks = chipInfo.sourceConnections.get(source);
+    if (sinks) {
+      sinks.splice(sinks.indexOf(sink), 1);
+      if (sinks.length === 0) chipInfo.sourceConnections.delete(source);
+    }
+  }
+}
+
+function addConnectionsToMaps(chipInfo, connections) {
+  for (const { source, sink } of connections) {
+    chipInfo.sinkConnection.set(sink, source);
+    const sinks = chipInfo.sourceConnections.get(source);
+    if (sinks) {
+      if (!sinks.includes(sink)) sinks.push(sink);
+    } else {
+      chipInfo.sourceConnections.set(source, [sink]);
+    }
+  }
+}
+
 class EditableChipInfo {
   constructor(chipClass, registry = defaultRegistry) {
     const chipInfo = info(chipClass);
@@ -88,6 +133,12 @@ class EditableChipInfo {
     // Events
     //
     const events = new Map();
+
+    //
+    // History
+    //
+    const history = new EditHistory();
+
     Object.defineProperties(this, {
       on: {
         value: function on(eventName, listener, onAllChipEditors) {
@@ -122,6 +173,18 @@ class EditableChipInfo {
       },
       dispatch: {
         value: function dispatch(eventName, detail) {
+          // Auto-record when undo/redo closures are embedded and not replaying
+          if (!history.isReplaying && detail?.undo && detail?.redo) {
+            history._record({
+              description: eventName,
+              execute: detail.redo,
+              undo: detail.undo,
+            });
+          }
+          // Annotate event detail so listeners can distinguish replay from user action
+          if (history.isReplaying && detail) {
+            detail.replaying = true;
+          }
           const names = eventName.split(':');
           let partialName = '';
           const listeners = [
@@ -145,6 +208,23 @@ class EditableChipInfo {
           }
           return !event.defaultPrevented;
         },
+      },
+      canUndo: { get: () => history.canUndo, enumerable: true },
+      canRedo: { get: () => history.canRedo, enumerable: true },
+      history: { value: history, enumerable: true },
+      undo: {
+        value: () => {
+          history.undo();
+          return self;
+        },
+        enumerable: true,
+      },
+      redo: {
+        value: () => {
+          history.redo();
+          return self;
+        },
+        enumerable: true,
       },
     });
 
@@ -250,10 +330,24 @@ class EditableChipInfo {
     while (chipInfo.getChip(chipToAdd.id) !== chipToAdd) {
       chipToAdd.id = info(chipToAdd).makeChipId();
     }
+    const chip = chipToAdd;
+    const undo = () => this.removeChip(chip);
+    const redo = () => {
+      chipInfo.addChip(chip);
+      this.dispatch('chip:add', {
+        subject: 'chip',
+        operation: 'add',
+        data: { chip },
+        undo,
+        redo,
+      });
+    };
     this.dispatch('chip:add', {
       subject: 'chip',
       operation: 'add',
-      chip: chipToAdd,
+      data: { chip },
+      undo,
+      redo,
     });
     return this;
   }
@@ -266,35 +360,70 @@ class EditableChipInfo {
     if (!(chip instanceof Chip) && !(chip instanceof PlaceholderChip)) {
       throw new Error('No chip to remove');
     }
-    chipInfo.chips.splice(chipInfo.chips.indexOf(chip), 1);
     // Placeholder chip removal
     if (chip instanceof PlaceholderChip) {
       // Remove chip loader, this will prevent it to resolve and replace itself
       // in the chips array
       chipInfo.chipLoaders.delete(chip);
     }
-    // Remove all connections to/from the chip
-    for (const [key, value] of chipInfo.sinkConnection.entries()) {
-      if (key.chip === chip || value.chip === chip) {
-        chipInfo.sinkConnection.delete(key);
-      }
-    }
-    for (let [key, values] of chipInfo.sourceConnections.entries()) {
-      if (key.chip === chip) {
-        chipInfo.sourceConnections.delete(key);
-      } else if (values.some((v) => v.chip === chip)) {
-        values = values.filter((v) => v.chip !== chip);
-        if (values.length === 0) {
-          chipInfo.sourceConnections.delete(key);
-        } else {
-          chipInfo.sourceConnections.set(key, values);
+    // Capture port values before removal
+    const portValues = [];
+    const chipInfoInner = info(chip);
+    if (chipInfoInner) {
+      for (const portOutlet of chipInfoInner.inputs) {
+        const portInfo = info(portOutlet);
+        if (portInfo.isData) {
+          const portInstance = chip['in'][portOutlet.name];
+          if (portInstance && portInstance.explicitValue !== undefined) {
+            portValues.push({
+              portName: portOutlet.name,
+              value: portInstance.explicitValue,
+            });
+          }
         }
       }
     }
+    // Collect and remove connections atomically (no individual undo entries)
+    const connectionsToRemove = collectConnectionsForChip(chipInfo, chip);
+    removeConnectionsFromMaps(chipInfo, connectionsToRemove);
+    if (connectionsToRemove.length > 0) {
+      // Notification-only dispatch (no undo/redo → not recorded)
+      this.dispatch('connection:remove', {
+        subject: 'connection',
+        operation: 'remove',
+        data: { connections: connectionsToRemove },
+      });
+    }
+    chipInfo.chips.splice(chipInfo.chips.indexOf(chip), 1);
+    const undo = () => {
+      chipInfo.addChip(chip);
+      this.dispatch('chip:add', {
+        subject: 'chip',
+        operation: 'add',
+        data: { chip },
+      });
+      if (connectionsToRemove.length > 0) {
+        addConnectionsToMaps(chipInfo, connectionsToRemove);
+        this.dispatch('connection:add', {
+          subject: 'connection',
+          operation: 'add',
+          data: { connections: connectionsToRemove },
+        });
+      }
+      for (const { portName, value } of portValues) {
+        try {
+          const p = chip['in'][portName];
+          if (p) p.explicitValue = value;
+        } catch (e) {}
+      }
+    };
+    const redo = () => this.removeChip(chip);
     this.dispatch('chip:remove', {
       subject: 'chip',
       operation: 'remove',
-      chip,
+      data: { chip, connections: connectionsToRemove, portValues },
+      undo,
+      redo,
     });
     return this;
   }
@@ -313,12 +442,14 @@ class EditableChipInfo {
     if (!dryRun) {
       const oldId = chip.id;
       chip.id = id;
+      const undo = () => this.setChipId(chip, oldId);
+      const redo = () => this.setChipId(chip, id);
       this.dispatch('chip:id', {
         subject: 'chip',
         operation: 'id',
-        chip,
-        id,
-        oldId,
+        data: { chip, id, oldId },
+        undo,
+        redo,
       });
     }
     return this;
@@ -328,7 +459,17 @@ class EditableChipInfo {
     const chipInfo = info(this);
     chip = chipInfo.getChip(chip);
     assert(chip, 'Provided sub-chip is not in the Chip body');
+    const oldLabel = chip.label;
     chip.label = label;
+    const undo = () => this.setChipLabel(chip, oldLabel);
+    const redo = () => this.setChipLabel(chip, label);
+    this.dispatch('chip:label', {
+      subject: 'chip',
+      operation: 'label',
+      data: { chip, label, oldLabel },
+      undo,
+      redo,
+    });
     return this;
   }
 
@@ -344,12 +485,27 @@ class EditableChipInfo {
   addInputFlowOutlet(name, config) {
     const chipInfo = info(this);
     const outlet = chipInfo.addInputFlowPort(name, config);
+    const undo = () => this.removeOutlet(outlet);
+    const redo = () => {
+      chipInfo.inputs.push(outlet);
+      this.dispatch('outlet:add:input:flow', {
+        subject: 'outlet',
+        operation: 'add',
+        side: 'input',
+        kind: 'flow',
+        data: { outlet },
+        undo,
+        redo,
+      });
+    };
     this.dispatch('outlet:add:input:flow', {
       subject: 'outlet',
       operation: 'add',
       side: 'input',
       kind: 'flow',
-      outlet,
+      data: { outlet },
+      undo,
+      redo,
     });
     return this;
   }
@@ -357,12 +513,27 @@ class EditableChipInfo {
   addInputDataOutlet(name, config) {
     const chipInfo = info(this);
     const outlet = chipInfo.addInputDataPort(name, config);
+    const undo = () => this.removeOutlet(outlet);
+    const redo = () => {
+      chipInfo.inputs.push(outlet);
+      this.dispatch('outlet:add:input:data', {
+        subject: 'outlet',
+        operation: 'add',
+        side: 'input',
+        kind: 'data',
+        data: { outlet },
+        undo,
+        redo,
+      });
+    };
     this.dispatch('outlet:add:input:data', {
       subject: 'outlet',
       operation: 'add',
       side: 'input',
       kind: 'data',
-      outlet,
+      data: { outlet },
+      undo,
+      redo,
     });
     return this;
   }
@@ -370,12 +541,27 @@ class EditableChipInfo {
   addOutputFlowOutlet(name) {
     const chipInfo = info(this);
     const outlet = chipInfo.addOutputFlowPort(name);
+    const undo = () => this.removeOutlet(outlet);
+    const redo = () => {
+      chipInfo.outputs.push(outlet);
+      this.dispatch('outlet:add:output:flow', {
+        subject: 'outlet',
+        operation: 'add',
+        side: 'output',
+        kind: 'flow',
+        data: { outlet },
+        undo,
+        redo,
+      });
+    };
     this.dispatch('outlet:add:output:flow', {
       subject: 'outlet',
       operation: 'add',
       side: 'output',
       kind: 'flow',
-      outlet,
+      data: { outlet },
+      undo,
+      redo,
     });
     return this;
   }
@@ -383,12 +569,27 @@ class EditableChipInfo {
   addOutputDataOutlet(name, config) {
     const chipInfo = info(this);
     const outlet = chipInfo.addOutputDataPort(name, config);
+    const undo = () => this.removeOutlet(outlet);
+    const redo = () => {
+      chipInfo.outputs.push(outlet);
+      this.dispatch('outlet:add:output:data', {
+        subject: 'outlet',
+        operation: 'add',
+        side: 'output',
+        kind: 'data',
+        data: { outlet },
+        undo,
+        redo,
+      });
+    };
     this.dispatch('outlet:add:output:data', {
       subject: 'outlet',
       operation: 'add',
       side: 'output',
       kind: 'data',
-      outlet,
+      data: { outlet },
+      undo,
+      redo,
     });
     return this;
   }
@@ -409,22 +610,159 @@ class EditableChipInfo {
     if (!dryRun) {
       const oldName = outlet.name;
       portInfo.name = newName;
+      const undo = () => this.renameOutlet(outlet, oldName);
+      const redo = () => this.renameOutlet(outlet, newName);
       this.dispatch('outlet:rename', {
         subject: 'outlet',
         operation: 'rename',
-        outlet,
-        name: newName,
-        oldName,
+        data: { outlet, name: newName, oldName },
+        undo,
+        redo,
       });
     }
     return this;
   }
 
-  moveOutlet(port, beforePort) {}
+  moveOutlet(port, beforePort) {
+    const chipInfo = info(this);
+    if (typeof port === 'string') {
+      port = chipInfo.getPort(port);
+    }
+    if (!(port instanceof PortOutlet)) {
+      throw new Error('Can only move chip outlets');
+    }
+    const portInfo = info(port);
+    if (portInfo.chipInfo !== chipInfo) {
+      throw new Error('Port outlet is not owned by chip');
+    }
+    const list = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
 
-  removeOutlet(port) {}
-  removeInputOutlet(name) {}
-  removeOutputOutlet(name) {}
+    if (beforePort !== undefined) {
+      if (typeof beforePort === 'string') {
+        beforePort = chipInfo.getPort(beforePort);
+      }
+      if (!(beforePort instanceof PortOutlet)) {
+        throw new Error('beforePort must be a chip outlet');
+      }
+      const beforePortInfo = info(beforePort);
+      if (beforePortInfo.chipInfo !== chipInfo) {
+        throw new Error('beforePort outlet is not owned by chip');
+      }
+      if (beforePortInfo.isInput !== portInfo.isInput) {
+        throw new Error('Cannot move outlet across sides (input/output)');
+      }
+      if (beforePort === port) {
+        return this;
+      }
+    }
+
+    // Remove from current position
+    const idx = list.indexOf(port);
+    const oldBeforeOutlet = list[idx + 1] ?? null;
+    list.splice(idx, 1);
+
+    // Insert before beforePort, or append to end
+    if (beforePort === undefined) {
+      list.push(port);
+    } else {
+      const beforeIdx = list.indexOf(beforePort);
+      list.splice(beforeIdx, 0, port);
+    }
+
+    const undo = () => this.moveOutlet(port, oldBeforeOutlet ?? undefined);
+    const redo = () => this.moveOutlet(port, beforePort ?? undefined);
+    this.dispatch('outlet:move', {
+      subject: 'outlet',
+      operation: 'move',
+      side: portInfo.isInput ? 'input' : 'output',
+      kind: portInfo.isFlow ? 'flow' : 'data',
+      data: { outlet: port, beforeOutlet: beforePort ?? null, oldBeforeOutlet },
+      undo,
+      redo,
+    });
+    return this;
+  }
+
+  removeOutlet(port) {
+    const chipInfo = info(this);
+    if (typeof port === 'string') {
+      port = chipInfo.getPort(port);
+    }
+    if (!(port instanceof PortOutlet)) {
+      throw new Error('Can only remove chip outlets');
+    }
+    const portInfo = info(port);
+    if (portInfo.chipInfo !== chipInfo) {
+      throw new Error('Port outlet is not owned by chip');
+    }
+    const side = portInfo.isInput ? 'input' : 'output';
+    const kind = portInfo.isFlow ? 'flow' : 'data';
+    // Collect and remove connections atomically (no individual undo entries)
+    const removedConnections = collectConnectionsForPort(chipInfo, portInfo);
+    removeConnectionsFromMaps(chipInfo, removedConnections);
+    if (removedConnections.length > 0) {
+      // Notification-only dispatch (no undo/redo → not recorded)
+      this.dispatch('connection:remove', {
+        subject: 'connection',
+        operation: 'remove',
+        data: { connections: removedConnections },
+      });
+    }
+    // Remove from inputs or outputs array
+    const list = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
+    const idx = list.indexOf(port);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+    }
+    const undo = () => {
+      const l = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
+      l.splice(Math.min(idx, l.length), 0, port);
+      if (removedConnections.length > 0) {
+        addConnectionsToMaps(chipInfo, removedConnections);
+        this.dispatch('connection:add', {
+          subject: 'connection',
+          operation: 'add',
+          data: { connections: removedConnections },
+        });
+      }
+      this.dispatch(`outlet:add:${side}:${kind}`, {
+        subject: 'outlet',
+        operation: 'add',
+        side,
+        kind,
+        data: { outlet: port },
+      });
+    };
+    const redo = () => this.removeOutlet(port);
+    this.dispatch('outlet:remove', {
+      subject: 'outlet',
+      operation: 'remove',
+      side,
+      kind,
+      data: { outlet: port, index: idx },
+      undo,
+      redo,
+    });
+    return this;
+  }
+
+  removeInputOutlet(name) {
+    const chipInfo = info(this);
+    const port = chipInfo.getInputPortOutlet(name);
+    if (!port) {
+      throw new Error(`No input outlet named "${name}"`);
+    }
+    return this.removeOutlet(port);
+  }
+
+  removeOutputOutlet(name) {
+    const chipInfo = info(this);
+    const port = chipInfo.getOutputPortOutlet(name);
+    if (!port) {
+      throw new Error(`No output outlet named "${name}"`);
+    }
+    return this.removeOutlet(port);
+  }
 
   setOutletType(port, newType) {
     const chipInfo = info(this);
@@ -441,7 +779,17 @@ class EditableChipInfo {
     if (portInfo.chipInfo !== chipInfo) {
       throw new Error('Port outlet is not owned by chip');
     }
-    port.type = type(newType);
+    const oldType = portInfo.type;
+    portInfo.type = newType !== undefined ? type(newType) : undefined;
+    const undo = () => this.setOutletType(port, oldType);
+    const redo = () => this.setOutletType(port, newType);
+    this.dispatch('outlet:type', {
+      subject: 'outlet',
+      operation: 'type',
+      data: { outlet: port, type: port.type, oldType },
+      undo,
+      redo,
+    });
     return this;
   }
 
@@ -462,12 +810,14 @@ class EditableChipInfo {
     }
     const oldValue = port.explicitValue;
     port.explicitValue = value;
+    const undo = () => this.setPortValue(port, oldValue);
+    const redo = () => this.setPortValue(port, value);
     this.dispatch('port:value', {
       subject: 'port',
       operation: 'value',
-      port,
-      value,
-      oldValue,
+      data: { port, value, oldValue },
+      undo,
+      redo,
     });
     return this;
   }
@@ -498,20 +848,33 @@ class EditableChipInfo {
         port.variadic[i];
       }
     }
-    // Disconnect and delete variadic ports
+    // Disconnect and delete variadic ports atomically (no individual undo entries)
     else {
+      const allRemovedConnections = [];
       for (let i = variadicCount; i < oldVariadicCount; i++) {
         const portToRemove = port.variadic[i];
-        this.removeConnection(portToRemove);
+        const conns = collectConnectionsForPort(chipInfo, info(portToRemove));
+        allRemovedConnections.push(...conns);
+        removeConnectionsFromMaps(chipInfo, conns);
         delete port.variadic[i];
       }
+      if (allRemovedConnections.length > 0) {
+        // Notification-only dispatch (no undo/redo → not recorded)
+        this.dispatch('connection:remove', {
+          subject: 'connection',
+          operation: 'remove',
+          data: { connections: allRemovedConnections },
+        });
+      }
     }
+    const undo = () => this.setPortVariadicCount(port, oldVariadicCount);
+    const redo = () => this.setPortVariadicCount(port, variadicCount);
     this.dispatch('port:variadicCount', {
       subject: 'port',
       operation: 'variadicCount',
-      port,
-      variadicCount,
-      oldVariadicCount,
+      data: { port, variadicCount, oldVariadicCount },
+      undo,
+      redo,
     });
     return this;
   }
@@ -535,7 +898,24 @@ class EditableChipInfo {
     }
     const outlets = chipInfo.inputs.filter((p) => info(p).isData);
     outlets.push(...chipInfo.outputs);
+    const oldExecute = portInfo.execute;
     portInfo.execute = makeFunction(code, outlets);
+    const undo = () => {
+      portInfo.execute = oldExecute;
+      this.dispatch('port:execute', {
+        subject: 'port',
+        operation: 'execute',
+        data: { outlet: portOutlet },
+      });
+    };
+    const redo = () => this.setPortExecute(portName, code);
+    this.dispatch('port:execute', {
+      subject: 'port',
+      operation: 'execute',
+      data: { outlet: portOutlet, code },
+      undo,
+      redo,
+    });
     return this;
   }
 
@@ -556,7 +936,24 @@ class EditableChipInfo {
     if (portInfo.allowSideEffects) {
       outlets.push(...chipInfo.outputs);
     }
+    const oldCompute = portInfo.compute;
     portInfo.compute = makeFunction(code, outlets);
+    const undo = () => {
+      portInfo.compute = oldCompute;
+      this.dispatch('port:compute', {
+        subject: 'port',
+        operation: 'compute',
+        data: { outlet: portOutlet },
+      });
+    };
+    const redo = () => this.setPortCompute(portName, code);
+    this.dispatch('port:compute', {
+      subject: 'port',
+      operation: 'compute',
+      data: { outlet: portOutlet, code },
+      undo,
+      redo,
+    });
     return this;
   }
 
@@ -580,10 +977,15 @@ class EditableChipInfo {
   addConnection(portA, portB) {
     const chipInfo = info(this);
     const connection = chipInfo.addConnection(portA, portB, false, true);
+    const { source, sink } = connection;
+    const undo = () => this.removeConnection(source, sink);
+    const redo = () => this.addConnection(source, sink);
     this.dispatch('connection:add', {
       subject: 'connection',
       operation: 'add',
-      ...connection,
+      data: { source, sink },
+      undo,
+      redo,
     });
     return this;
   }
@@ -601,6 +1003,42 @@ class EditableChipInfo {
     }
     if (portB instanceof PortOutlet) {
       portB = info(portB);
+    }
+    // Collect connections before deletion
+    const connections = [];
+    if (portA) {
+      const sinkTarget = chipInfo.sinkConnection.get(portA);
+      if (!portB && sinkTarget) {
+        connections.push({ source: sinkTarget, sink: portA });
+      } else if (portB && sinkTarget === portB) {
+        connections.push({ source: portB, sink: portA });
+      }
+      const aConns = chipInfo.sourceConnections.get(portA);
+      if (aConns) {
+        if (portB) {
+          if (aConns.includes(portB)) {
+            connections.push({ source: portA, sink: portB });
+          }
+        } else {
+          for (const otherPort of aConns) {
+            connections.push({ source: portA, sink: otherPort });
+          }
+        }
+      }
+    }
+    if (portB) {
+      const sinkTarget = chipInfo.sinkConnection.get(portB);
+      if (sinkTarget === portA) {
+        if (!connections.some((c) => c.source === portA && c.sink === portB)) {
+          connections.push({ source: portA, sink: portB });
+        }
+      }
+      const bConns = chipInfo.sourceConnections.get(portB);
+      if (bConns && bConns.includes(portA)) {
+        if (!connections.some((c) => c.source === portB && c.sink === portA)) {
+          connections.push({ source: portB, sink: portA });
+        }
+      }
     }
     // Delete from sinkConnection
     if (!portB || chipInfo.sinkConnection.get(portA) === portB) {
@@ -634,11 +1072,32 @@ class EditableChipInfo {
         chipInfo.sourceConnections.delete(portB);
       }
     }
+    if (!connections || connections.length === 0) {
+      this.dispatch('connection:remove', {
+        subject: 'connection',
+        operation: 'remove',
+        data: { connections },
+      });
+      return this;
+    }
+    const undo = () => {
+      for (const c of connections) {
+        try {
+          this.addConnection(c.source, c.sink);
+        } catch (e) {}
+      }
+    };
+    const redo = () => {
+      for (const c of connections) {
+        this.removeConnection(c.source, c.sink);
+      }
+    };
     this.dispatch('connection:remove', {
       subject: 'connection',
       operation: 'remove',
-      // TODO report removed connections
-      // connections,
+      data: { connections },
+      undo,
+      redo,
     });
     return this;
   }
