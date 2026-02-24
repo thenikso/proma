@@ -2,10 +2,7 @@ import { describe } from '../runner/riteway.mjs';
 import {
   chip,
   inputFlow,
-  inputData,
   outputFlow,
-  outputData,
-  wire,
   edit,
   trackDirty,
 } from '../../core/index.mjs';
