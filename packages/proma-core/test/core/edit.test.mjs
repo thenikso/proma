@@ -212,6 +212,101 @@ describe('[core/edit] edit ports', async (assert) => {
   });
 });
 
+describe('[core/edit] removeOutlet', async (assert) => {
+  assert({
+    given: 'removeInputOutlet by name',
+    should: 'remove the input outlet from the chip',
+    actual: edit(
+      chip('EditChip', () => {
+        inputFlow('exec');
+        inputData('value');
+        outputFlow('then');
+      }),
+    )
+      .removeInputOutlet('value')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      in: [{ name: 'exec', kind: 'flow' }],
+      out: [{ name: 'then', kind: 'flow' }],
+    },
+  });
+
+  assert({
+    given: 'removeOutputOutlet by name',
+    should: 'remove the output outlet from the chip',
+    actual: edit(
+      chip('EditChip', () => {
+        inputFlow('exec');
+        outputFlow('then');
+        outputData('out');
+      }),
+    )
+      .removeOutputOutlet('out')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      in: [{ name: 'exec', kind: 'flow' }],
+      out: [{ name: 'then', kind: 'flow' }],
+    },
+  });
+
+  assert({
+    given: 'removeOutlet by string name',
+    should: 'remove the outlet using dot-path syntax',
+    actual: edit(
+      chip('EditChip', () => {
+        inputFlow('exec');
+        inputData('value');
+        outputFlow('then');
+      }),
+    )
+      .removeOutlet('in.value')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      in: [{ name: 'exec', kind: 'flow' }],
+      out: [{ name: 'then', kind: 'flow' }],
+    },
+  });
+
+  assert({
+    given: 'removeOutlet on an outlet that has a connection',
+    should: 'also remove the connection',
+    actual: edit(
+      chip('EditChip', () => {
+        const exec = inputFlow('exec');
+        const then = outputFlow('then');
+        wire(exec, then);
+      }),
+    )
+      .removeInputOutlet('exec')
+      .Chip.toJSON(),
+    expected: {
+      URI: 'EditChip',
+      out: [{ name: 'then', kind: 'flow' }],
+    },
+  });
+
+  assert({
+    given: 'removeInputOutlet with a non-existent name',
+    should: 'throw',
+    actual: Try(() => {
+      edit(chip('EditChip', () => {})).removeInputOutlet('nonexistent');
+    }),
+    expected: new Error('No input outlet named "nonexistent"'),
+  });
+
+  assert({
+    given: 'removeOutputOutlet with a non-existent name',
+    should: 'throw',
+    actual: Try(() => {
+      edit(chip('EditChip', () => {})).removeOutputOutlet('nonexistent');
+    }),
+    expected: new Error('No output outlet named "nonexistent"'),
+  });
+});
+
 describe('[core/edit] edit uses', async (assert) => {
   testRegistry
     .resolver(/^use-log/, (add) => {
