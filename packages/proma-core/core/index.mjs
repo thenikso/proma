@@ -7,3 +7,4 @@ export { EditHistory } from './history.mjs';
 export { fromJSON } from './deserialize.mjs';
 export { debug } from './debug.mjs';
 export { validate } from './validate.mjs';
+export { DirtyTracker, trackDirty } from './dirty.mjs';
