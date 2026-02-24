@@ -41,29 +41,11 @@ class ChipDebugger {
   snapshot() {
     const chipInfo = info(this.chip);
     const result = {};
-    result['$'] = this._chipPortValues(this.chip);
+    result['$'] = chipPortValues(this.chip);
     for (const subChip of chipInfo.chips) {
-      result[subChip.id] = this._chipPortValues(subChip);
+      result[subChip.id] = chipPortValues(subChip);
     }
     return result;
-  }
-
-  _chipPortValues(chipInstance) {
-    const chipInfo = info(chipInstance);
-    const values = {};
-    for (const outlet of chipInfo.inputs) {
-      const portInfo = info(outlet);
-      if (!portInfo.isData) continue;
-      const port = chipInstance[INPUT][outlet.name];
-      if (port) values[`in.${outlet.name}`] = port.$runValue;
-    }
-    for (const outlet of chipInfo.outputs) {
-      const portInfo = info(outlet);
-      if (!portInfo.isData) continue;
-      const port = chipInstance[OUTPUT][outlet.name];
-      if (port) values[`out.${outlet.name}`] = port.$runValue;
-    }
-    return values;
   }
 
   // Returns an array of port descriptors for the given chip (by id).
@@ -90,8 +72,7 @@ class ChipDebugger {
         side: 'in',
         kind: portInfo.isFlow ? 'flow' : 'data',
         value: port ? port.$runValue : undefined,
-        type:
-          port && port.type ? port.type.signature : undefined,
+        type: port && port.type ? port.type.signature : undefined,
       });
     }
 
@@ -103,8 +84,7 @@ class ChipDebugger {
         side: 'out',
         kind: portInfo.isFlow ? 'flow' : 'data',
         value: port ? port.$runValue : undefined,
-        type:
-          port && port.type ? port.type.signature : undefined,
+        type: port && port.type ? port.type.signature : undefined,
       });
     }
 
@@ -131,4 +111,22 @@ class ChipDebugger {
       },
     };
   }
+}
+
+function chipPortValues(chipInstance) {
+  const chipInfo = info(chipInstance);
+  const values = {};
+  for (const outlet of chipInfo.inputs) {
+    const portInfo = info(outlet);
+    if (!portInfo.isData) continue;
+    const port = chipInstance[INPUT][outlet.name];
+    if (port) values[`in.${outlet.name}`] = port.$runValue;
+  }
+  for (const outlet of chipInfo.outputs) {
+    const portInfo = info(outlet);
+    if (!portInfo.isData) continue;
+    const port = chipInstance[OUTPUT][outlet.name];
+    if (port) values[`out.${outlet.name}`] = port.$runValue;
+  }
+  return values;
 }
