@@ -20,19 +20,23 @@ export class DirtyTracker {
 
     // Adding/removing chips dirties the whole graph (structural change)
     editor.on('chip:add', (event) => {
-      this._dirtyChips.add(event.detail.chip.id);
-      this._propagateDirty(event.detail.chip);
+      const { chip } = event.detail.data || {};
+      if (!chip) return;
+      this._dirtyChips.add(chip.id);
+      this._propagateDirty(chip);
     });
 
     editor.on('chip:remove', (event) => {
-      this._dirtyChips.delete(event.detail.chip.id);
+      const { chip } = event.detail.data || {};
+      if (chip && chip.id) this._dirtyChips.delete(chip.id);
       // Removing a chip dirties everything connected to it
       this._fullRecompile = true;
     });
 
     editor.on('chip:id', (event) => {
-      this._dirtyChips.delete(event.detail.oldId);
-      this._dirtyChips.add(event.detail.id);
+      const { id, oldId } = event.detail.data || {};
+      if (oldId) this._dirtyChips.delete(oldId);
+      if (id) this._dirtyChips.add(id);
     });
 
     // Outlet changes dirty the whole chip definition
@@ -42,7 +46,7 @@ export class DirtyTracker {
 
     // Connection changes dirty the connected chips
     editor.on('connection:add', (event) => {
-      const { source, sink } = event.detail;
+      const { source, sink } = event.detail.data || {};
       this._markPortDirty(source);
       this._markPortDirty(sink);
     });
@@ -55,11 +59,13 @@ export class DirtyTracker {
 
     // Port value changes dirty the specific chip
     editor.on('port:value', (event) => {
-      this._markPortDirty(event.detail.port);
+      const { port } = event.detail.data || {};
+      this._markPortDirty(port);
     });
 
     editor.on('port:variadicCount', (event) => {
-      this._markPortDirty(event.detail.port);
+      const { port } = event.detail.data || {};
+      this._markPortDirty(port);
     });
   }
 
