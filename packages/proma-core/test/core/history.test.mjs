@@ -1,16 +1,15 @@
-import { describe, Try } from '../runner/riteway.mjs';
+import { describe } from '../runner/riteway.mjs';
 import {
   chip,
   inputFlow,
   inputData,
   outputFlow,
   outputData,
-  wire,
   edit,
   withHistory,
 } from '../../core/index.mjs';
 
-import { Pass, Log } from '../lib.mjs';
+import { Pass } from '../lib.mjs';
 
 // Helper to create a simple editable chip with basic ports
 function makeEditChip(name = 'HistoryTestChip') {

@@ -1,6 +1,5 @@
 import { info } from './utils.mjs';
 import { PortOutlet } from './ports.mjs';
-import { Chip } from './chip.mjs';
 
 export class EditHistory {
   constructor(editor) {
