@@ -318,33 +318,106 @@ const instance = new restored();
 
 ### Edit API
 
-Programmatically edit chip graphs:
+Programmatically create and modify chip graphs. `edit()` wraps a chip class and
+returns an `EditableChipInfo` that exposes a fluent mutation API.
 
 ```javascript
-import { edit } from '@proma/core';
+import { chip, inputFlow, outputFlow, inputData, edit } from '@proma/core';
 
-const editor = edit(myChipInfo);
+// Create an editable chip (must be defined with chip())
+const MyChip = chip('MyChip');
+const editor = edit(MyChip);
 
-// Listen to changes
-editor.on('change', () => {
-  console.log('Chip was modified');
+// Listen to any change
+editor.on('*', (event) => {
+  console.log('changed:', event.type, event.detail);
 });
 
-// Add a sub-chip
-editor.addChip('subChipId', SomeChip, { x: 100, y: 100 });
+// Add / remove outlets
+editor.addInputFlowOutlet('exec');
+editor.addOutputFlowOutlet('then');
+editor.addInputDataOutlet('value', { type: types.number });
+editor.addOutputDataOutlet('result');
 
-// Add a connection
-editor.connect(
-  'chipA', 'outputPort',
-  'chipB', 'inputPort'
-);
+// Rename an outlet (dot-path: 'in.name' or 'out.name')
+editor.renameOutlet('in.value', 'input');
 
-// Remove a connection
-editor.disconnect('chipA', 'outputPort', 'chipB', 'inputPort');
+// Remove an outlet (also removes its connections)
+editor.removeInputOutlet('input');
+editor.removeOutputOutlet('result');
+// or by dot-path reference:
+editor.removeOutlet('in.exec');
 
-// Remove a chip
-editor.removeChip('subChipId');
+// Add a sub-chip — accepts a chip instance, class, or registry URI
+editor.addChip(new SomeChip('arg'), 'myId');   // instance, optional id
+editor.addChip(SomeChip, ['arg'], 'myId');      // class + canonical args + id
+editor.addChip('mylib#SomeChip', ['arg'], 'myId'); // URI
+
+// Remove a sub-chip (by instance or id string)
+editor.removeChip('myId');
+
+// Rename a sub-chip's id
+editor.setChipId('myId', 'newId');
+
+// Add / remove connections (ports addressed as 'in.name', 'out.name',
+// or 'chipId.in.name', 'chipId.out.name' for sub-chips)
+editor.addConnection('exec', 'myId.in.exec');
+editor.addConnection('myId.out.result', 'result');
+editor.removeConnection('exec', 'myId.in.exec');
+
+// Set an explicit value on an input data port
+editor.setPortValue('myId.in.value', 42);
+
+// Access the underlying Chip class at any time
+const MyUpdatedChip = editor.Chip;
 ```
+
+### Undo / Redo History
+
+Wrap any editor with `withHistory()` to get a fully undoable/redoable edit
+session. The returned proxy has the same API as the plain editor plus undo/redo
+controls.
+
+```javascript
+import { chip, edit, withHistory } from '@proma/core';
+
+const MyChip = chip('MyChip');
+const editor = withHistory(edit(MyChip));
+
+// All edit operations are now tracked
+editor.addInputFlowOutlet('exec');
+editor.addOutputFlowOutlet('then');
+editor.addChip(SomeChip, [], 'node1');
+editor.addConnection('exec', 'node1.in.exec');
+
+// Undo / redo
+console.log(editor.canUndo); // true
+console.log(editor.canRedo); // false
+
+editor.undo(); // removes the connection
+editor.undo(); // removes node1
+editor.redo(); // re-adds node1
+
+// Inspect stack depth
+console.log(editor.history.undoCount); // 2
+console.log(editor.history.redoCount); // 1
+
+// Group multiple operations into a single undoable step
+editor.history.beginGroup();
+editor.addChip(SomeChip, [], 'a');
+editor.addChip(SomeChip, [], 'b');
+editor.addConnection('a.out.result', 'b.in.value');
+editor.history.endGroup();
+
+editor.undo(); // undoes all three operations at once
+
+// Clear history (does not affect the chip graph)
+editor.history.clear();
+```
+
+Tracked operations: `addChip`, `removeChip`, `setChipId`, `renameOutlet`,
+`addConnection`, `removeConnection`, `setPortValue`, `setPortVariadicCount`,
+and all `add*Outlet` methods.
 
 ### Debugging
 
@@ -469,6 +542,9 @@ export { fromJSON } from './deserialize.mjs';
 // Editing
 export { edit } from './edit.mjs';
 
+// Undo/redo
+export { EditHistory, withHistory } from './history.mjs';
+
 // Debugging
 export { debug } from './debug.mjs';
 
@@ -555,6 +631,7 @@ proma-core/
 │   ├── serialize.mjs        # JSON serialization
 │   ├── deserialize.mjs      # JSON deserialization
 │   ├── edit.mjs             # Edit API
+│   ├── history.mjs          # Undo/redo history (EditHistory, withHistory)
 │   ├── debug.mjs            # Debugging utilities
 │   ├── wrapper.mjs          # Code generation wrapper
 │   └── library/             # Standard libraries
