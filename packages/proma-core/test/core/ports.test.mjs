@@ -42,34 +42,34 @@ describe('[core/ports] (input data) canonical ports', async (assert) => {
   // TODO test that a chip constructed without a required input fails
 });
 
-describe('[core/ports] (input data) conceiled ports', async (assert) => {
-  const LiteralConceiled = chip('test/core/ports/LiteralConceiled', () => {
+describe('[core/ports] (input data) concealed ports', async (assert) => {
+  const LiteralConcealed = chip('test/core/ports/LiteralConcealed', () => {
     const value = inputData('value', {
       canonical: true,
-      conceiled: true,
+      concealed: true,
     });
     outputData('value', () => value());
   });
 
   assert({
-    given: 'a conceiled port',
+    given: 'a concealed port',
     should: 'can not be connected but only assigned to',
     actual: Try(chip, () => {
       const input = inputData('input');
 
-      const val = new LiteralConceiled('one');
+      const val = new LiteralConcealed('one');
       val.id = 'val';
       val.in.value = 'two';
 
       wire(input, val.in.value);
     }),
-    expected: new Error('Can not connect to conceiled port "val.in.value"'),
+    expected: new Error('Can not connect to concealed port "val.in.value"'),
   });
 
   const LiteralHidden = chip('test/core/ports/LiteralHidden', () => {
     const value = inputData('value', {
       canonical: 'required',
-      conceiled: 'hidden',
+      concealed: 'hidden',
     });
     outputData('value', () => value());
   });
@@ -135,24 +135,24 @@ describe('[core/ports] (input data) conceiled ports', async (assert) => {
 
 // TODO variadic check that is the last port (also for outputs)
 
-describe('[core/ports] (output data) conceiled ports', async (assert) => {
-  const OutputConceiled = chip('test/core/ports/OutputConceiled', () => {
+describe('[core/ports] (output data) concealed ports', async (assert) => {
+  const OutputConcealed = chip('test/core/ports/OutputConcealed', () => {
     const value = inputData('value', { canonical: true });
-    outputData('value', { compute: () => value(), conceiled: true });
+    outputData('value', { compute: () => value(), concealed: true });
   });
 
   assert({
-    given: 'a conceiled output port',
+    given: 'a concealed output port',
     should: 'can not be connected',
     actual: Try(chip, () => {
-      const val = new OutputConceiled('one');
+      const val = new OutputConcealed('one');
       val.id = 'val';
 
       const output = outputData('output');
 
       wire(val.out.value, output);
     }),
-    expected: new Error('Can not connect to conceiled port "val.out.value"'),
+    expected: new Error('Can not connect to concealed port "val.out.value"'),
   });
 
   // TODO how to hide this?
@@ -160,7 +160,7 @@ describe('[core/ports] (output data) conceiled ports', async (assert) => {
   //   const value = inputData('value', {
   //     canonical: 'required',
   //   });
-  //   outputData('value', { compute: () => value(), conceiled: 'hidden' });
+  //   outputData('value', { compute: () => value(), concealed: 'hidden' });
   // });
 
   // assert({

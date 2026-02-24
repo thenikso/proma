@@ -33,7 +33,7 @@ async function deserializeChip(chip, data, registry, withErrors) {
       } else {
         build.addInputDataOutlet(port.name, {
           canonical: port.canonical,
-          conceiled: port.conceiled,
+          concealed: port.concealed,
           defaultValue: port.defaultValue,
           type: port.type || 'any',
         });

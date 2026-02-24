@@ -61,7 +61,7 @@ export default function install({
     });
     const then = outputFlow('then');
     const _timer = outputData('_timer', {
-      conceiled: 'hidden',
+      concealed: 'hidden',
       defaultValue: undefined,
     });
   });
@@ -85,7 +85,7 @@ export default function install({
     });
     const then = outputFlow('then');
     const _throttled = outputData('_throttled', {
-      conceiled: 'hidden',
+      concealed: 'hidden',
       defaultValue: false,
     });
   });

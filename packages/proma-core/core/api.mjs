@@ -62,7 +62,7 @@ export function inputConfig(name, { defaultValue, required } = {}) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputDataPort(name, {
     canonical: required ? 'required' : true,
-    conceiled: true,
+    concealed: true,
     defaultValue,
   });
 }
@@ -222,7 +222,7 @@ export function externalRef(externalReferenceObj) {
 const ExternalGetInt = plainChip('ExternalGet', () => {
   const externalDataRef = inputData('externalDataRef', {
     canonical: 'required',
-    conceiled: 'hidden',
+    concealed: 'hidden',
   });
   outputData('value', () => externalDataRef());
 });
@@ -247,7 +247,7 @@ const ExternalSetInt = plainChip('ExternalSet', () => {
   });
   const externalSetRef = inputData('externalSetRef', {
     canonical: 'required',
-    conceiled: 'hidden',
+    concealed: 'hidden',
   });
   const value = inputData('value', {
     canonical: true,

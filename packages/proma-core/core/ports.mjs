@@ -88,10 +88,10 @@ export class Port extends Function {
               : portInfo.defaultValue;
           },
         },
-        isConceiled: {
+        isConcealed: {
           enumerable: true,
           get() {
-            return portInfo.isConceiled;
+            return portInfo.isConcealed;
           },
         },
       });
@@ -280,10 +280,10 @@ export class PortOutlet extends Function {
             return portInfo.defaultValue;
           },
         },
-        isConceiled: {
+        isConcealed: {
           enumerable: true,
           get() {
-            return portInfo.isConceiled;
+            return portInfo.isConcealed;
           },
         },
       });
@@ -582,12 +582,12 @@ export class OutputDataSourcePortInfo extends PortInfo {
     // When reading a output port, if no value has been assigned to it yet, it
     // will default to its `defaultValue`
     this.defaultValue = config.defaultValue;
-    // Conceiled indicates how the port is hidden:
+    // Concealed indicates how the port is hidden:
     // - `true` the port can not be connected from the outside
     // - `'hidden'` the port is not accessible from the outside.
     //    Use this to create internal chip states.
     // TODO 'hidden' output data ports are not enforced in any way
-    this.conceiled = config.conceiled || false;
+    this.concealed = config.concealed || false;
 
     // Used by compiler to indicate a port that is being
     // set by an execution (rather than be computed)
@@ -620,12 +620,12 @@ export class OutputDataSourcePortInfo extends PortInfo {
     this.computeOn = config.computeOn || [];
   }
 
-  get isConceiled() {
-    return !!this.conceiled;
+  get isConcealed() {
+    return !!this.concealed;
   }
 
   get isHidden() {
-    return this.conceiled === 'hidden';
+    return this.concealed === 'hidden';
   }
 
   get isInput() {
@@ -673,11 +673,11 @@ export class InputDataSinkPortInfo extends VariadicPortInfo {
     // - `true` the port can receive default value from the chip constructor
     // - `'required'` the port must receive a value from the chip constructor
     this.canonical = config.canonical || false;
-    // Conceiled indicates how the port is hidden
+    // Concealed indicates how the port is hidden
     // - `true` the port can not be connected but only receive a direct value
     // - `'hidden'` the port is not accessible. use only with `defaultValue` or
     //   `canonical` to give any meaninful value
-    this.conceiled = config.conceiled || false;
+    this.concealed = config.concealed || false;
     // The default value the port should be having
     this.defaultValue = config.defaultValue;
     this.type = config.type;
@@ -696,12 +696,12 @@ export class InputDataSinkPortInfo extends VariadicPortInfo {
     return this.canonical === 'required';
   }
 
-  get isConceiled() {
-    return !!this.conceiled;
+  get isConcealed() {
+    return !!this.concealed;
   }
 
   get isHidden() {
-    return this.conceiled === 'hidden';
+    return this.concealed === 'hidden';
   }
 
   get isInput() {

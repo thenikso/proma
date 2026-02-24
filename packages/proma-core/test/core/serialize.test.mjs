@@ -43,7 +43,7 @@ const chipJSON = {
       name: 'conf',
       kind: 'data',
       canonical: true,
-      conceiled: true,
+      concealed: true,
       defaultValue: true,
     },
   ],

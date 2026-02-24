@@ -114,8 +114,8 @@ export function serializePortInfo(portInfo) {
   if (portInfo.canonical === true) {
     res.canonical = portInfo.canonical;
   }
-  if (portInfo.conceiled === true) {
-    res.conceiled = portInfo.conceiled;
+  if (portInfo.concealed === true) {
+    res.concealed = portInfo.concealed;
   }
   if (portInfo.variadic) {
     res.variadic = portInfo.variadic;

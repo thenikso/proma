@@ -631,7 +631,7 @@ describe('[programs/outputs] state outputs', async (assert) => {
         const then = outputFlow('then');
         const count = outputData('count', {
           defaultValue: 0,
-          // conceiled: 'hidden',
+          // concealed: 'hidden',
         });
       },
       (chip) => {
@@ -715,7 +715,7 @@ describe('[programs/outputs] state outputs', async (assert) => {
     const gate = outputData('gate', {
       inline: false,
       defaultValue: true,
-      // conceiled: 'hidden',
+      // concealed: 'hidden',
     });
   });
 

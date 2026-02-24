@@ -36,7 +36,7 @@ export function validate(chipClassOrInstance) {
 
 /**
  * Check for sub-chip input data ports that have no connection, no explicit value,
- * and no default value. Conceiled ports are skipped since they are user-settable and
+ * and no default value. Concealed ports are skipped since they are user-settable and
  * must have a default value.
  */
 function checkDisconnectedInputs(chipInfo, diagnostics) {
@@ -55,8 +55,8 @@ function checkDisconnectedInputs(chipInfo, diagnostics) {
       const port = subChip.in[portOutlet.name];
       if (!port) continue;
 
-      // Skip conceiled ports — they are user-settable and should have defaults
-      if (port.isConceiled) continue;
+      // Skip concealed ports — they are user-settable and should have defaults
+      if (port.isConcealed) continue;
 
       // Check if connected
       const isConnected = connectedSinks.has(port);

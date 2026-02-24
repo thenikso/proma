@@ -31,8 +31,8 @@ export default function install({
     });
 
     // Internal state storage
-    const _value = outputData('_value', { conceiled: 'hidden' });
-    const _previousValue = outputData('_previousValue', { conceiled: 'hidden' });
+    const _value = outputData('_value', { concealed: 'hidden' });
+    const _previousValue = outputData('_previousValue', { concealed: 'hidden' });
   });
 
   // Gate: Only fires "then" if condition is true when exec is called
@@ -93,7 +93,7 @@ export default function install({
       type: 'number',
     });
 
-    const _count = outputData('_count', { conceiled: 'hidden' });
+    const _count = outputData('_count', { concealed: 'hidden' });
   });
 
   // Toggle: Boolean state that toggles on exec
@@ -132,7 +132,7 @@ export default function install({
       type: 'boolean',
     });
 
-    const _value = outputData('_value', { conceiled: 'hidden' });
+    const _value = outputData('_value', { concealed: 'hidden' });
   });
 
   return { State, Gate, Counter, Toggle };

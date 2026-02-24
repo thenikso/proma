@@ -489,11 +489,11 @@ export class ChipInfo {
       source = portB;
       sink = portA;
     }
-    if (sink.isData && sink.isConceiled) {
-      throw new Error(`Can not connect to conceiled port "${sink.fullName}"`);
+    if (sink.isData && sink.isConcealed) {
+      throw new Error(`Can not connect to concealed port "${sink.fullName}"`);
     }
-    if (source.isData && source.isConceiled) {
-      throw new Error(`Can not connect to conceiled port "${source.fullName}"`);
+    if (source.isData && source.isConcealed) {
+      throw new Error(`Can not connect to concealed port "${source.fullName}"`);
     }
     if (source.type && sink.type && !source.type.match(sink.type)) {
       throw new Error(

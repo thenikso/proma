@@ -152,8 +152,8 @@ The `isSink` property is computed as `isFlow XOR isInput`.
 | Class | Side | Kind | Source/Sink | Key Properties |
 |-------|------|------|-------------|----------------|
 | `InputFlowSourcePortInfo` | Input | Flow | Source | `execute`, `executeCompiler` |
-| `OutputDataSourcePortInfo` | Output | Data | Source | `compute`, `computeCompiler`, `computeOn`, `inline`, `type`, `defaultValue`, `conceiled` |
-| `InputDataSinkPortInfo` | Input | Data | Sink | `canonical`, `conceiled`, `defaultValue`, `type`, `variadic` |
+| `OutputDataSourcePortInfo` | Output | Data | Source | `compute`, `computeCompiler`, `computeOn`, `inline`, `type`, `defaultValue`, `concealed` |
+| `InputDataSinkPortInfo` | Input | Data | Sink | `canonical`, `concealed`, `defaultValue`, `type`, `variadic` |
 | `OutputFlowSinkPortInfo` | Output | Flow | Sink | `computeOutputs` (Set of output data ports that update on this flow), `variadic` |
 
 ### 2.5 Port Modifiers
@@ -169,19 +169,19 @@ const input = inputData('input', { canonical: true, defaultValue: 0 });
 
 Required canonical ports (`canonical: 'required'`) must be declared before optional ones.
 
-#### Conceiled Ports
+#### Concealed Ports
 
-Conceiled ports are used to expose user-settable parameters that cannot receive connections from other ports. They restrict external connectivity while allowing direct value assignment:
+Concealed ports are used to expose user-settable parameters that cannot receive connections from other ports. They restrict external connectivity while allowing direct value assignment:
 
-- `conceiled: true` -- Port cannot be wired from outside, but its value can be set directly (typically via constructor for canonical ports). Skipped in validation since they must have a default value.
-- `conceiled: 'hidden'` -- Port is completely inaccessible from the outside. Used for internal state or configuration.
+- `concealed: true` -- Port cannot be wired from outside, but its value can be set directly (typically via constructor for canonical ports). Skipped in validation since they must have a default value.
+- `concealed: 'hidden'` -- Port is completely inaccessible from the outside. Used for internal state or configuration.
 
 Typical use case: a chip that accepts configuration parameters that users can set but that should not be connected to other port outputs.
 
-The `inputConfig()` API helper creates a canonical + conceiled port:
+The `inputConfig()` API helper creates a canonical + concealed port:
 
 ```javascript
-// Shorthand for: inputData(name, { canonical: true/required, conceiled: true })
+// Shorthand for: inputData(name, { canonical: true/required, concealed: true })
 export function inputConfig(name, { defaultValue, required } = {}) { ... }
 ```
 
@@ -657,7 +657,7 @@ A serialized chip has this structure:
   "in": [
     { "name": "exec", "kind": "flow" },
     { "name": "input", "kind": "data", "canonical": true, "defaultValue": 3, "type": "Number" },
-    { "name": "conf", "kind": "data", "canonical": true, "conceiled": true }
+    { "name": "conf", "kind": "data", "canonical": true, "concealed": true }
   ],
   "out": [
     { "name": "then", "kind": "flow" },
@@ -690,7 +690,7 @@ A serialized chip has this structure:
 | `execute` | Input flow | Stringified function |
 | `compute` | Output data | Stringified function |
 | `canonical` | Input data | `true` if settable via constructor |
-| `conceiled` | Input/Output data | `true` or `"hidden"` |
+| `concealed` | Input/Output data | `true` or `"hidden"` |
 | `defaultValue` | Data ports | Default value |
 | `type` | Data ports | Type signature string |
 | `computeOn` | Output data | Array of output flow port names |

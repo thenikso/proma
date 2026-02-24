@@ -21,7 +21,7 @@ describe('[core/external] get external data', async (assert) => {
       () => {
         const func = inputData('func', {
           canonical: 'required',
-          conceiled: 'hidden',
+          concealed: 'hidden',
         });
         const exec = inputFlow('exec');
 
@@ -98,7 +98,7 @@ describe('[core/external] get external data', async (assert) => {
   const GetData = plainChip('test/programs/external/GetData', () => {
     const getData = inputData('getData', {
       canonical: 'required',
-      conceiled: 'hidden',
+      concealed: 'hidden',
     });
     outputData('value', () => getData());
   });
@@ -154,7 +154,7 @@ describe('[core/external] set external data', async (assert) => {
     });
     const setFunctionRef = inputData('setFunctionRef', {
       canonical: 'required',
-      conceiled: 'hidden',
+      concealed: 'hidden',
     });
     const value = inputData('value', {
       canonical: true,
