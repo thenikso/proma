@@ -384,17 +384,16 @@ const MyUpdatedChip = editor.Chip;
 
 ### Undo / Redo History
 
-Wrap any editor with `withHistory()` to get a fully undoable/redoable edit
-session. The returned proxy has the same API as the plain editor plus undo/redo
-controls.
+Every editor returned by `edit()` has undo/redo history built in — no wrapper
+needed.
 
 ```javascript
-import { chip, edit, withHistory } from '@proma/core';
+import { chip, edit } from '@proma/core';
 
 const MyChip = chip('MyChip');
-const editor = withHistory(edit(MyChip));
+const editor = edit(MyChip);
 
-// All edit operations are now tracked
+// All edit operations are automatically tracked
 editor.addInputFlowOutlet('exec');
 editor.addOutputFlowOutlet('then');
 editor.addChip(SomeChip, [], 'node1');
@@ -553,8 +552,8 @@ export { fromJSON } from './deserialize.mjs';
 // Editing
 export { edit } from './edit.mjs';
 
-// Undo/redo
-export { EditHistory, withHistory } from './history.mjs';
+// Undo/redo history (built into every editor)
+export { EditHistory } from './history.mjs';
 
 // Debugging
 export { debug } from './debug.mjs';
@@ -642,7 +641,7 @@ proma-core/
 │   ├── serialize.mjs        # JSON serialization
 │   ├── deserialize.mjs      # JSON deserialization
 │   ├── edit.mjs             # Edit API
-│   ├── history.mjs          # Undo/redo history (EditHistory, withHistory)
+│   ├── history.mjs          # Undo/redo history (EditHistory)
 │   ├── debug.mjs            # Debugging utilities
 │   ├── wrapper.mjs          # Code generation wrapper
 │   └── library/             # Standard libraries
