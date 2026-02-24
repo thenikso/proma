@@ -6,3 +6,4 @@ export { edit } from './edit.mjs';
 export { EditHistory } from './history.mjs';
 export { fromJSON } from './deserialize.mjs';
 export { debug } from './debug.mjs';
+export { validate } from './validate.mjs';

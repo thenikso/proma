@@ -429,6 +429,48 @@ Tracked operations: `addChip`, `removeChip`, `setChipId`, `setChipLabel`,
 `removeOutputOutlet`, `setOutletType`, `addConnection`, `removeConnection`,
 `setPortValue`, `setPortVariadicCount`, and all `add*Outlet` methods.
 
+### Validation
+
+Validate chip definitions to detect structural issues before runtime:
+
+```javascript
+import { chip, inputFlow, outputFlow, inputData, validate } from '@proma/core';
+
+const MyChip = chip('MyChip', () => {
+  const exec = inputFlow('exec');
+  const then = outputFlow('then');
+  // ... define chip
+});
+
+// Validate the chip definition
+const diagnostics = validate(MyChip);
+
+if (diagnostics.length > 0) {
+  diagnostics.forEach((d) => {
+    console.log(`[${d.level}] ${d.code}: ${d.message}`);
+  });
+}
+```
+
+Validation checks for:
+
+- **disconnected-input** (warning) — Input data port with no connection, explicit value, or default
+- **unreachable-chip** (warning) — Sub-chip with no connections to other chips
+- **dangling-flow** (warning) — Output flow port not connected to any other chip
+- **no-entry-flow** (warning) — No input flow outlet is connected (execution cannot enter)
+- **data-cycle** (error) — Circular data dependency detected between chips
+
+The `validate()` function accepts:
+- A chip class: `validate(MyChip)`
+- A chip instance: `validate(new MyChip())`
+- A ChipInfo object: `validate(info(MyChip))`
+
+Returns an array of diagnostic objects with:
+- `level` — `"warning"` or `"error"`
+- `code` — The diagnostic code (one of the above)
+- `message` — Human-readable description
+- `path` — Port or chip ID where the issue occurs (empty for chip-level issues)
+
 ### Debugging
 
 Debug chip execution:
@@ -557,6 +599,9 @@ export { EditHistory } from './history.mjs';
 
 // Debugging
 export { debug } from './debug.mjs';
+
+// Validation
+export { validate } from './validate.mjs';
 
 // Types
 export { types } from './types.mjs';
