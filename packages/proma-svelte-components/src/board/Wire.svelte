@@ -8,10 +8,20 @@
 	const board = getBoard();
 
 	let id;
+	let retryTimer;
+
+	function addWireWithRetry(retriesLeft = 8) {
+		if (id) return;
+		id = board.addWire(outputChip, outputPort, inputChip, inputPort, path);
+		if (!id && retriesLeft > 0) {
+			retryTimer = requestAnimationFrame(() => addWireWithRetry(retriesLeft - 1));
+		}
+	}
 
 	onMount(() => {
-		id = board.addWire(outputChip, outputPort, inputChip, inputPort, path);
+		addWireWithRetry();
 		return () => {
+			cancelAnimationFrame(retryTimer);
 			if (id) {
 				board.removeWire(id);
 			}

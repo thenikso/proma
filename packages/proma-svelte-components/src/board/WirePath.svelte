@@ -15,10 +15,6 @@
 	// can work as intended
 	let shouldWorkaroundStraightLine = $derived(type && type.indexOf('-') >= 0);
 
-	// If the end of the path is before the start in the X coordinate, we add
-	// an "inverted" class to make the gradient reversed if present.
-	let inverted = $state(false);
-
 	function connectionMakePath(fromPoint, toPoint) {
 		const { x: x1, y: y1 } = toPoint;
 		const { x: x4, y: y4 } = fromPoint;
@@ -39,14 +35,16 @@
 		const p3x = x4 + dx;
 		const p3y = y4;
 
-		const d = `M${p1x} ${p1y} C ${p2x} ${p2y} ${p3x} ${p3y} ${p4x} ${p4y}`;
-
-		inverted = p1x < p4x;
-
-		return d;
+		return {
+			d: `M${p1x} ${p1y} C ${p2x} ${p2y} ${p3x} ${p3y} ${p4x} ${p4y}`,
+			inverted: p1x < p4x,
+		};
 	}
 
-	let d = $derived((fromPoint && toPoint && connectionMakePath(fromPoint, toPoint)) || '');
+	const emptyPath = { d: '', inverted: false };
+	let { d, inverted } = $derived(
+		(fromPoint && toPoint && connectionMakePath(fromPoint, toPoint)) || emptyPath,
+	);
 </script>
 
 <path

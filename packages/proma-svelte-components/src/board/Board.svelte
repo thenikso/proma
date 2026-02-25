@@ -102,6 +102,16 @@
 	// Board
 	//
 
+	function resolveChipRef(chip) {
+		if (typeof chip !== 'string') return chip;
+		return boardContentEl?.getElementsByClassName('Chip-' + chip)?.[0]?.$promaChip || null;
+	}
+
+	function resolvePortRef(chip, side, port) {
+		if (typeof port !== 'string') return port;
+		return chip?.getPort(side, port) || null;
+	}
+
 	const board = setBoard({
 		type: 'board',
 		// Chip
@@ -120,52 +130,42 @@
 		},
 		// Wires
 		addWire(outputChip, outputPort, inputChip, inputPort, wirePath, id) {
-			try {
-				if (typeof outputChip === 'string') {
-					outputChip = boardContentEl.getElementsByClassName('Chip-' + outputChip)[0].$promaChip;
-				}
-				if (typeof outputPort === 'string') {
-					outputPort = outputChip.getPort(OUTPUT, outputPort);
-				}
-				if (typeof inputChip === 'string') {
-					inputChip = boardContentEl.getElementsByClassName('Chip-' + inputChip)[0].$promaChip;
-				}
-				if (typeof inputPort === 'string') {
-					inputPort = inputChip.getPort(INPUT, inputPort);
-				}
-				if (id) {
-					board.removeWire(id);
-				} else {
-					id = `wire-${shortUID()}`;
-				}
-				const type =
-					outputPort.dataType === inputPort.dataType
-						? inputPort.dataType
-						: `${outputPort.dataType}-to-${inputPort.dataType}`;
-				wires = [
-					...wires,
-					{
-						id,
-						outputChip,
-						outputPort,
-						inputChip,
-						inputPort,
-						type,
-						wirePath,
-						...wirePoints({ outputPort, inputPort }),
-					},
-				];
-				// In Svelte 5, mount timing can leave outlets unresolved on first pass.
-				// Trigger a deferred re-measure so initial wires become visible.
-				board.updateWires();
-				outputPort.connectionCount++;
-				inputPort.connectionCount++;
-				return id;
-			} catch (e) {
-				console.warn(
-					`Could not add wire: ${outputChip}.out.${outputPort} -> ${inputChip}.in.${inputPort}`,
-				);
+			outputChip = resolveChipRef(outputChip);
+			inputChip = resolveChipRef(inputChip);
+			if (!outputChip || !inputChip) return null;
+
+			outputPort = resolvePortRef(outputChip, OUTPUT, outputPort);
+			inputPort = resolvePortRef(inputChip, INPUT, inputPort);
+			if (!outputPort || !inputPort) return null;
+
+			if (id) {
+				board.removeWire(id);
+			} else {
+				id = `wire-${shortUID()}`;
 			}
+			const type =
+				outputPort.dataType === inputPort.dataType
+					? inputPort.dataType
+					: `${outputPort.dataType}-to-${inputPort.dataType}`;
+			wires = [
+				...wires,
+				{
+					id,
+					outputChip,
+					outputPort,
+					inputChip,
+					inputPort,
+					type,
+					wirePath,
+					...wirePoints({ outputPort, inputPort }),
+				},
+			];
+			// In Svelte 5, mount timing can leave outlets unresolved on first pass.
+			// Trigger a deferred re-measure so initial wires become visible.
+			board.updateWires();
+			outputPort.connectionCount++;
+			inputPort.connectionCount++;
+			return id;
 		},
 		removeWire(id) {
 			const wireIndex = wires.findIndex((w) => w.id === id);
