@@ -180,13 +180,19 @@
 			return wire;
 		},
 		updateWires(limitChip) {
-			cancelAnimationFrame(updateWiresTimer);
-			if (limitChip) {
-				updateWiresLimit = [...(updateWiresLimit || []), limitChip];
-			} else {
-				updateWiresLimit = null;
+			// TODO(perf): We currently support either a full refresh (limitChip unset)
+			// or an object-ref filtered refresh. For large boards, consider indexing
+			// wire IDs by chip ID to update only connected wires during drag.
+			if (updateWiresLimit) {
+				if (limitChip) {
+					updateWiresLimit.add(limitChip);
+				} else {
+					updateWiresLimit = null;
+				}
 			}
-			updateWiresTimer = requestAnimationFrame(updateWiresPoints);
+			if (!updateWiresTimer) {
+				updateWiresTimer = requestAnimationFrame(updateWiresPoints);
+			}
 		},
 		//
 		startNewWire(port) {
@@ -258,45 +264,49 @@
 	let wires = $state([]);
 	let wiresEl = $state();
 	let updateWiresTimer;
-	let updateWiresLimit;
+	let updateWiresLimit = new Set();
 	let newWireFromPort = $state();
 	// Used in `board.probeNewWire` to store the last probed element and send a new
 	// event if it changes.
 	let newWireProbeEnd;
 
 	function updateWiresPoints() {
+		updateWiresTimer = null;
+		const boardRect = boardEl?.getBoundingClientRect();
 		for (const wire of wires) {
 			if (
 				!updateWiresLimit ||
-				updateWiresLimit.includes(wire.inputChip) ||
-				updateWiresLimit.includes(wire.outputChip)
+				updateWiresLimit.has(wire.inputChip) ||
+				updateWiresLimit.has(wire.outputChip)
 			) {
-				Object.assign(wire, wirePoints(wire));
+				Object.assign(wire, wirePoints(wire, boardRect));
 			}
 		}
-		updateWiresLimit = null;
-		// To force redraw
-		// TODO make more efficient
+		updateWiresLimit = new Set();
+		// To force redraw.
+		// TODO(perf): If this becomes expensive, switch to immutable wire object
+		// replacement only for changed wires, so keyed children update without
+		// redrawing the entire array each frame.
 		wires = [...wires];
 	}
 
-	function wirePoints(wire) {
-		const fromPoint = getElementCenter(wire.outputPort.outletElement);
-		const toPoint = getElementCenter(wire.inputPort.outletElement);
+	function wirePoints(wire, boardRect) {
+		const fromPoint = getElementCenter(wire.outputPort.outletElement, boardRect);
+		const toPoint = getElementCenter(wire.inputPort.outletElement, boardRect);
 		return {
 			fromPoint,
 			toPoint,
 		};
 	}
 
-	function getElementCenter(el) {
+	function getElementCenter(el, boardRect) {
 		if (!el) {
 			return null;
 		}
 		const bbox = el.getBoundingClientRect();
 		const x = bbox.x + bbox.width / 6; // not exactly the center
 		const y = bbox.y + bbox.height / 2;
-		return clientPointToBoardPoint(x, y);
+		return clientPointToBoardPoint(x, y, boardRect);
 	}
 
 	//
@@ -452,8 +462,11 @@
 		const deltaY = (event.pageY - dragging.y) / zoom;
 		for (const chip of selectedChipsSet) {
 			chip.movePosition(deltaX, deltaY, snap);
-			board.updateWires(chip);
 		}
+		// TODO(perf): Full wire refresh is the most robust behavior for now.
+		// Revisit targeted updates once chip->wire indexing is proven stable
+		// across mount timing and HMR in proma-web.
+		board.updateWires();
 		dragging = { x: event.pageX, y: event.pageY };
 	}
 
@@ -558,12 +571,12 @@
 	// Utils
 	//
 
-	function clientPointToBoardPoint(x, y) {
+	function clientPointToBoardPoint(x, y, boardRect) {
 		if (typeof x === 'object') {
 			y = x.y;
 			x = x.x;
 		}
-		const { x: boardX, y: boardY, width, height } = boardEl.getBoundingClientRect();
+		const { x: boardX, y: boardY, width, height } = boardRect || boardEl.getBoundingClientRect();
 		return {
 			x: (x - boardX - width / 2 - panX) / zoom,
 			y: (y - boardY - height / 2 - panY) / zoom,
