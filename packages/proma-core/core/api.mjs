@@ -1,9 +1,9 @@
 // @ts-check
-import { context, assert, info } from './utils.mjs';
-import { Chip as ChipBase, ChipInfo } from './chip.mjs';
-import { runFlowPorts } from './run.mjs';
-import { Compilation } from './compile.mjs';
-import { ExternalReference } from './external.mjs';
+import { context, assert, info } from "./utils.mjs";
+import { Chip as ChipBase, ChipInfo } from "./chip.mjs";
+import { runFlowPorts } from "./run.mjs";
+import { Compilation } from "./compile.mjs";
+import { ExternalReference } from "./external.mjs";
 
 /**
  * @typedef {{ name: string, type?: string }} EventPortDescriptor
@@ -22,8 +22,8 @@ import { ExternalReference } from './external.mjs';
 // Creates a chip
 export const plainChip = makeChipFactory();
 
-const OnCreate = event('OnCreate');
-const OnDestroy = event('OnDestroy');
+const OnCreate = event("OnCreate");
+const OnDestroy = event("OnDestroy");
 
 // Creates a chip with OnCreate and OnDestroy provided custom chips
 export const chip = makeChipFactory(
@@ -57,7 +57,7 @@ export const chip = makeChipFactory(
         }
       },
     },
-  },
+  }
 );
 
 /**
@@ -105,8 +105,8 @@ export function outputData(name, config) {
 /**
  * Wires two ports in the current chip build context.
  *
- * @param {unknown} portA
- * @param {unknown} portB
+ * @param {import('./chip.mjs').ConnectionEndpointSelector} portA
+ * @param {import('./chip.mjs').ConnectionEndpointSelector} portB
  */
 export function wire(portA, portB) {
   const chipInfo = context(ChipInfo);
@@ -120,7 +120,7 @@ export function wire(portA, portB) {
 export function inputConfig(name, { defaultValue, required } = {}) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputDataPort(name, {
-    canonical: required ? 'required' : true,
+    canonical: required ? "required" : true,
     concealed: true,
     defaultValue,
   });
@@ -136,18 +136,18 @@ export function inputConfig(name, { defaultValue, required } = {}) {
  */
 export function outputHandle(name, execHandle, type) {
   assert(
-    typeof execHandle === 'function',
-    'A handler should specify a function',
+    typeof execHandle === "function",
+    "A handler should specify a function"
   );
   const compute = () => execHandle;
-  compute.toString = () => '() => ' + String(execHandle);
+  compute.toString = () => "() => " + String(execHandle);
   const handlePort = outputData(name, {
     compute,
-    inline: 'once',
+    inline: "once",
     allowSideEffects: true,
     type,
   });
-  Object.defineProperty(handlePort, 'isHandle', {
+  Object.defineProperty(handlePort, "isHandle", {
     enumerable: true,
     value: true,
   });
@@ -164,15 +164,15 @@ export function outputHandle(name, execHandle, type) {
 export function event(name, ...ports) {
   /** @type {EventPortDescriptor[]} */
   const normalizedPorts = (ports || []).map((p) => {
-    if (typeof p === 'string') {
-      const [portName, portType] = p.split(':');
-      return { name: portName, type: portType || 'any' };
+    if (typeof p === "string") {
+      const [portName, portType] = p.split(":");
+      return { name: portName, type: portType || "any" };
     }
     return p;
   });
   const handleArgs = normalizedPorts
-    .map(({ name, type }) => `${name}:${type || 'any'}`)
-    .join(', ');
+    .map(({ name, type }) => `${name}:${type || "any"}`)
+    .join(", ");
   const handleType = `(${handleArgs}) => void`;
   const EventChip = plainChip(name, () => {
     /** @param {...unknown} args */
@@ -183,19 +183,19 @@ export function event(name, ...ports) {
       then();
     };
     handler.toString = () => `(...args) => {
-      ${normalizedPorts.map(({ name }, i) => `${name}(args[${i}]);`).join('\n')}
+      ${normalizedPorts.map(({ name }, i) => `${name}(args[${i}]);`).join("\n")}
       then();
     }`;
-    const handle = outputHandle('handle', handler, handleType);
-    const then = outputFlow('then');
+    const handle = outputHandle("handle", handler, handleType);
+    const then = outputFlow("then");
     const outputs = normalizedPorts.map(({ name, type }) =>
-      outputData(name, { type }),
+      outputData(name, { type })
     );
   });
   Object.defineProperties(EventChip.prototype, {
     customChipKind: {
       enumerable: true,
-      value: 'event',
+      value: "event",
     },
     chipURI: {
       enumerable: true,
@@ -213,9 +213,9 @@ export function event(name, ...ports) {
  * @param {string} [type]
  * @returns {typeof ChipBase}
  */
-export function switchChip(name, type = 'any') {
+export function switchChip(name, type = "any") {
   const SwitchChip = plainChip(name, () => {
-    const exec = inputFlow('exec', {
+    const exec = inputFlow("exec", {
       execute: () => {
         const allCases = cases();
         const allCasesCont = thens();
@@ -269,14 +269,14 @@ export function switchChip(name, type = 'any') {
             tools.recast.types.builders.switchCase(caseDiscr, [
               caseBlock,
               tools.recast.types.builders.breakStatement(),
-            ]),
+            ])
           );
         }
         let defaultCaseBlock = tools.compile(
           thenDefault,
           scope,
           codeWrapper,
-          tools,
+          tools
         );
         if (!tools.recast.types.namedTypes.Statement.check(defaultCaseBlock)) {
           defaultCaseBlock =
@@ -287,25 +287,25 @@ export function switchChip(name, type = 'any') {
             tools.recast.types.builders.switchCase(null, [
               defaultCaseBlock,
               tools.recast.types.builders.breakStatement(),
-            ]),
+            ])
           );
         }
         if (switchCases.length === 0) return;
         return tools.recast.types.builders.switchStatement(disc, switchCases);
       },
     });
-    const discriminant = inputData('discriminant', { canonical: true, type });
-    const cases = inputData('cases', {
+    const discriminant = inputData("discriminant", { canonical: true, type });
+    const cases = inputData("cases", {
       type: `[${type}]`,
-      variadic: 'case{index}',
+      variadic: "case{index}",
     });
-    const thenDefault = outputFlow('thenDefault');
-    const thens = outputFlow('thens', { variadic: 'then{index}' });
+    const thenDefault = outputFlow("thenDefault");
+    const thens = outputFlow("thens", { variadic: "then{index}" });
   });
   Object.defineProperties(SwitchChip.prototype, {
     customChipKind: {
       enumerable: true,
-      value: 'switch',
+      value: "switch",
     },
     chipURI: {
       enumerable: true,
@@ -328,12 +328,12 @@ export function externalRef(externalReferenceObj) {
   return new ExternalReference(externalReferenceObj);
 }
 
-const ExternalGetInt = plainChip('ExternalGet', () => {
-  const externalDataRef = inputData('externalDataRef', {
-    canonical: 'required',
-    concealed: 'hidden',
+const ExternalGetInt = plainChip("ExternalGet", () => {
+  const externalDataRef = inputData("externalDataRef", {
+    canonical: "required",
+    concealed: "hidden",
   });
-  outputData('value', () => externalDataRef());
+  outputData("value", () => externalDataRef());
 });
 
 /**
@@ -341,7 +341,7 @@ const ExternalGetInt = plainChip('ExternalGet', () => {
  * @returns {typeof ExternalGetInt}
  */
 export function externalGet(externalReferenceObj) {
-  if (typeof externalReferenceObj === 'string') {
+  if (typeof externalReferenceObj === "string") {
     externalReferenceObj = {
       [externalReferenceObj]: undefined,
     };
@@ -355,20 +355,20 @@ export function externalGet(externalReferenceObj) {
   };
 }
 
-const ExternalSetInt = plainChip('ExternalSet', () => {
-  const exec = inputFlow('exec', () => {
+const ExternalSetInt = plainChip("ExternalSet", () => {
+  const exec = inputFlow("exec", () => {
     externalSetRef()(value());
     then();
   });
-  const externalSetRef = inputData('externalSetRef', {
-    canonical: 'required',
-    concealed: 'hidden',
+  const externalSetRef = inputData("externalSetRef", {
+    canonical: "required",
+    concealed: "hidden",
   });
-  const value = inputData('value', {
+  const value = inputData("value", {
     canonical: true,
   });
-  const then = outputFlow('then');
-  const outValue = outputData('value');
+  const then = outputFlow("then");
+  const outValue = outputData("value");
   wire(value, outValue);
 });
 
@@ -405,8 +405,8 @@ function makeChipFactory($customChips, $hooks) {
    */
   function chip(uri, build, configuration) {
     /** @type {string | undefined} */
-    let chipURI = typeof uri === 'string' ? uri : undefined;
-    if (typeof uri !== 'string') {
+    let chipURI = typeof uri === "string" ? uri : undefined;
+    if (typeof uri !== "string") {
       build = uri;
       chipURI = undefined;
     }
@@ -415,7 +415,7 @@ function makeChipFactory($customChips, $hooks) {
         editable: true,
         metadata: undefined,
       },
-      configuration,
+      configuration
     );
     const chipInfo = new ChipInfo(chipURI, config.label);
     context.push(chipInfo);
@@ -423,11 +423,11 @@ function makeChipFactory($customChips, $hooks) {
     let customChips = {};
     try {
       const resolvedCustomChips =
-        (typeof $customChips === 'function'
+        (typeof $customChips === "function"
           ? $customChips(config)
           : $customChips) || {};
       customChips = resolvedCustomChips;
-      if (typeof build === 'function') {
+      if (typeof build === "function") {
         build.call(undefined, customChips);
       }
     } catch (buildError) {
@@ -451,7 +451,7 @@ function makeChipFactory($customChips, $hooks) {
         else if (
           $hooks &&
           $hooks.onCreate &&
-          typeof $hooks.onCreate.selectPorts === 'function'
+          typeof $hooks.onCreate.selectPorts === "function"
         ) {
           runFlowPorts(this, $hooks.onCreate.selectPorts);
         }
@@ -461,7 +461,7 @@ function makeChipFactory($customChips, $hooks) {
         if (
           $hooks &&
           $hooks.onDestroy &&
-          typeof $hooks.onDestroy.selectPorts === 'function'
+          typeof $hooks.onDestroy.selectPorts === "function"
         ) {
           runFlowPorts(this, $hooks.onDestroy.selectPorts);
         }
@@ -496,8 +496,8 @@ function makeChipFactory($customChips, $hooks) {
             (c) =>
               /** @type {{ imports?: Record<string, string> }} */ (
                 c.constructor
-              ).imports,
-          ),
+              ).imports
+          )
         );
       }
 
@@ -522,13 +522,13 @@ function makeChipFactory($customChips, $hooks) {
           (importModule
             ? Promise.resolve(importModule(url))
             : import(/* @vite-ignore */ url).catch((e) => {
-                console.warn('Could not import: ', url);
+                console.warn("Could not import: ", url);
                 return Promise.reject(e);
               })
-          ).then((m) => m.default || m),
+          ).then((m) => m.default || m)
         );
         const ctx = Object.entries(context || {}).filter(
-          ([name]) => !importsNames.includes(name),
+          ([name]) => !importsNames.includes(name)
         );
         const ctxNames = ctx.map(([name]) => name);
         const ctxValues = ctx.map(([, val]) => val);
@@ -536,11 +536,11 @@ function makeChipFactory($customChips, $hooks) {
         const makeCompiledClass = new Function(
           ...importsNames,
           ...ctxNames,
-          'return (' + code + ')',
+          "return (" + code + ")"
         );
         return makeCompiledClass(
           ...(await Promise.all(importsValues)),
-          ...(await Promise.all(ctxValues)),
+          ...(await Promise.all(ctxValues))
         );
       }
 
@@ -615,7 +615,7 @@ function makeChipFactory($customChips, $hooks) {
               source,
               sink,
             };
-          },
+          }
         );
       }
     }
@@ -634,12 +634,12 @@ function makeChipFactory($customChips, $hooks) {
       (config) =>
         Object.assign(
           {},
-          (typeof $customChips === 'function'
+          (typeof $customChips === "function"
             ? $customChips(config)
             : $customChips) || {},
-          (typeof customChips === 'function' && customChips()) || customChips,
+          (typeof customChips === "function" && customChips()) || customChips
         ),
-      Object.assign({}, $hooks, hooks),
+      Object.assign({}, $hooks, hooks)
     );
   };
   return chip;
