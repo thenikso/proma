@@ -4,6 +4,7 @@ import { makePortRun } from './run.mjs';
 import { serializePortInfo } from './serialize.mjs';
 import { type } from './types.mjs';
 
+// TODO move to constants file (this should avoid circular dependencies between core files)
 export const INPUT = 'in';
 export const OUTPUT = 'out';
 

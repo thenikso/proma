@@ -1,11 +1,21 @@
 import { setContext, getContext, onMount } from 'svelte';
 import { readable, derived } from 'svelte/store';
 
+/**
+ * @typedef {(event: ShortcutEvent) => void} ShortcutAction
+ * @typedef {import('svelte/store').Readable<Record<string, unknown>> & {
+ *   set: (shortcut: string, action: ShortcutAction) => void
+ * }} ShortcutsStore
+ */
+
 let setShortcuts;
 
-export const shortcuts = readable({}, (set) => {
+/** @type {ShortcutsStore} */
+export const shortcuts = /** @type {ShortcutsStore} */ (
+	readable({}, (set) => {
 	setShortcuts = set;
-});
+})
+);
 
 const resolvedGlobalShortcuts = new Map();
 let globalShortcutsMathers = [];
@@ -35,7 +45,11 @@ const TARGET_PATH_RESOLVERS = Symbol('target-path-resolvers');
 
 // - `targetSelectors` is an array of target resolvers like
 //   [{ id: 'board', target: board, select: event => event.path[0] == somehthing }]
-export function createShortcutDispatcher(targetSelectors, localShortcuts) {
+/**
+ * @param {Array<{ id: string, select: (event: Event, pathSoFar?: string[]) => any, present?: (target: any) => any }>} [targetSelectors]
+ * @param {Record<string, ShortcutAction>} [localShortcuts]
+ */
+export function createShortcutDispatcher(targetSelectors = [], localShortcuts = {}) {
 	// Parent `<Shortcuts>` will define additional target selectors, making a path
 	// to the current shortcut
 	const parentTargetPathResolvers = getContext(TARGET_PATH_RESOLVERS) || [];
