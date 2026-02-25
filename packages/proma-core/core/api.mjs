@@ -94,7 +94,7 @@ export function outputFlow(name, config) {
 
 /**
  * @param {string} name
- * @param {object | Function | string | any[]} [config]
+ * @param {object | Function | string | unknown[]} [config]
  * @returns {import('./ports.mjs').PortOutlet}
  */
 export function outputData(name, config) {

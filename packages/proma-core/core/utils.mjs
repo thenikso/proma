@@ -45,7 +45,7 @@ const contextStack = [];
  * instance of that class.
  *
  * @template T
- * @param {new (...args: any[]) => T} [klass]
+ * @param {new (...args: unknown[]) => T} [klass]
  * @returns {T | unknown}
  */
 export function context(klass) {

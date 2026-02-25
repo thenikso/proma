@@ -425,7 +425,7 @@ class EditableChipInfo {
    * Adds a chip instance/class/uri to the editable graph.
    *
    * @param {string | typeof Chip | Chip | PlaceholderChip} chipToAdd
-   * @param {unknown} [canonicalValues]
+   * @param {unknown[] | string} [canonicalValues]
    * @param {string} [id]
    * @returns {EditableChipInfo}
    */
@@ -670,7 +670,7 @@ class EditableChipInfo {
 
   /**
    * @param {string} name
-   * @param {unknown} [config]
+   * @param {object | Function} [config]
    * @returns {EditableChipInfo}
    */
   addInputFlowOutlet(name, config) {
@@ -703,7 +703,7 @@ class EditableChipInfo {
 
   /**
    * @param {string} name
-   * @param {unknown} [config]
+   * @param {object | boolean | string} [config]
    * @returns {EditableChipInfo}
    */
   addInputDataOutlet(name, config) {
@@ -768,7 +768,7 @@ class EditableChipInfo {
 
   /**
    * @param {string} name
-   * @param {unknown} [config]
+   * @param {object | Function | PortOutlet | PortOutlet[] | string} [config]
    * @returns {EditableChipInfo}
    */
   addOutputDataOutlet(name, config) {

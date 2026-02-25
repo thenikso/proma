@@ -30,7 +30,7 @@ import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
 export class Chip {
   /**
    * @param {ChipInfo} chipInfo
-   * @param {any[]} [canonicalValues]
+   * @param {unknown[]} [canonicalValues]
    */
   constructor(chipInfo, canonicalValues) {
     let id = chipInfo.makeChipId();
@@ -532,9 +532,12 @@ export class ChipInfo {
     const portInfo = new InputDataSinkPortInfo(this, name, config);
     portInfo.assertValidName(name, INPUT);
     if (portInfo.isRequired) {
-      const otherCanonicalInputs = this.inputs.filter(
-        (outlet) => outlet.isData && outlet.isCanonical && !outlet.isRequired,
-      );
+      const otherCanonicalInputs = this.inputs.filter((outlet) => {
+        const outletInfo = outlet instanceof PortOutlet ? info(outlet) : outlet;
+        return (
+          outletInfo.isData && outletInfo.isCanonical && !outletInfo.isRequired
+        );
+      });
       if (otherCanonicalInputs.length !== 0) {
         throw new Error(
           `Required canonical inputs must be declared before non-required ones: ${name}`,
@@ -662,7 +665,9 @@ export class ChipInfo {
       ) {
         const computeOn = this.outputs
           .slice(0, this.outputs.indexOf(sink))
-          .map((i) => info(i))
+          .map((outlet) =>
+            outlet instanceof PortOutlet ? info(outlet) : outlet,
+          )
           .filter((i) => i.isFlow);
         sink.computeOn = computeOn;
       }
