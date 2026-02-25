@@ -41,8 +41,7 @@ pnpm test          # Run unit tests
 
 ## Routes
 
-- `/` - Landing page
-- `/playground` - Browser-only editor/playground
+- `/` - Browser-only editor/playground
 
 ## Project Structure
 

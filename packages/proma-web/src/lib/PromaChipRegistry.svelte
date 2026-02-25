@@ -248,7 +248,12 @@
 		</svg>
 		<input type="text" placeholder="Search" bind:this={searchInputEl} bind:value={searchValue} />
 		{#if searchValue}
-			<div class="search-clear-button" onclick={handleClearClick}>
+			<button
+				type="button"
+				class="search-clear-button"
+				aria-label="Clear search"
+				onclick={handleClearClick}
+			>
 				<svg
 					class="clear-icon"
 					xmlns="http://www.w3.org/2000/svg"
@@ -264,7 +269,7 @@
 					<line x1="18" y1="6" x2="6" y2="18" />
 					<line x1="6" y1="6" x2="18" y2="18" />
 				</svg>
-			</div>
+			</button>
 		{/if}
 	</div>
 	{#if groupListOptions.items.length === 0}
@@ -273,7 +278,8 @@
 		<div class="result-list" bind:this={resultListEl}>
 			<GroupList items={groupListOptions.items} getItemOptions={groupListOptions.getItemOptions}>
 				{#snippet groupStart({ item, options, toggle, collapsed })}
-					<div
+					<button
+						type="button"
 						id={options.text}
 						class="library-path"
 						class:highlighted={highlightedEl && highlightedEl.id === options.text}
@@ -295,13 +301,14 @@
 						>
 							<path d="M6 9l6 6 6-6" />
 						</svg>
-					</div>
+					</button>
 				{/snippet}
 				{#snippet item({ item, options })}
 					{#if item.header}
 						<div class="library-header">{item.header}</div>
 					{:else}
-						<div
+						<button
+							type="button"
 							id={options.id}
 							class="library-item"
 							class:highlighted={highlightedEl && highlightedEl.id === options.id}
@@ -316,7 +323,7 @@
 									{/if}
 								</div>
 							</div>
-						</div>
+						</button>
 					{/if}
 				{/snippet}
 			</GroupList>

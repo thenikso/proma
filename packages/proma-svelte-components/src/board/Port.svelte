@@ -82,7 +82,14 @@
 	});
 </script>
 
-<div class="Port Port-{name} Port-type-{type} {side}" bind:this={portEl} onclick={bubble('click')}>
+<div
+	class="Port Port-{name} Port-type-{type} {side}"
+	bind:this={portEl}
+	onclick={bubble('click')}
+	onkeydown={bubble('keydown')}
+	role="button"
+	tabindex="0"
+>
 	{#if outlet}
 		{@const SvelteComponent = outlet}
 		<div class="PortOutlet">

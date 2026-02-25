@@ -363,7 +363,7 @@ function makeChipFactory($customChips, $hooks) {
         const importsValues = imports.map(([, url]) =>
           (importModule
             ? Promise.resolve(importModule(url))
-            : import(url).catch((e) => {
+            : import(/* @vite-ignore */url).catch((e) => {
                 console.warn('Could not import: ', url);
                 return Promise.reject(e);
               })

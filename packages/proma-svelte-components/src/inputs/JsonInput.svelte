@@ -77,6 +77,7 @@
 	//
 
 	function handleKeydown(event) {
+		event.stopPropagation();
 		switch (event.code) {
 			case 'Enter':
 				event.preventDefault();
@@ -151,7 +152,9 @@
 	class="JsonInput"
 	class:error
 	tabindex="0"
+	role="button"
 	onkeydown={handleKeydown}
+	onmousedown={(event) => event.stopPropagation()}
 	onclick={openEditor}
 >
 	<div class="value" class:placeholder={typeof valueString === 'undefined'}>
@@ -159,7 +162,13 @@
 	</div>
 	{#if showEditor}
 		<Overlay anchor={containerBoundingBox} on:dismiss={confirmValue}>
-			<div class="editor" class:error style={editorStyles} onkeydown={handleKeydown}>
+			<div
+				class="editor"
+				class:error
+				style={editorStyles}
+				onkeydown={handleKeydown}
+				role="presentation"
+			>
 				<CodeMirror
 					bind:this={codeEditor}
 					options={{

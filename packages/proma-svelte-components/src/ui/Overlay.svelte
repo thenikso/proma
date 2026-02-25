@@ -82,6 +82,9 @@
 	onmousedown={stopPropagation(bubble('mousedown'))}
 	onmouseup={stopPropagation(bubble('mouseup'))}
 	onclick={stopPropagation(bubble('click'))}
+	onkeydown={stopPropagation(bubble('keydown'))}
+	role="dialog"
+	tabindex="0"
 >
 	{@render children?.({ dismiss: dispatchDismiss })}
 </div>

@@ -45,7 +45,7 @@
 			}));
 		const allOptions = [
 			{
-				label: '➕ &nbsp;New Project',
+				label: '➕ New Project',
 				value: 'new',
 			},
 			...options,
@@ -303,7 +303,6 @@
 			>
 				Build &amp; Download
 			</button>
-			<button type="button" class="button primary">Take survey</button>
 		</div>
 	</div>
 	<div class="Editor">

@@ -76,7 +76,7 @@
 </script>
 
 {#if root}
-	<div class="item-name" onclick={() => dispatchSelectFolder(root)}>
+	<button type="button" class="item-name" onclick={() => dispatchSelectFolder(root)}>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			width="16"
@@ -109,33 +109,36 @@
 			<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
 		</svg>
 		{root}
-	</div>
+	</button>
 {/if}
 {#if showFolderFiles}
 	<ol>
 		{#each items as item}
 			{#if typeof item === 'string'}
-				<li
-					class="item-name"
-					class:selected={selected === item}
-					onclick={() => dispatchSelectFile(item)}
-				>
-					<div class="spacer"></div>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
+				<li>
+					<button
+						type="button"
+						class="item-name"
+						class:selected={selected === item}
+						onclick={() => dispatchSelectFile(item)}
 					>
-						<path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-						<path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
-					</svg>
-					{item}
+						<div class="spacer"></div>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+							<path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
+						</svg>
+						{item}
+					</button>
 				</li>
 			{:else}
 				<li>
@@ -180,6 +183,13 @@
 	}
 
 	.item-name {
+		display: block;
+		width: 100%;
+		border: none;
+		background: transparent;
+		text-align: left;
+		font-size: inherit;
+		font-family: inherit;
 		padding-top: 3px;
 		padding-bottom: 3px;
 		user-select: none;

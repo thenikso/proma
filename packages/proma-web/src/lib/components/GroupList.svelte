@@ -58,6 +58,14 @@
 		{:else}
 			<div
 				onclick={() => (group.collapsed = !group.collapsed)}
+				onkeydown={(event) => {
+					if (event.key === 'Enter' || event.key === ' ') {
+						event.preventDefault();
+						group.collapsed = !group.collapsed;
+					}
+				}}
+				role="button"
+				tabindex="0"
 				style="background: white; position: sticky; top: 0;"
 			>
 				<strong>{options.text}</strong>

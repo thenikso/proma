@@ -1,7 +1,4 @@
 <script>
-	import { createBubbler, stopPropagation } from 'svelte/legacy';
-
-	const bubble = createBubbler();
 	import { onDestroy } from 'svelte';
 	import StringInput from './StringInput.svelte';
 	import JsonInput from './JsonInput.svelte';
@@ -44,11 +41,7 @@
 	}
 </script>
 
-<div
-	onmousedown={stopPropagation(bubble('mousedown'))}
-	onkeydown={stopPropagation(bubble('keydown'))}
-	onkeyup={stopPropagation(bubble('keyup'))}
->
+<div role="group">
 	{#if portType === 'string'}
 		<StringInput placeholder={port.defaultValue || ''} value={portValue} on:input={handleInput} />
 	{:else if portType === 'number'}

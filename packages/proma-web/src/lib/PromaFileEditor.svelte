@@ -127,8 +127,10 @@
 	);
 </script>
 
+<svelte:window onkeydowncapture={dispatchShortcut} />
+
 {#if sourceChip}
-	<div class="PromaFile" {id} onkeydown={dispatchShortcut}>
+	<div class="PromaFile" {id}>
 		<ChipBoardView
 			chip={sourceChip}
 			edit={chipEditor}

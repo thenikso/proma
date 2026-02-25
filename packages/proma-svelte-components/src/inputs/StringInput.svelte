@@ -66,6 +66,7 @@
 	//
 
 	function handleKeydown(event) {
+		event.stopPropagation();
 		switch (event.code) {
 			case 'Enter':
 				event.preventDefault();
@@ -82,6 +83,10 @@
 	function handleBlur() {
 		confirmValue();
 	}
+
+	function handleMouseDown(event) {
+		event.stopPropagation();
+	}
 </script>
 
 <div class="StringInput">
@@ -89,6 +94,7 @@
 		type="text"
 		bind:value={internalValue}
 		{placeholder}
+		onmousedown={handleMouseDown}
 		onkeydown={handleKeydown}
 		onblur={handleBlur}
 		{...rest}
