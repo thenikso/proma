@@ -1,8 +1,11 @@
 <script>
-  import '../app.css';
+  import './layout.css';
+	import favicon from '$lib/assets/favicon.png';
   import { onMount } from 'svelte';
   import { initShortcuts } from '$lib/shortcuts';
   import { login, logout } from '$lib/stores/auth';
+
+	let { children } = $props();
 
   initShortcuts();
 
@@ -12,4 +15,5 @@
   });
 </script>
 
-<slot />
+<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+{@render children()}
