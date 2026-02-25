@@ -452,8 +452,8 @@
 		const deltaY = (event.pageY - dragging.y) / zoom;
 		for (const chip of selectedChipsSet) {
 			chip.movePosition(deltaX, deltaY, snap);
-			board.updateWires(chip);
 		}
+		board.updateWires();
 		dragging = { x: event.pageX, y: event.pageY };
 	}
 
