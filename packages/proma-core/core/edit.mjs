@@ -9,19 +9,20 @@ import { type } from './types.mjs';
 import { EditHistory } from './history.mjs';
 
 /**
- * @typedef {{ source: any, sink: any }} PortConnection
+ * @typedef {{ source: unknown, sink: unknown }} PortConnection
  * @typedef {(event: CustomEvent) => void} EditEventListener
- * @typedef {(eventName: string, detail?: any) => boolean} EditDispatch
+ * @typedef {(eventName: string, detail?: unknown) => boolean} EditDispatch
+ * @typedef {(uri: string, ...args: unknown[]) => typeof Chip} CustomChipFactory
  */
 
-/** @type {{ [kind: string]: (uri: string, ...args: any[]) => any }} */
+/** @type {{ [kind: string]: CustomChipFactory }} */
 const VALID_CUSTOM_CHIPS = {
   /** @param {string} uri */
   event,
   /** @param {string} uri */
   switch: switchChip,
-  /** @param {string} _ @param {any} ext */
-  external: (_, ext) => externalGet(ext),
+  /** @param {string} _ @param {unknown} ext */
+  external: (_, ext) => externalGet(/** @type {string | object} */ (ext)),
 };
 const CUSTOM_CHIP_REGEXP = new RegExp(
   `^(.+?):(${Object.keys(VALID_CUSTOM_CHIPS).join('|')})(?:\\((.+)\\))?$`,
@@ -32,7 +33,7 @@ const CUSTOM_CHIP_REGEXP = new RegExp(
  * Creates an editable facade for a chip class.
  *
  * @param {any} ChipClass
- * @param {any} [registry]
+ * @param {import('./registry.mjs').Registry} [registry]
  * @returns {EditableChipInfo}
  */
 export function edit(ChipClass, registry) {
@@ -43,11 +44,11 @@ export function edit(ChipClass, registry) {
   return new EditableChipInfo(ChipClass, registry);
 }
 
-/** @type {WeakMap<any, Map<string, Set<EditEventListener>>>} */
+/** @type {WeakMap<import('./chip.mjs').ChipInfo, Map<string, Set<EditEventListener>>>} */
 const sharedEventsByChipInfo = new WeakMap();
 
 /**
- * @param {any} chipInfo
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
  * @param {string} eventName
  * @param {EditEventListener} listener
  */
@@ -62,7 +63,7 @@ function onSharedEvent(chipInfo, eventName, listener) {
 }
 
 /**
- * @param {any} chipInfo
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
  * @param {string} [eventName]
  * @param {EditEventListener} [listener]
  * @returns {boolean}
@@ -88,7 +89,7 @@ function offSharedEvent(chipInfo, eventName, listener) {
 }
 
 /**
- * @param {any} chipInfo
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
  * @param {string} eventName
  * @returns {EditEventListener[]}
  */
@@ -102,8 +103,8 @@ function getSharedEvents(chipInfo, eventName) {
 // individual connection:remove events that would each create undo entries.
 
 /**
- * @param {any} chipInfo
- * @param {any} chip
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {Chip | PlaceholderChip} chip
  * @returns {PortConnection[]}
  */
 function collectConnectionsForChip(chipInfo, chip) {
@@ -116,8 +117,8 @@ function collectConnectionsForChip(chipInfo, chip) {
 }
 
 /**
- * @param {any} chipInfo
- * @param {any} portInfo
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {unknown} portInfo
  * @returns {PortConnection[]}
  */
 function collectConnectionsForPort(chipInfo, portInfo) {
@@ -130,7 +131,7 @@ function collectConnectionsForPort(chipInfo, portInfo) {
 }
 
 /**
- * @param {any} chipInfo
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
  * @param {PortConnection[]} connections
  * @returns {void}
  */
@@ -146,7 +147,7 @@ function removeConnectionsFromMaps(chipInfo, connections) {
 }
 
 /**
- * @param {any} chipInfo
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
  * @param {PortConnection[]} connections
  * @returns {void}
  */
@@ -165,7 +166,7 @@ function addConnectionsToMaps(chipInfo, connections) {
 class EditableChipInfo {
   /**
    * @param {any} chipClass
-   * @param {any} [registry]
+   * @param {import('./registry.mjs').Registry} [registry]
    */
   constructor(chipClass, registry = defaultRegistry) {
     const chipInfo = info(chipClass);
@@ -349,7 +350,7 @@ class EditableChipInfo {
   //
 
   /**
-   * @returns {any[]}
+   * @returns {(Chip | PlaceholderChip)[]}
    */
   allChips() {
     const chipInfo = info(this);
@@ -358,7 +359,7 @@ class EditableChipInfo {
 
   /**
    * @param {string} id
-   * @returns {any}
+   * @returns {Chip | PlaceholderChip}
    */
   getChip(id) {
     const chipInfo = info(this);
@@ -368,7 +369,7 @@ class EditableChipInfo {
   /**
    * Adds a chip instance/class/uri to the editable graph.
    *
-   * @param {any} chipToAdd
+   * @param {string | typeof Chip | Chip | PlaceholderChip} chipToAdd
    * @param {any} [canonicalValues]
    * @param {string} [id]
    * @returns {EditableChipInfo}
@@ -461,7 +462,7 @@ class EditableChipInfo {
   /**
    * Removes a sub-chip and all of its connections.
    *
-   * @param {any} chip
+   * @param {string | Chip | PlaceholderChip} chip
    * @returns {EditableChipInfo}
    */
   removeChip(chip) {
@@ -541,7 +542,7 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {any} chip
+   * @param {string | Chip | PlaceholderChip} chip
    * @param {string} id
    * @param {boolean} [dryRun]
    * @returns {EditableChipInfo}
@@ -574,7 +575,7 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {any} chip
+   * @param {string | Chip | PlaceholderChip} chip
    * @param {string} label
    * @returns {EditableChipInfo}
    */
@@ -601,9 +602,9 @@ class EditableChipInfo {
   //
 
   /**
-   * @param {string | string[] | any} path
+   * @param {string | string[] | unknown} path
    * @param {'in' | 'out'} [side]
-   * @returns {any}
+   * @returns {unknown}
    */
   getPort(path, side) {
     const chipInfo = info(this);
@@ -612,7 +613,7 @@ class EditableChipInfo {
 
   /**
    * @param {string} name
-   * @param {any} [config]
+   * @param {unknown} [config]
    * @returns {EditableChipInfo}
    */
   addInputFlowOutlet(name, config) {
@@ -645,7 +646,7 @@ class EditableChipInfo {
 
   /**
    * @param {string} name
-   * @param {any} [config]
+   * @param {unknown} [config]
    * @returns {EditableChipInfo}
    */
   addInputDataOutlet(name, config) {
@@ -710,7 +711,7 @@ class EditableChipInfo {
 
   /**
    * @param {string} name
-   * @param {any} [config]
+   * @param {unknown} [config]
    * @returns {EditableChipInfo}
    */
   addOutputDataOutlet(name, config) {
@@ -976,7 +977,7 @@ class EditableChipInfo {
 
   /**
    * @param {any} port
-   * @param {any} value
+   * @param {unknown} value
    * @returns {EditableChipInfo}
    */
   setPortValue(port, value) {
@@ -1159,7 +1160,7 @@ class EditableChipInfo {
   //
 
   /**
-   * @param {any} port
+   * @param {unknown} port
    * @returns {boolean}
    */
   hasConnections(port) {
@@ -1168,8 +1169,8 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {any} portA
-   * @param {any} portB
+   * @param {unknown} portA
+   * @param {unknown} portB
    * @returns {EditableChipInfo}
    */
   probeConnection(portA, portB) {
@@ -1181,8 +1182,8 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {any} portA
-   * @param {any} portB
+   * @param {unknown} portA
+   * @param {unknown} portB
    * @returns {EditableChipInfo}
    */
   addConnection(portA, portB) {
@@ -1204,8 +1205,8 @@ class EditableChipInfo {
   /**
    * Removes one or many connections depending on provided endpoints.
    *
-   * @param {any} portA
-   * @param {any} [portB]
+   * @param {unknown} portA
+   * @param {unknown} [portB]
    * @returns {EditableChipInfo}
    */
   removeConnection(portA, portB) {
