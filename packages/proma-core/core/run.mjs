@@ -9,6 +9,7 @@ import recast from '../vendor/recast.mjs';
  * @typedef {((value?: any) => any) & {
  *   chip?: any,
  *   name?: string,
+ *   fullName?: string,
  *   value?: any,
  *   type?: any,
  *   variadic?: Iterable<any>,
@@ -31,6 +32,7 @@ export function runFlowPorts(ownerChip, selectPortsToRun) {
     for (const innerChip of chipInfo.chips) {
       const ports = selectPortsToRun(innerChip) || [];
       for (const port of ports) {
+        if (!port) continue;
         scope.with(port.chip, port);
       }
     }
@@ -427,11 +429,13 @@ function prepareFunctionToRun(port, func) {
   }
 
   const chip = port.chip;
+  /** @type {{ [name: string]: any }} */
   const usedInPorts = {};
+  /** @type {{ [name: string]: any }} */
   const usedOutPorts = {};
 
   visit(funcAst.body, {
-    visitIdentifier(path) {
+    visitIdentifier(/** @type {any} */ path) {
       if (namedTypes.CallExpression.check(path.parentPath.value)) {
         const portName = path.value.name;
         const inPort = chip.in[portName];
