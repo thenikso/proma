@@ -112,6 +112,17 @@ This document tracks architecture and implementation smells found during the JSD
   - Higher chance of subtle mismatches when code assumes a specific endpoint shape.
   - Refactors in one layer (editor/runtime/compiler) can silently break another.
 
+## 12) Hand-rolled type-signature parser is high-complexity and mutation-heavy
+
+- Location: `packages/proma-core/core/types.mjs`
+- Pattern:
+  - Custom grammar parser mutates token arrays in-place across many small consumers (`consume*`, `maybeConsume*`).
+  - Parsing, matching, checking, and serialization logic are tightly coupled in one module.
+- Risks:
+  - Hard to reason about parser edge cases and error diagnostics.
+  - Type-related changes require touching multiple interdependent paths.
+  - Static typing improvements are slower because structures are mostly implicit/dynamic.
+
 ## Suggested follow-up backlog (after typing phases)
 
 1. Design RFC for replacing callable `Function`-subclass ports with a plain-object callable wrapper model.

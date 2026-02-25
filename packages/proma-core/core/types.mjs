@@ -1,6 +1,25 @@
 // @ts-check
 import recast from '../vendor/recast.mjs';
 
+/**
+ * @typedef {{
+ *   label?: string,
+ *   type?: any,
+ *   container?: 'object' | 'array' | 'tuple' | 'function',
+ *   of?: any,
+ *   to?: any,
+ *   subset?: boolean
+ * }} TypeDefinition
+ * @typedef {TypeDefinition[]} TypeDefinitions
+ * @typedef {{ [name: string]: any }} CustomTypesMap
+ */
+
+/**
+ * Parses a type signature or normalizes an existing `Type`.
+ *
+ * @param {string | Function | Type | any} signature
+ * @returns {Type}
+ */
 export function type(signature) {
   if (signature instanceof Type) {
     // TODO add to typeCache?
@@ -17,6 +36,9 @@ export function type(signature) {
 const typeCache = new Map();
 
 export class Type {
+  /**
+   * @param {TypeDefinitions} definitions
+   */
   constructor(definitions) {
     const isSingle = definitions.length === 1;
     const signature = serializeTypeAll(definitions);
@@ -27,8 +49,10 @@ export class Type {
     }
     // TODO add cache
     const self = this;
-    let typeChecker;
-    let typeMatcher;
+    /** @type {((data: any) => boolean) | null} */
+    let typeChecker = null;
+    /** @type {((otherDefinitions: TypeDefinitions) => boolean) | null} */
+    let typeMatcher = null;
     Object.defineProperties(this, {
       isMulti: {
         enumerable: true,
@@ -51,7 +75,10 @@ export class Type {
         value: definitions,
       },
       check: {
-        value: function check(data, customTypes) {
+        value: function check(
+          /** @type {any} */ data,
+          /** @type {CustomTypesMap} */ customTypes,
+        ) {
           if (!typeChecker || customTypes) {
             typeChecker = makeCheckAll(definitions, customTypes);
           }
@@ -63,7 +90,10 @@ export class Type {
         },
       },
       match: {
-        value: function match(otherType, customTypes) {
+        value: function match(
+          /** @type {any} */ otherType,
+          /** @type {CustomTypesMap} */ customTypes,
+        ) {
           if (self === AnyType) return true;
           if (isAnyType(otherType)) {
             return true;
@@ -154,6 +184,10 @@ function resolveType(definitionObject, customTypes) {
 
 const toString = {}.toString;
 
+/**
+ * @param {any} data
+ * @returns {string}
+ */
 function classDeclarationOf(data) {
   return toString.call(data).slice(8, -1);
 }
@@ -162,10 +196,20 @@ function classDeclarationOf(data) {
 // Serialize
 //
 
+/**
+ * @param {TypeDefinitions} definitions
+ * @param {boolean} [includeLabels]
+ * @returns {string}
+ */
 function serializeTypeAll(definitions, includeLabels) {
   return definitions.map((d) => serializeType(d, includeLabels)).join('|');
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {boolean} [includeLabels]
+ * @returns {string}
+ */
 function serializeType(definitionObject, includeLabels) {
   const { type, container } = definitionObject;
   let res = '';
@@ -205,6 +249,10 @@ function serializeType(definitionObject, includeLabels) {
   return res;
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @returns {any}
+ */
 function hasBaseType(definitionObject) {
   const type = definitionObject.type;
   switch (type) {
@@ -239,6 +287,11 @@ function hasBaseType(definitionObject) {
   return false;
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {boolean} [includeLabels]
+ * @returns {string}
+ */
 function serializeSingleType(definitionObject, includeLabels) {
   let label = (includeLabels && definitionObject.label) || '';
   if (label) {
@@ -255,6 +308,10 @@ function serializeSingleType(definitionObject, includeLabels) {
   return label + type.name;
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @returns {string}
+ */
 function serializeKind(definitionObject) {
   if (definitionObject.container) return definitionObject.container;
   const type = serializeSingleType(definitionObject);
@@ -286,12 +343,22 @@ function serializeKind(definitionObject) {
 // Matching
 //
 
+/**
+ * @param {TypeDefinition} a
+ * @param {TypeDefinition} b
+ * @returns {number}
+ */
 const byType = (a, b) => {
   if (a.type > b.type) return 1;
   if (a.type < b.type) return -1;
   return 0;
 };
 
+/**
+ * @param {TypeDefinitions} definitions
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(otherDefinitions: TypeDefinitions) => boolean}
+ */
 function makeMatchAll(definitions, customTypes) {
   const declarationMatchers = definitions
     .slice()
@@ -308,6 +375,11 @@ function makeMatchAll(definitions, customTypes) {
   };
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(otherDefinitionObject: TypeDefinition) => boolean}
+ */
 function makeTypeMatch(definitionObject, customTypes) {
   const { type, container } = definitionObject;
   let matchFunc;
@@ -376,6 +448,11 @@ function makeTypeMatch(definitionObject, customTypes) {
   return matchFunc;
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(otherDefinitionObject: TypeDefinition) => boolean}
+ */
 function makeMatchObjectContainer(definitionObject, customTypes) {
   const expectMathers = {};
   let expectKeyCount = 0;
@@ -405,6 +482,11 @@ function makeMatchObjectContainer(definitionObject, customTypes) {
   };
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(otherDefinitionObject: TypeDefinition) => boolean}
+ */
 function makeMatchArrayContainer(definitionObject, customTypes) {
   const matchArrayItem = makeMatchAll(definitionObject.of, customTypes);
   return function matchArrayContainer(otherDefinitionObject) {
@@ -416,6 +498,11 @@ function makeMatchArrayContainer(definitionObject, customTypes) {
   };
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(otherDefinitionObject: TypeDefinition) => boolean}
+ */
 function makeMatchTupleContainer(definitionObject, customTypes) {
   const tupleMatchers = definitionObject.of.map((t) =>
     makeMatchAll(t, customTypes),
@@ -435,6 +522,11 @@ function makeMatchTupleContainer(definitionObject, customTypes) {
   };
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(otherDefinitionObject: TypeDefinition) => boolean}
+ */
 function makeMatchFunctionContainer(definitionObject, customTypes) {
   const argumentsMatchers = definitionObject.of.map((t) =>
     makeMatchAll(t, customTypes),
@@ -460,6 +552,11 @@ function makeMatchFunctionContainer(definitionObject, customTypes) {
 // Checking
 //
 
+/**
+ * @param {TypeDefinitions} definitions
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(data: any) => boolean}
+ */
 function makeCheckAll(definitions, customTypes) {
   const checks = definitions.map((d) => makeCheck(d, customTypes));
   if (checks.length === 1) {
@@ -468,6 +565,11 @@ function makeCheckAll(definitions, customTypes) {
   return (data) => checks.some((check) => check(data));
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(data: any) => boolean}
+ */
 function makeCheck(definitionObject, customTypes) {
   const { type, container } = definitionObject;
   let checkFunc;
@@ -529,6 +631,10 @@ const checkInstanceOfBoolean = (data) => typeof data === 'boolean';
 const checkInstanceOfSymbol = (data) => typeof data === 'symbol';
 const checkInstanceOfFunction = (data) => typeof data === 'function';
 
+/**
+ * @param {any} resolvedType
+ * @returns {(data: any) => boolean}
+ */
 function makeCheckInstanceOf(resolvedType) {
   switch (resolvedType) {
     case undefined:
@@ -577,6 +683,11 @@ function makeCheckInstanceOf(resolvedType) {
   }
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(data: any) => boolean}
+ */
 function makeCheckObjectContainer(definitionObject, customTypes) {
   let expectKeyCount = 0;
   const innerTypeDeclarations = definitionObject.of;
@@ -606,6 +717,11 @@ function makeCheckObjectContainer(definitionObject, customTypes) {
   };
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(data: any) => boolean}
+ */
 function makeCheckArrayContainer(definitionObject, customTypes) {
   const checkArrayItem = makeCheckAll(definitionObject.of, customTypes);
   return function checkArrayContainer(data) {
@@ -613,6 +729,11 @@ function makeCheckArrayContainer(definitionObject, customTypes) {
   };
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(data: any) => boolean}
+ */
 function makeCheckTupleContainer(definitionObject, customTypes) {
   const tupleChecks = definitionObject.of.map((t) =>
     makeCheckAll(t, customTypes),
@@ -626,6 +747,11 @@ function makeCheckTupleContainer(definitionObject, customTypes) {
   };
 }
 
+/**
+ * @param {TypeDefinition} definitionObject
+ * @param {CustomTypesMap} [customTypes]
+ * @returns {(data: any) => boolean}
+ */
 function makeCheckFunctionContainer(definitionObject, customTypes) {
   const expectedArgumentsCount = definitionObject.of.length;
   return function checkFunctionContainer(data) {
