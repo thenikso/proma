@@ -141,11 +141,15 @@ export class Chip {
 }
 
 /**
- * @param {any} obj
+ * @param {unknown} obj
  * @returns {boolean}
  */
 export function isChipClass(obj) {
-  return obj.__proto__ === Chip;
+  return (
+    !!obj &&
+    (typeof obj === 'function' || typeof obj === 'object') &&
+    Reflect.getPrototypeOf(obj) === Chip
+  );
 }
 
 //
@@ -156,7 +160,7 @@ export class ChipInfo {
   /**
    * @param {string} [URI]
    * @param {ChipLabelFactory | string} [makeLabel]
-   * @param {any} [registry]
+   * @param {import('./registry.mjs').Registry} [registry]
    */
   constructor(URI, makeLabel, registry) {
     /**
@@ -175,7 +179,7 @@ export class ChipInfo {
      * If specified, the registry to use to serialize this chip.
      * Serialization may need a registry to produce fully qualified URIs.
      *
-     * @type {any}
+     * @type {import('./registry.mjs').Registry | undefined}
      */
     this.registry = registry;
     /**
@@ -717,7 +721,7 @@ export class ChipInfo {
             chipInstance[outletInfo.isInput ? INPUT : OUTPUT][outletInfo.name];
           if (
             !parentPort ||
-            info(/** @type {any} */ (parentPort)) !== outletInfo
+            info(/** @type {Port} */ (parentPort)) !== outletInfo
           ) {
             throw new Error('Invalid port found in given parent');
           }
@@ -748,8 +752,8 @@ export class ChipInfo {
   //
 
   /**
-   * @param {any} [registry]
-   * @returns {any}
+   * @param {import('./registry.mjs').Registry} [registry]
+   * @returns {import('./serialize.mjs').SerializedChipInfo}
    */
   toJSON(registry) {
     return serializeChipInfo(this, registry || this.registry);
