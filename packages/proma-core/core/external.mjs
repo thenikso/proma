@@ -4,7 +4,7 @@ export class ExternalReference {
    *
    * Call with `new ExternalReference({ myReference })`.
    *
-   * @param {{ [name: string]: any }} externalReferenceObj
+   * @param {{ [name: string]: unknown }} externalReferenceObj
    */
   constructor(externalReferenceObj) {
     const keys = Object.keys(externalReferenceObj);
@@ -15,7 +15,7 @@ export class ExternalReference {
      * @type {string}
      */
     this.reference = keys[0];
-    /** @type {any} */
+    /** @type {unknown} */
     this.value = externalReferenceObj[this.reference];
   }
 }
