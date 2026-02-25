@@ -18,7 +18,7 @@
   "scripts": {
     "dev": "serve -p 4000 .",
     "test": "node test/index.mjs",
-    "check:types": "tsc -p tsconfig.types.json --noEmit",
+    "check": "tsc -p tsconfig.types.json --noEmit",
     "format": "prettier --write .",
     "build:types": "tsc -p tsconfig.types.json",
     "build:types:watch": "tsc -p tsconfig.types.json --watch",
