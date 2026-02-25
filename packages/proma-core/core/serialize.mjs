@@ -1,11 +1,52 @@
 import { info } from './utils.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';
 
+/**
+ * @typedef {{ source: string, sink: string }} SerializedConnection
+ * @typedef {{
+ *   id: string,
+ *   chipURI: string,
+ *   args?: any[],
+ *   init?: Record<string, any>,
+ *   label?: string
+ * }} SerializedChipInstance
+ * @typedef {{
+ *   URI: string,
+ *   use?: string[],
+ *   chips?: any[],
+ *   connections?: SerializedConnection[],
+ *   [INPUT]?: any[],
+ *   [OUTPUT]?: any[]
+ * }} SerializedChipInfo
+ * @typedef {{
+ *   name: string,
+ *   kind: 'flow' | 'data',
+ *   execute?: string,
+ *   canonical?: boolean,
+ *   concealed?: boolean | 'hidden',
+ *   variadic?: any,
+ *   defaultValue?: any,
+ *   compute?: string,
+ *   computeOn?: string[],
+ *   inline?: boolean | 'once',
+ *   allowSideEffects?: boolean,
+ *   type?: string
+ * }} SerializedPortInfo
+ */
+
 //
 // Serialization
 //
 
+/**
+ * Serializes a runtime chip instance into constructor args/init data.
+ *
+ * @param {any} chip
+ * @param {any} [registry]
+ * @returns {SerializedChipInstance}
+ */
 export function serializeChipInstance(chip, registry) {
+  /** @type {SerializedChipInstance} */
   const res = {
     id: chip.id,
     chipURI:
@@ -14,7 +55,9 @@ export function serializeChipInstance(chip, registry) {
   };
 
   const chipInfo = info(chip);
+  /** @type {any[]} */
   let canonicalData = [];
+  /** @type {Record<string, any>} */
   const initData = {};
   for (const portOutlet of chipInfo.inputDataPorts) {
     const portInfo = info(portOutlet);
@@ -52,7 +95,15 @@ export function serializeChipInstance(chip, registry) {
   return res;
 }
 
+/**
+ * Serializes chip definition metadata (outlets, sub-chips, and connections).
+ *
+ * @param {any} chipInfo
+ * @param {any} [registry]
+ * @returns {SerializedChipInfo}
+ */
 export function serializeChipInfo(chipInfo, registry) {
+  /** @param {any} x */
   const toJSON = (x) => x.toJSON(registry);
   const inputs = chipInfo.inputs.map(toJSON);
   const outputs = chipInfo.outputs.map(toJSON);
@@ -76,6 +127,7 @@ export function serializeChipInfo(chipInfo, registry) {
       };
     },
   );
+  /** @type {SerializedChipInfo} */
   const res = {
     URI: chipInfo.URI,
   };
@@ -101,7 +153,14 @@ export function serializeChipInfo(chipInfo, registry) {
   return res;
 }
 
+/**
+ * Serializes a PortInfo instance into wire format.
+ *
+ * @param {any} portInfo
+ * @returns {SerializedPortInfo}
+ */
 export function serializePortInfo(portInfo) {
+  /** @type {SerializedPortInfo} */
   const res = {
     name: portInfo.name,
     kind: portInfo.isFlow ? 'flow' : 'data',
@@ -144,6 +203,10 @@ export function serializePortInfo(portInfo) {
   return res;
 }
 
+/**
+ * @param {Function} func
+ * @returns {string}
+ */
 function funcToString(func) {
   // TODO use recast to clean this
   return String(func);

@@ -2,11 +2,37 @@ import recast from '../vendor/recast.mjs';
 import { info } from './utils.mjs';
 import { ExternalReference } from './external.mjs';
 
+/**
+ * @typedef {{
+ *   portName: string,
+ *   path: Array<string | number>
+ * }} InputOrFlowReplacement
+ * @typedef {InputOrFlowReplacement & {
+ *   argPath: Array<string | number>,
+ *   scopeBlockPath: Array<string | number>,
+ *   scopeBlockBodyIndex: number
+ * }} OutputDataReplacement
+ * @typedef {{
+ *   scopeBlockPath: Array<string | number>,
+ *   scopeBlockBodyIndex: number,
+ *   injectBlock: any
+ * }} ScopeInjection
+ * @typedef {{
+ *   compileInputData: (portName: string) => any,
+ *   compileOutputFlow: (portName: string) => any,
+ *   compileOutputData: (portName: string, argBlock: any) => any
+ * }} AstBuilderTools
+ */
+
 const {
   parse,
   types: { namedTypes, visit, builders },
 } = recast;
 
+/**
+ * @param {any} value
+ * @returns {any}
+ */
 export function literalCompiler(value) {
   if (value instanceof ExternalReference) {
     return builders.identifier(value.reference);
@@ -41,6 +67,10 @@ export function literalCompiler(value) {
   }
 }
 
+/**
+ * @param {any} funcAst
+ * @returns {any}
+ */
 export function getFunction(funcAst) {
   if (namedTypes.FunctionDeclaration.check(funcAst)) {
     return funcAst;
@@ -53,6 +83,10 @@ export function getFunction(funcAst) {
   return null;
 }
 
+/**
+ * @param {any} nodePath
+ * @returns {Array<string | number>}
+ */
 export function pathFromNodePath(nodePath) {
   const res = [];
   while (nodePath && nodePath.name !== null && nodePath.name !== 'root') {
@@ -62,6 +96,11 @@ export function pathFromNodePath(nodePath) {
   return res;
 }
 
+/**
+ * @param {any} obj
+ * @param {Array<string | number>} path
+ * @returns {any}
+ */
 export function getPath(obj, path) {
   let cursor = obj;
   for (let i = 0, l = path.length; i < l; i++) {
@@ -72,6 +111,12 @@ export function getPath(obj, path) {
   return cursor;
 }
 
+/**
+ * @param {any} obj
+ * @param {Array<string | number>} path
+ * @param {any} value
+ * @returns {any}
+ */
 export function replaceAstPath(obj, path, value) {
   if (!path || path.length === 0) {
     return value;
@@ -88,11 +133,21 @@ export function replaceAstPath(obj, path, value) {
   return obj;
 }
 
+/**
+ * Builds an AST compiler adapter around a port function (`execute`, `compute`).
+ *
+ * @param {any} portInfo
+ * @param {string} [sourceProp]
+ * @returns {(tools: AstBuilderTools) => any}
+ */
 export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   const chipInfo = portInfo.chipInfo;
 
+  /** @type {InputOrFlowReplacement[]} */
   const replaceInputData = [];
+  /** @type {InputOrFlowReplacement[]} */
   const replaceOutputFlows = [];
+  /** @type {OutputDataReplacement[]} */
   const replaceOutputData = [];
 
   const func = getFunction(parse(String(portInfo[sourceProp])).program.body[0]);
@@ -181,6 +236,7 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
     // with declarations and the last expression being a way to read the output
     // port. Declarations are saved in this `injectInScope` array to be injected
     // later
+    /** @type {ScopeInjection[]} */
     const injectInScope = [];
 
     for (let {
@@ -260,12 +316,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
 
         const injectionLength = injectBlock.body.length;
         for (const insertionIndex in cursorsByInsertionIndex) {
-          if (insertionIndex >= cursors) {
+          if (Number(insertionIndex) >= scopeBlockBodyIndex) {
             cursorsByInsertionIndex[insertionIndex] += injectionLength;
           }
         }
-
-        cursors.set(scopeBlock, cursor);
       }
     }
 
@@ -283,6 +337,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
 // intendet to have there like just `myObj.something;` could actually trigger
 // a getter but we might be tempted to remove it here. Aim to produce clean
 // code when compiling instead.
+/**
+ * @param {any} ast
+ * @returns {any}
+ */
 export function cleanAst(ast) {
   visit(ast, {
     visitNoop(path) {
