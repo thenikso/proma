@@ -119,7 +119,9 @@ export class Port extends Function {
       fullName: {
         enumerable: true,
         get() {
-          return `${chipRef.id}.${portInfo.isInput ? INPUT : OUTPUT}.${self.name}`;
+          return `${chipRef.id}.${portInfo.isInput ? INPUT : OUTPUT}.${
+            self.name
+          }`;
         },
       },
       // Common port accessors
