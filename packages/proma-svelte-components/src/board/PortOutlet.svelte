@@ -1,6 +1,7 @@
+<svelte:options runes={true} />
+
 <script>
-  export let type = 'exec'; // NOTE this is more like "kind" than "type"
-  export let connected = false;
+  let { type = 'exec', connected = false } = $props(); // NOTE this is more like "kind" than "type"
 </script>
 
 {#if type === 'exec'}

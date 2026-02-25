@@ -4,24 +4,26 @@
   "description": "Web hosting for Proma projects",
   "license": "UNLICENSED",
   "author": "Nicola Peduzzi <thenikso@gmail.com>",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "setup": "serverless dynamodb install",
-    "serve": "serve frontend/public -s",
+    "serve": "vite preview",
     "dev:backend": "serverless offline start",
-    "dev:frontend": "node frontend/esbuild.mjs -w -s",
+    "dev:frontend": "vite dev",
     "dev": "pnpm dev:frontend | pnpm dev:backend",
     "build:backend": "serverless package",
-    "build:frontend": "node frontend/esbuild.mjs",
+    "build:frontend": "vite build",
     "deploy:backend": "serverless deploy",
     "deploy:frontend": "serverless client build && serverless client deploy --no-confirm",
     "deploy": "pnpm deploy:backend && pnpm deploy:frontend"
   },
   "devDependencies": {
-    "@proma/core": "^0.1.0",
-    "@proma/svelte-components": "^0.1.0",
+    "@sveltejs/adapter-static": "^3.0.6",
+    "@sveltejs/kit": "^2.20.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@proma/core": "workspace:*",
+    "@proma/svelte-components": "workspace:*",
     "aws-sdk": "2.1044.0",
-    "esbuild-svelte": "0.6.0",
     "file-saver": "2.0.5",
     "fuse.js": "6.4.6",
     "jsonwebtoken": "8.5.1",
@@ -30,7 +32,7 @@
     "lerna": "^4.0.0",
     "lz-string": "1.4.4",
     "prettier": "^2.5.1",
-    "prettier-plugin-svelte": "^2.5.0",
+    "prettier-plugin-svelte": "^3.3.3",
     "serve": "13.0.2",
     "serverless": "2.68.0",
     "serverless-build-client": "2.5.0",
@@ -40,12 +42,13 @@
     "serverless-offline": "8.3.1",
     "serverless-s3-local": "0.6.20",
     "stream-browserify": "3.0.0",
-    "svelte": "3.44.2",
-    "svelte-select": "4.4.6"
+    "svelte": "^5.23.0",
+    "svelte-select": "^5.8.3"
   },
   "dependencies": {
     "esbuild": "0.14.2",
     "fast-deep-equal": "3.1.3",
-    "node-fetch": "3.1.0"
+    "node-fetch": "3.1.0",
+    "vite": "^6.2.2"
   }
 }

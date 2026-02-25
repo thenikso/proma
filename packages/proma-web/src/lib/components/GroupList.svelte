@@ -63,26 +63,7 @@
     {#if options.groupEnd}
       <slot name="groupEnd" {item} {options} />
     {:else if Array.isArray(options)}
-      <svelte:self items={options}>
-        <svelte:fragment slot="groupStart" let:item let:options let:toggle let:collapsed>
-          <slot name="groupStart" {item} {options} {toggle} {collapsed}>
-            <div
-              on:click={() => (group.collapsed = !group.collapsed)}
-              style="background: white; position: sticky; top: 0;"
-            >
-              <strong>{options.text}</strong>
-            </div>
-          </slot>
-        </svelte:fragment>
-        <svelte:fragment slot="groupEnd" let:item let:options>
-          <slot name="groupEnd" {item} {options}/>
-        </svelte:fragment>
-        <svelte:fragment slot="item" let:item let:options>
-          <slot name="item" {item} {options}>
-            <div>{options.text}</div>
-          </slot>
-        </svelte:fragment>
-      </svelte:self>
+      <svelte:self items={options} {getItemOptions} />
     {:else}
       <slot name="item" {item} {options}>
         <div>{options.text}</div>
@@ -90,4 +71,3 @@
     {/if}
   {/if}
 {/each}
-

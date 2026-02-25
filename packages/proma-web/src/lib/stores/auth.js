@@ -1,5 +1,4 @@
 import { writable, readable, derived, get } from 'svelte/store';
-import { history } from './history';
 
 /* global: AUTH0_DOMAIN, AUTH0_CLIENTID, createAuth0Client */
 
@@ -34,9 +33,11 @@ if (AUTH0_DOMAIN && AUTH0_CLIENTID) {
     if (query.includes('code=') && query.includes('state=')) {
       await _auth0Client.handleRedirectCallback();
       authChanged.update((n) => n + 1);
-      history.replace(window.location.hash?.substr(1) || '/');
+      const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
+      window.history.replaceState({}, '', cleanUrl || '/');
     } else if (window.location.search === '?logout') {
-      history.replace(window.location.hash?.substr(1) || '/');
+      const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
+      window.history.replaceState({}, '', cleanUrl || '/');
     }
   }
 
@@ -101,8 +102,8 @@ export const authToken = derived(
 );
 
 function makeRedirectUri(extraQuery) {
-  const { origin, pathname, search } = window.location;
-  return `${origin}${extraQuery ? `?${extraQuery}` : ''}#${pathname}${search}`;
+  const { origin, pathname } = window.location;
+  return `${origin}${pathname}${extraQuery ? `?${extraQuery}` : ''}`;
 }
 
 export async function login(popup = false) {

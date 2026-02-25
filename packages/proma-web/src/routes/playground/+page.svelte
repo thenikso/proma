@@ -14,20 +14,20 @@
   import { CodeMirror } from '@proma/svelte-components';
   import jszip from 'jszip';
   import { saveAs } from 'file-saver';
-  import { history } from '$lib/stores/history';
-  import { page } from '$lib/stores/routing';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import FileTree from '$lib/components/FileTree.svelte';
   import PromaFileEditor from '$lib/PromaFileEditor.svelte';
   import PromaRunEditor from '$lib/PromaRunEditor.svelte';
   import PromaBoardDetails from '$lib/PromaBoardDetails.svelte';
   import makeBaseProject from '$lib/playground-projects/base';
-  import Select from 'svelte-select/src/Select.svelte';
+  import Select from 'svelte-select';
 
   //
   // Project Selection
   //
 
-  $: selectedProjectName = $page.query.project;
+  $: selectedProjectName = $page.url.searchParams.get('project');
   $: selectedProjectDataString =
     selectedProjectName &&
     localStorage.getItem('project-' + selectedProjectName);
@@ -83,16 +83,16 @@
     action('Playground.save')();
 
     if (detail.value === 'new') {
-      selectedProjectName = null;
-      selectedFilePath = 'readme.md';
+      updateUrl({ project: null, file: 'readme.md' });
     } else {
       const shouldSaveAs = detail.value.startsWith('saveas-');
-      selectedProjectName = detail.label;
+      const nextProjectName = detail.label;
       if (shouldSaveAs) {
+        updateUrl({ project: nextProjectName });
         action('Playground.save')();
         updateProjectsOptions();
       } else {
-        selectedFilePath = null;
+        updateUrl({ project: nextProjectName, file: null });
       }
     }
   }
@@ -103,8 +103,7 @@
       updateProjectsOptions();
     }
 
-    selectedProjectName = null;
-    selectedFilePath = 'readme.md';
+    updateUrl({ project: null, file: 'readme.md' });
   }
 
   const projectSelectOptionLabel = (option) =>
@@ -122,7 +121,7 @@
   // File Selection
   //
 
-  $: selectedFilePath = $page.query.file;
+  $: selectedFilePath = $page.url.searchParams.get('file');
 
   $: selectedFileContent = selectedFilePath && files[selectedFilePath];
   $: selectedFileExt = selectedFileContent && getFileExt(selectedFilePath);
@@ -162,7 +161,7 @@
     const { file, folder } = e.detail;
     if (file) {
       action('Playground.save')();
-      selectedFilePath = file;
+      updateUrl({ file });
     } else {
       if (expandedFolders.some((s) => s.startsWith(folder))) {
         expandedFolders = expandedFolders.filter(
@@ -185,27 +184,27 @@
   };
 
   $: selectedTool = (VALID_TOOLS[selectedFileExt] || []).includes(
-    $page.fragment,
+    ($page.url.hash || '').replace(/^#/, ''),
   )
-    ? $page.fragment
+    ? ($page.url.hash || '').replace(/^#/, '')
     : '';
 
-  //
-  // Url update
-  //
-
-  $: {
-    const query = {};
-    if (selectedProjectName) {
-      query.project = selectedProjectName;
+  async function updateUrl({
+    project = selectedProjectName,
+    file = selectedFilePath,
+    fragment = selectedTool,
+  } = {}) {
+    const params = new URLSearchParams();
+    if (project) params.set('project', project);
+    if (file) params.set('file', file);
+    const query = params.toString();
+    const hash = fragment ? `#${fragment}` : '';
+    const next = `${$page.url.pathname}${query ? `?${query}` : ''}${hash}`;
+    const current = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
+    if (next !== current) {
+      await goto(next, { replaceState: true, noScroll: true, keepFocus: true });
     }
-    if (selectedFilePath) {
-      query.file = selectedFilePath;
-    }
-    page.push({ query });
   }
-
-  $: page.replace({ fragment: selectedTool });
 
   //
   // Download project
@@ -330,10 +329,16 @@
         {#if selectedTool}
           <div class="ToolsPanel">
             <div class="ToolsTabs">
-              <button type="button" on:click={() => (selectedTool = 'info')}>
+              <button
+                type="button"
+                on:click={() => updateUrl({ fragment: 'info' })}
+              >
                 info
               </button>
-              <button type="button" on:click={() => (selectedTool = 'test')}>
+              <button
+                type="button"
+                on:click={() => updateUrl({ fragment: 'test' })}
+              >
                 test
               </button>
             </div>
@@ -362,7 +367,7 @@
         <button
           type="button"
           class="RunButton button primary"
-          on:click={() => (selectedTool = 'test')}>Test</button
+          on:click={() => updateUrl({ fragment: 'test' })}>Test</button
         >
       </PromaFileEditor>
     {:else if selectedFileExt}

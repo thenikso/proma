@@ -1,9 +1,11 @@
-<script context="module">
+<script>
   import { action } from '@proma/svelte-components';
+  import { page } from '$app/stores';
   import { fetchApi } from '$lib/api';
+  import { keyMods } from '$lib/stores';
+  import PromaFileEditor from '$lib/PromaFileEditor.svelte';
 
   // TODO this should probably be in a store
-
   let getCurrentProjectToSave;
   let savingPromise;
 
@@ -20,11 +22,6 @@
     );
     return savingPromise;
   });
-</script>
-
-<script>
-  import { page, keyMods } from '$lib/stores';
-  import PromaFileEditor from '$lib/PromaFileEditor.svelte';
 
   $: hostId = $page.params.hostId;
   $: projectSlug = $page.params.projectSlug;
@@ -32,8 +29,15 @@
   let projectPromise;
   let project;
   let selectedFilePath;
+  let currentProjectKey;
 
-  $: loadProject(hostId, projectSlug);
+  $: {
+    const nextKey = `${hostId || ''}/${projectSlug || ''}`;
+    if (nextKey && nextKey !== currentProjectKey) {
+      currentProjectKey = nextKey;
+      loadProject(hostId, projectSlug);
+    }
+  }
 
   function loadProject(hostId, projectSlug) {
     project = null;
@@ -41,7 +45,8 @@
     projectPromise = fetchApi(`/project/${hostId}/${projectSlug}`).then(
       (res) => {
         project = res;
-        selectedFilePath = $page.query.file ?? Object.keys(project?.files)[0];
+        selectedFilePath =
+          $page.url.searchParams.get('file') ?? Object.keys(project?.files)[0];
         return res;
       },
     );

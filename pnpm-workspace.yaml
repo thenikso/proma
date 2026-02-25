@@ -1,2 +1,11 @@
 packages:
-  - "packages/*"
+  - packages/*
+
+onlyBuiltDependencies:
+  - core-js
+  - es5-ext
+  - esbuild
+  - fsevents
+  - protobufjs
+  - serverless
+  - snappy
