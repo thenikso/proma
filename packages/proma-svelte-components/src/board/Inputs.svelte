@@ -1,26 +1,33 @@
 <script>
-  import { onMount } from 'svelte';
-  import { getChip, setChipSide, INPUT } from './context';
+	import { onMount } from 'svelte';
+	import { getChip, setChipSide, INPUT } from './context';
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('svelte').Snippet} [children]
+	 */
 
-  setChipSide(INPUT);
+	/** @type {Props} */
+	let { children } = $props();
 
-  const chip = getChip();
+	setChipSide(INPUT);
 
-  let containerEl;
+	const chip = getChip();
 
-  onMount(() => {
-    const parentEl = containerEl.parentElement;
-    containerEl.remove();
-    chip.addPortExtras(INPUT, containerEl);
-    return () => {
-      chip.removePortExtras(INPUT, containerEl);
-      if (parentEl) {
-        parentEl.appendChild(containerEl);
-      }
-    };
-  });
+	let containerEl = $state();
+
+	onMount(() => {
+		const parentEl = containerEl.parentElement;
+		containerEl.remove();
+		chip.addPortExtras(INPUT, containerEl);
+		return () => {
+			chip.removePortExtras(INPUT, containerEl);
+			if (parentEl) {
+				parentEl.appendChild(containerEl);
+			}
+		};
+	});
 </script>
 
 <div bind:this={containerEl}>
-  <slot />
+	{@render children?.()}
 </div>

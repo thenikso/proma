@@ -28,29 +28,29 @@ Note: This package has peer dependencies on `@proma/core` and `svelte`.
 
 ```svelte
 <script>
-  import { Board } from '@proma/svelte-components';
-  import { chip, inputFlow, outputFlow } from '@proma/core';
+	import { Board } from '@proma/svelte-components';
+	import { chip, inputFlow, outputFlow } from '@proma/core';
 
-  // Create a simple chip
-  const MyChip = chip('MyChip', () => {
-    const exec = inputFlow('exec', () => then());
-    const then = outputFlow('then');
-  });
+	// Create a simple chip
+	const MyChip = chip('MyChip', () => {
+		const exec = inputFlow('exec', () => then());
+		const then = outputFlow('then');
+	});
 
-  // Get the ChipInfo for the board
-  const chipInstance = MyChip();
-  const chipBoard = chipInstance.$info;
+	// Get the ChipInfo for the board
+	const chipInstance = MyChip();
+	const chipBoard = chipInstance.$info;
 
-  // Track selected chips
-  let selectedChips = [];
+	// Track selected chips
+	let selectedChips = [];
 </script>
 
 <div style="width: 100%; height: 600px;">
-  <Board
-    {chipBoard}
-    bind:selectedChips
-    on:wire:end={(e) => console.log('Wire connected!', e.detail)}
-  />
+	<Board
+		{chipBoard}
+		bind:selectedChips
+		on:wire:end={(e) => console.log('Wire connected!', e.detail)}
+	/>
 </div>
 ```
 
@@ -58,26 +58,26 @@ Note: This package has peer dependencies on `@proma/core` and `svelte`.
 
 ```svelte
 <script>
-  import { ChipBoardView } from '@proma/svelte-components';
-  import { fromJSON, registry } from '@proma/core';
+	import { ChipBoardView } from '@proma/svelte-components';
+	import { fromJSON, registry } from '@proma/core';
 
-  // Load chip from JSON
-  let chipClass;
-  let chipInstance;
+	// Load chip from JSON
+	let chipClass;
+	let chipInstance;
 
-  async function loadChip(json) {
-    chipClass = await fromJSON(json);
-    chipInstance = new chipClass();
-  }
+	async function loadChip(json) {
+		chipClass = await fromJSON(json);
+		chipInstance = new chipClass();
+	}
 
-  // Use the registry for available chips
-  registry.use('proma/std');
+	// Use the registry for available chips
+	registry.use('proma/std');
 </script>
 
 <ChipBoardView
-  {chipInstance}
-  {registry}
-  on:change={(e) => console.log('Chip modified', e.detail)}
+	{chipInstance}
+	{registry}
+	on:change={(e) => console.log('Chip modified', e.detail)}
 />
 ```
 
@@ -88,6 +88,7 @@ Note: This package has peer dependencies on `@proma/core` and `svelte`.
 The main visual editor component with full node-editing capabilities.
 
 **Props:**
+
 - `chipBoard` (ChipInfo) - The chip graph to display
 - `panX` (number) - Horizontal pan offset (default: 0)
 - `panY` (number) - Vertical pan offset (default: 0)
@@ -96,6 +97,7 @@ The main visual editor component with full node-editing capabilities.
 - `refreshKey` (any) - Change to force refresh
 
 **Events:**
+
 - `wire:start` - User starts drawing a wire
 - `wire:probe` - Wire dragged over a port
 - `wire:end` - Wire connection attempt
@@ -104,6 +106,7 @@ The main visual editor component with full node-editing capabilities.
 - `port:contextmenu` - Right-click on port
 
 **Features:**
+
 - **Pan/Zoom** - Mouse wheel, trackpad gestures, spacebar to grab
 - **Selection** - Click to select, rectangle selection, multi-select with Cmd/Ctrl
 - **Drag and Drop** - Move chips around the board
@@ -115,28 +118,21 @@ The main visual editor component with full node-editing capabilities.
 
 ```svelte
 <script>
-  import { Board } from '@proma/svelte-components';
+	import { Board } from '@proma/svelte-components';
 
-  let chipBoard;
-  let selectedChips = [];
-  let panX = 0;
-  let panY = 0;
-  let zoom = 1;
+	let chipBoard;
+	let selectedChips = [];
+	let panX = 0;
+	let panY = 0;
+	let zoom = 1;
 
-  function handleWireEnd(event) {
-    const { from, to } = event.detail;
-    // Handle wire connection
-  }
+	function handleWireEnd(event) {
+		const { from, to } = event.detail;
+		// Handle wire connection
+	}
 </script>
 
-<Board
-  {chipBoard}
-  bind:selectedChips
-  bind:panX
-  bind:panY
-  bind:zoom
-  on:wire:end={handleWireEnd}
-/>
+<Board {chipBoard} bind:selectedChips bind:panX bind:panY bind:zoom on:wire:end={handleWireEnd} />
 ```
 
 ### Chip
@@ -144,12 +140,14 @@ The main visual editor component with full node-editing capabilities.
 Displays an individual chip on the board.
 
 **Props:**
+
 - `chip` (object) - Chip instance
 - `chipInfo` (ChipInfo) - Chip metadata
 - `selected` (boolean) - Selection state
 - `position` (object) - `{ x, y }` position
 
 **Events:**
+
 - `select` - Chip selected
 - `contextmenu` - Right-click on chip
 
@@ -158,11 +156,13 @@ Displays an individual chip on the board.
 Displays a port on a chip.
 
 **Props:**
+
 - `port` (Port) - Port instance
 - `type` (string) - 'input' or 'output'
 - `flow` (boolean) - Is this a flow port?
 
 **Events:**
+
 - `click` - Port clicked
 - `contextmenu` - Right-click on port
 
@@ -171,6 +171,7 @@ Displays a port on a chip.
 Displays a connection between ports.
 
 **Props:**
+
 - `wire` (object) - Wire data with `from` and `to` port references
 - `color` (string) - Wire color (based on type)
 
@@ -179,15 +180,18 @@ Displays a connection between ports.
 Complete editing view with board, registry panel, and controls.
 
 **Props:**
+
 - `chipInstance` (Chip) - The chip being edited
 - `registry` (Registry) - Registry for available chips
 - `testPayload` (object) - Test data for running the chip
 
 **Events:**
+
 - `change` - Chip modified
 - `run` - Chip executed with test data
 
 **Features:**
+
 - Chip board with full editing
 - Registry browser to add chips
 - Test/run functionality
@@ -198,9 +202,11 @@ Complete editing view with board, registry panel, and controls.
 Edit chip input/output ports.
 
 **Props:**
+
 - `chipInfo` (ChipInfo) - The chip to edit
 
 **Features:**
+
 - Add/remove input ports
 - Add/remove output ports
 - Rename ports
@@ -212,10 +218,12 @@ Edit chip input/output ports.
 Edit properties of a sub-chip within a chip graph.
 
 **Props:**
+
 - `subChip` (Chip) - The sub-chip instance
 - `subChipInfo` (ChipInfo) - Sub-chip metadata
 
 **Features:**
+
 - Edit position
 - Edit metadata
 - View chip structure
@@ -229,6 +237,7 @@ Type-aware input controls for port values.
 Auto-selects the correct input component based on port type.
 
 **Props:**
+
 - `port` (Port) - The port to edit
 - `value` (any) - Current value (bindable)
 
@@ -237,6 +246,7 @@ Auto-selects the correct input component based on port type.
 Text input for strings.
 
 **Props:**
+
 - `value` (string) - Current value (bindable)
 - `placeholder` (string) - Placeholder text
 
@@ -245,6 +255,7 @@ Text input for strings.
 JSON editor with syntax highlighting.
 
 **Props:**
+
 - `value` (any) - Current value as JSON (bindable)
 - `editable` (boolean) - Allow editing
 
@@ -255,27 +266,29 @@ JSON editor with syntax highlighting.
 Modal/popup overlay for dialogs.
 
 **Props:**
+
 - `visible` (boolean) - Show/hide overlay
 - `closeOnClickOutside` (boolean) - Close when clicking backdrop
 
 **Slots:**
+
 - Default slot - Overlay content
 
 **Example:**
 
 ```svelte
 <script>
-  import { Overlay } from '@proma/svelte-components';
-  let showDialog = false;
+	import { Overlay } from '@proma/svelte-components';
+	let showDialog = false;
 </script>
 
-<button on:click={() => showDialog = true}>Open</button>
+<button on:click={() => (showDialog = true)}>Open</button>
 
-<Overlay visible={showDialog} closeOnClickOutside on:close={() => showDialog = false}>
-  <div class="dialog">
-    <h2>Dialog Content</h2>
-    <button on:click={() => showDialog = false}>Close</button>
-  </div>
+<Overlay visible={showDialog} closeOnClickOutside on:close={() => (showDialog = false)}>
+	<div class="dialog">
+		<h2>Dialog Content</h2>
+		<button on:click={() => (showDialog = false)}>Close</button>
+	</div>
 </Overlay>
 ```
 
@@ -284,10 +297,12 @@ Modal/popup overlay for dialogs.
 Button for adding new ports to chips.
 
 **Props:**
+
 - `type` (string) - Port type ('input' or 'output')
 - `portType` (string) - Data type for the port
 
 **Events:**
+
 - `click` - Button clicked
 
 ## Board Context API
@@ -319,12 +334,12 @@ import { shortcuts } from '@proma/svelte-components';
 
 // Register a shortcut
 shortcuts.register({
-  pattern: 'Cmd+S',
-  handler: (event) => {
-    event.preventDefault();
-    saveProject();
-  },
-  scope: 'editor' // Optional scope
+	pattern: 'Cmd+S',
+	handler: (event) => {
+		event.preventDefault();
+		saveProject();
+	},
+	scope: 'editor', // Optional scope
 });
 
 // Remove a shortcut
@@ -332,6 +347,7 @@ shortcuts.unregister(handlerFunction);
 ```
 
 **Pattern Syntax:**
+
 - `Cmd+S` - Command (Mac) or Ctrl (Windows/Linux) + S
 - `Shift+Enter` - Shift + Enter
 - `Alt+ArrowUp` - Alt + Up Arrow
@@ -343,24 +359,24 @@ Components come with default styles but can be customized using CSS variables:
 
 ```css
 :root {
-  /* Board colors */
-  --board-bg: #1e1e1e;
-  --board-grid: #2a2a2a;
+	/* Board colors */
+	--board-bg: #1e1e1e;
+	--board-grid: #2a2a2a;
 
-  /* Chip colors */
-  --chip-bg: #2d2d2d;
-  --chip-border: #404040;
-  --chip-selected: #0078d4;
+	/* Chip colors */
+	--chip-bg: #2d2d2d;
+	--chip-border: #404040;
+	--chip-selected: #0078d4;
 
-  /* Port colors */
-  --port-flow: #ffffff;
-  --port-data: #4fc3f7;
+	/* Port colors */
+	--port-flow: #ffffff;
+	--port-data: #4fc3f7;
 
-  /* Wire colors */
-  --wire-default: #888888;
-  --wire-number: #4fc3f7;
-  --wire-string: #81c784;
-  --wire-boolean: #ba68c8;
+	/* Wire colors */
+	--wire-default: #888888;
+	--wire-number: #4fc3f7;
+	--wire-string: #81c784;
+	--wire-boolean: #ba68c8;
 }
 ```
 
@@ -426,123 +442,111 @@ proma-svelte-components/
 
 ```svelte
 <script>
-  import { Board } from '@proma/svelte-components';
-  import { chip, inputFlow, outputFlow, wire, registry } from '@proma/core';
+	import { Board } from '@proma/svelte-components';
+	import { chip, inputFlow, outputFlow, wire, registry } from '@proma/core';
 
-  // Setup registry
-  registry.use('proma/std');
+	// Setup registry
+	registry.use('proma/std');
 
-  // Create a custom chip with sub-chips
-  const MyFlow = chip('MyFlow', () => {
-    const exec = inputFlow('exec', () => {
-      log.exec();
-    });
+	// Create a custom chip with sub-chips
+	const MyFlow = chip('MyFlow', () => {
+		const exec = inputFlow('exec', () => {
+			log.exec();
+		});
 
-    // Add a Log chip
-    const log = registry.get('proma/std#Log')();
-    wire('Hello from custom editor!', log.message);
-    wire(log.then, done);
+		// Add a Log chip
+		const log = registry.get('proma/std#Log')();
+		wire('Hello from custom editor!', log.message);
+		wire(log.then, done);
 
-    const done = outputFlow('done');
-  });
+		const done = outputFlow('done');
+	});
 
-  const chipInstance = MyFlow();
-  const chipBoard = chipInstance.$info;
+	const chipInstance = MyFlow();
+	const chipBoard = chipInstance.$info;
 
-  let selectedChips = [];
+	let selectedChips = [];
 
-  function handleChipContextMenu(event) {
-    const { chip } = event.detail;
-    console.log('Context menu for chip:', chip);
-    // Show context menu
-  }
+	function handleChipContextMenu(event) {
+		const { chip } = event.detail;
+		console.log('Context menu for chip:', chip);
+		// Show context menu
+	}
 </script>
 
-<style>
-  .editor {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .toolbar {
-    padding: 10px;
-    background: #2d2d2d;
-    border-bottom: 1px solid #404040;
-  }
-
-  .board-container {
-    flex: 1;
-    position: relative;
-  }
-</style>
-
 <div class="editor">
-  <div class="toolbar">
-    <button on:click={() => chipInstance.exec()}>Run</button>
-    <button on:click={() => selectedChips = []}>Clear Selection</button>
-  </div>
+	<div class="toolbar">
+		<button on:click={() => chipInstance.exec()}>Run</button>
+		<button on:click={() => (selectedChips = [])}>Clear Selection</button>
+	</div>
 
-  <div class="board-container">
-    <Board
-      {chipBoard}
-      bind:selectedChips
-      on:chip:contextmenu={handleChipContextMenu}
-    />
-  </div>
+	<div class="board-container">
+		<Board {chipBoard} bind:selectedChips on:chip:contextmenu={handleChipContextMenu} />
+	</div>
 </div>
+
+<style>
+	.editor {
+		width: 100%;
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.toolbar {
+		padding: 10px;
+		background: #2d2d2d;
+		border-bottom: 1px solid #404040;
+	}
+
+	.board-container {
+		flex: 1;
+		position: relative;
+	}
+</style>
 ```
 
 ### Using with Edit API
 
 ```svelte
 <script>
-  import { Board } from '@proma/svelte-components';
-  import { chip, edit, registry } from '@proma/core';
+	import { Board } from '@proma/svelte-components';
+	import { chip, edit, registry } from '@proma/core';
 
-  const MyChip = chip('MyChip', () => {
-    const exec = inputFlow('exec', () => then());
-    const then = outputFlow('then');
-  });
+	const MyChip = chip('MyChip', () => {
+		const exec = inputFlow('exec', () => then());
+		const then = outputFlow('then');
+	});
 
-  const chipInstance = MyChip();
-  const chipBoard = chipInstance.$info;
-  const editor = edit(chipBoard);
+	const chipInstance = MyChip();
+	const chipBoard = chipInstance.$info;
+	const editor = edit(chipBoard);
 
-  // Listen for changes
-  editor.on('change', () => {
-    console.log('Chip modified!');
-    // Update the board
-    chipBoard = chipBoard; // Trigger Svelte reactivity
-  });
+	// Listen for changes
+	editor.on('change', () => {
+		console.log('Chip modified!');
+		// Update the board
+		chipBoard = chipBoard; // Trigger Svelte reactivity
+	});
 
-  function addLogChip() {
-    const LogChip = registry.get('proma/std#Log');
-    editor.addChip('log1', LogChip, {
-      metadata: { x: 200, y: 100 }
-    });
-  }
+	function addLogChip() {
+		const LogChip = registry.get('proma/std#Log');
+		editor.addChip('log1', LogChip, {
+			metadata: { x: 200, y: 100 },
+		});
+	}
 
-  function handleWireEnd(event) {
-    const { from, to } = event.detail;
+	function handleWireEnd(event) {
+		const { from, to } = event.detail;
 
-    // Add connection via edit API
-    editor.connect(
-      from.chip.$info.id,
-      from.port.name,
-      to.chip.$info.id,
-      to.port.name
-    );
-  }
+		// Add connection via edit API
+		editor.connect(from.chip.$info.id, from.port.name, to.chip.$info.id, to.port.name);
+	}
 </script>
 
 <button on:click={addLogChip}>Add Log Chip</button>
 
-<Board
-  {chipBoard}
-  on:wire:end={handleWireEnd}
-/>
+<Board {chipBoard} on:wire:end={handleWireEnd} />
 ```
 
 ## TypeScript Support

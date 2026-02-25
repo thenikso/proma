@@ -1,32 +1,32 @@
 <script>
-  import { onMount } from 'svelte';
-  import { getBoard } from './context';
-  import WirePath from './WirePath.svelte';
+	import { onMount } from 'svelte';
+	import { getBoard } from './context';
+	import WirePath from './WirePath.svelte';
 
-  export let outputChip;
-  export let outputPort;
-  export let inputChip;
-  export let inputPort;
-  export let path = WirePath;
+	let { outputChip, outputPort, inputChip, inputPort, path = WirePath } = $props();
 
-  const board = getBoard();
+	const board = getBoard();
 
-  let id;
+	let id;
+	let retryTimer;
 
-  onMount(() => {
-    id = board.addWire(
-      outputChip,
-      outputPort,
-      inputChip,
-      inputPort,
-      path,
-    );
-    return () => {
-      if (id) {
-        board.removeWire(id);
-      }
-    };
-  });
+	function addWireWithRetry(retriesLeft = 8) {
+		if (id) return;
+		id = board.addWire(outputChip, outputPort, inputChip, inputPort, path);
+		if (!id && retriesLeft > 0) {
+			retryTimer = requestAnimationFrame(() => addWireWithRetry(retriesLeft - 1));
+		}
+	}
 
-  // $: id = board.addWire(outputChip, outputPort, inputChip, inputPort, path, id);
+	onMount(() => {
+		addWireWithRetry();
+		return () => {
+			cancelAnimationFrame(retryTimer);
+			if (id) {
+				board.removeWire(id);
+			}
+		};
+	});
+
+	// $: id = board.addWire(outputChip, outputPort, inputChip, inputPort, path, id);
 </script>
