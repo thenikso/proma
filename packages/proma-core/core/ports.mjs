@@ -111,9 +111,10 @@ export class Port extends Function {
     });
 
     if (portInfo.isData) {
-      const dataPortInfo = /** @type {InputDataSinkPortInfo | OutputDataSourcePortInfo} */ (
-        portInfo
-      );
+      const dataPortInfo =
+        /** @type {InputDataSinkPortInfo | OutputDataSourcePortInfo} */ (
+          portInfo
+        );
       Object.defineProperties(self, {
         type: {
           enumerable: true,
@@ -139,7 +140,9 @@ export class Port extends Function {
       });
 
       if (portInfo.isInput) {
-        const inputDataPortInfo = /** @type {InputDataSinkPortInfo} */ (portInfo);
+        const inputDataPortInfo = /** @type {InputDataSinkPortInfo} */ (
+          portInfo
+        );
         Object.defineProperties(self, {
           // value: {
           //   enumerable: true,
@@ -444,52 +447,55 @@ function makeVariadicAccessors(ownerPort, makePortAtIndex) {
     }
     return index;
   };
-  return new Proxy(/** @type {PortVariadicAccessors} */ (/** @type {any} */ ([])), {
-    /**
-     * @param {PortVariadicAccessors} target
-     * @param {string | symbol | number} key
-     */
-    get(target, key) {
-      const index = getIndex(key);
-      /** @type {string | symbol | number} */
-      let lookupKey = key;
-      if (index >= 0) {
-        const indexKey = index;
-        lookupKey = indexKey;
-        if (typeof target[indexKey] === 'undefined') {
-          const variadicPort = makePortAtIndex(index);
-          Object.defineProperties(variadicPort, {
-            variadicIndex: {
-              enumerable: true,
-              value: index,
-            },
-            explicitValue: {
-              enumerable: true,
-              get: () => {
-                return ownerPort.explicitValue[index];
+  return new Proxy(
+    /** @type {PortVariadicAccessors} */ (/** @type {any} */ ([])),
+    {
+      /**
+       * @param {PortVariadicAccessors} target
+       * @param {string | symbol | number} key
+       */
+      get(target, key) {
+        const index = getIndex(key);
+        /** @type {string | symbol | number} */
+        let lookupKey = key;
+        if (index >= 0) {
+          const indexKey = index;
+          lookupKey = indexKey;
+          if (typeof target[indexKey] === 'undefined') {
+            const variadicPort = makePortAtIndex(index);
+            Object.defineProperties(variadicPort, {
+              variadicIndex: {
+                enumerable: true,
+                value: index,
               },
-              set: (value) => {
-                ownerPort.explicitValue[index] = value;
+              explicitValue: {
+                enumerable: true,
+                get: () => {
+                  return ownerPort.explicitValue[index];
+                },
+                set: (value) => {
+                  ownerPort.explicitValue[index] = value;
+                },
               },
-            },
-          });
-          target[indexKey] = variadicPort;
+            });
+            target[indexKey] = variadicPort;
+          }
         }
-      }
-      return Reflect.get(target, lookupKey);
+        return Reflect.get(target, lookupKey);
+      },
+      /**
+       * @param {PortVariadicAccessors} target
+       * @param {string | symbol | number} key
+       */
+      deleteProperty(target, key) {
+        const index = getIndex(key);
+        if (index < 0) return false;
+        target.splice(index, 1);
+        ownerPort.explicitValue.splice(index, 1);
+        return true;
+      },
     },
-    /**
-     * @param {PortVariadicAccessors} target
-     * @param {string | symbol | number} key
-     */
-    deleteProperty(target, key) {
-      const index = getIndex(key);
-      if (index < 0) return false;
-      target.splice(index, 1);
-      ownerPort.explicitValue.splice(index, 1);
-      return true;
-    },
-  });
+  );
 }
 
 //

@@ -467,10 +467,12 @@ function makeChipFactory($customChips, $hooks) {
       }
 
       static get imports() {
-          return Object.assign(
+        return Object.assign(
           {},
           config.imports,
-          ...chipInfo.chips.map((c) => /** @type {any} */ (c).constructor.imports),
+          ...chipInfo.chips.map(
+            (c) => /** @type {any} */ (c).constructor.imports,
+          ),
         );
       }
 
@@ -494,7 +496,7 @@ function makeChipFactory($customChips, $hooks) {
         const importsValues = imports.map(([, url]) =>
           (importModule
             ? Promise.resolve(importModule(url))
-            : import(/* @vite-ignore */url).catch((e) => {
+            : import(/* @vite-ignore */ url).catch((e) => {
                 console.warn('Could not import: ', url);
                 return Promise.reject(e);
               })

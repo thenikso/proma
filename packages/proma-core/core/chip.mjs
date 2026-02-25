@@ -92,7 +92,9 @@ export class Chip {
     if (Array.isArray(canonicalValues) && canonicalValues.length > 0) {
       let i = 0;
       for (const portOutlet of chipInfo.inputs) {
-        const portInfo = /** @type {InputDataSinkPortInfo} */ (info(portOutlet));
+        const portInfo = /** @type {InputDataSinkPortInfo} */ (
+          info(portOutlet)
+        );
         if (!portInfo.canonical) {
           continue;
         }
@@ -397,10 +399,7 @@ export class ChipInfo {
       if (!chip) {
         return null;
       }
-      if (
-        (side !== INPUT && side !== OUTPUT) ||
-        typeof portName !== 'string'
-      ) {
+      if ((side !== INPUT && side !== OUTPUT) || typeof portName !== 'string') {
         return null;
       }
       return chip[side][portName];
@@ -680,7 +679,10 @@ export class ChipInfo {
         if (outletInfo instanceof PortInfo) {
           const parentPort =
             chipInstance[outletInfo.isInput ? INPUT : OUTPUT][outletInfo.name];
-          if (!parentPort || info(/** @type {any} */ (parentPort)) !== outletInfo) {
+          if (
+            !parentPort ||
+            info(/** @type {any} */ (parentPort)) !== outletInfo
+          ) {
             throw new Error('Invalid port found in given parent');
           }
           res.push(parentPort);
