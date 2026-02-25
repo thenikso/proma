@@ -4,7 +4,9 @@ import { isChipClass } from './chip.mjs';
 import * as lib from './library/index.mjs';
 
 /**
- * @typedef {(chip: any, qualifier?: string) => void} AddChipFn
+ * @typedef {typeof import('./chip.mjs').Chip & { URI: string }} RegistryChipClass
+ * @typedef {RegistryChipClass | RegistryChipClass[] | Record<string, RegistryChipClass | RegistryChipClass[]>} AddableChip
+ * @typedef {(chip: RegistryChipClass, qualifier?: string) => void} AddChipFn
  * @typedef {(add: AddChipFn, match: RegExpExecArray) => void | Promise<void>} ResolverLoadFn
  * @typedef {{ test: RegExp, load: ResolverLoadFn }} Resolver
  */
@@ -32,11 +34,15 @@ export class Registry {
   #resolvers;
 
   constructor() {
+    /** @type {Map<string, RegistryChipClass>} */
     this.#qualifiedToChip = new Map();
+    /** @type {Map<RegistryChipClass, [string, string?]>} */
     this.#chipToQualifiers = new Map();
+    /** @type {Map<string, RegistryChipClass>} */
     this.#uriToChip = new Map();
     /** @type {Resolver[]} */
     this.#resolvers = [];
+    /** @type {Map<string, RegistryChipClass[]>} */
     this.#useToChips = new Map();
   }
 
@@ -53,7 +59,7 @@ export class Registry {
    * Add a chip to the registry. You can pass a valid Chip or an array of Chips
    * or an object with other valid `add` values.
    *
-   * @param {any} chip
+   * @param {AddableChip} chip
    * @param {string} [qualifier]
    * @returns {Registry}
    */
@@ -62,9 +68,9 @@ export class Registry {
   }
 
   /**
-   * @param {any} chip
+   * @param {AddableChip} chip
    * @param {string | undefined} qualifier
-   * @param {((chip: any) => void) | null} useChipCb
+   * @param {((chip: RegistryChipClass) => void) | null} useChipCb
    * @returns {Registry}
    */
   #add(chip, qualifier, useChipCb = null) {
@@ -77,25 +83,30 @@ export class Registry {
     }
     if (!isChipClass(chip)) {
       if (typeof chip === 'object' && chip) {
-        this.#add(Array.from(Object.values(chip)), qualifier, useChipCb);
+        this.#add(
+          /** @type {AddableChip} */ (Array.from(Object.values(chip))),
+          qualifier,
+          useChipCb,
+        );
         return this;
       }
       throw new Error('chip must be a Chip');
     }
-    if (this.#chipToQualifiers.has(chip)) {
-      throw new Error(`Chip ${chip.URI} is already registered`);
+    const chipClass = /** @type {RegistryChipClass} */ (chip);
+    if (this.#chipToQualifiers.has(chipClass)) {
+      throw new Error(`Chip ${chipClass.URI} is already registered`);
     }
-    let qualifiedName = chip.URI;
+    let qualifiedName = chipClass.URI;
     if (qualifier) {
       qualifiedName = `${qualifier}#${qualifiedName}`;
     }
     if (this.#qualifiedToChip.has(qualifiedName)) {
       throw new Error(`Duplicate qualified name: ${qualifiedName}`);
     }
-    this.#qualifiedToChip.set(qualifiedName, chip);
-    this.#chipToQualifiers.set(chip, [qualifiedName]);
+    this.#qualifiedToChip.set(qualifiedName, chipClass);
+    this.#chipToQualifiers.set(chipClass, [qualifiedName]);
     if (useChipCb) {
-      useChipCb(chip);
+      useChipCb(chipClass);
     }
     return this;
   }
@@ -178,7 +189,7 @@ export class Registry {
    * @returns {Promise<Registry>}
    */
   async use(qualifiedName) {
-    /** @type {any[]} */
+    /** @type {RegistryChipClass[]} */
     const loadedChips = [];
     await this.#resolve(qualifiedName, (chip, qualifier) =>
       this.#add(chip, qualifier, (chip) => {
@@ -234,7 +245,7 @@ export class Registry {
    * Returns either the chip or a promise resolving to the chip.
    *
    * @param {string} name
-   * @returns {any | Promise<any>}
+   * @returns {RegistryChipClass | Promise<RegistryChipClass>}
    */
   load(name) {
     const chip = this.#qualifiedToChip.get(name) || this.#uriToChip.get(name);
@@ -264,7 +275,7 @@ export class Registry {
    * registry. That could be the `qualifiedName` or the chip `URI`
    * if the chip is registered via the `use` method.
    *
-   * @param {any} chip
+   * @param {RegistryChipClass} chip
    * @returns {string | undefined}
    */
   name(chip) {
@@ -277,7 +288,7 @@ export class Registry {
    * If the given chip is registered, returns the qualified name
    * according to this registry.
    *
-   * @param {any} chip
+   * @param {RegistryChipClass} chip
    * @returns {string | undefined}
    */
   qualifiedName(chip) {

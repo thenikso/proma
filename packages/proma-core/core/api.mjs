@@ -328,9 +328,11 @@ export function externalGet(externalReferenceObj) {
       [externalReferenceObj]: undefined,
     };
   }
+  /** @type {object} */
+  const normalizedExternalRef = /** @type {object} */ (externalReferenceObj);
   return class ExternalGet extends ExternalGetInt {
     constructor() {
-      super(externalRef(externalReferenceObj));
+      super(externalRef(normalizedExternalRef));
     }
   };
 }
@@ -472,7 +474,8 @@ function makeChipFactory($customChips, $hooks) {
           {},
           config.imports,
           ...chipInfo.chips.map(
-            (c) => /** @type {any} */ (c).constructor.imports,
+            (/** @type {any} */ c) =>
+              /** @type {any} */ (c).constructor.imports,
           ),
         );
       }

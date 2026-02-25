@@ -123,6 +123,18 @@ This document tracks architecture and implementation smells found during the JSD
   - Type-related changes require touching multiple interdependent paths.
   - Static typing improvements are slower because structures are mostly implicit/dynamic.
 
+## 13) `Registry.add` accepts recursive polymorphic inputs
+
+- Location: `packages/proma-core/core/registry.mjs`
+- Pattern:
+  - `add` accepts chips, arrays of chips, and object trees whose values can also
+    be arrays/chips; normalization is done recursively at runtime.
+- Risks:
+  - Hard to express and enforce with static types, leading to wider
+    `any`/casts around registry operations.
+  - Validation errors are pushed to runtime and can surface late.
+  - Makes API behavior less predictable for contributors extending registry logic.
+
 ## Suggested follow-up backlog (after typing phases)
 
 1. Design RFC for replacing callable `Function`-subclass ports with a plain-object callable wrapper model.

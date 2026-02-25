@@ -6,17 +6,17 @@ import { INPUT, OUTPUT } from './constants.mjs';
  * @typedef {{
  *   id: string,
  *   chipURI: string,
- *   args?: any[],
- *   init?: Record<string, any>,
+ *   args?: unknown[],
+ *   init?: Record<string, unknown>,
  *   label?: string
  * }} SerializedChipInstance
  * @typedef {{
  *   URI: string,
  *   use?: string[],
- *   chips?: any[],
+ *   chips?: SerializedChipInstance[],
  *   connections?: SerializedConnection[],
- *   [INPUT]?: any[],
- *   [OUTPUT]?: any[]
+ *   [INPUT]?: SerializedPortInfo[],
+ *   [OUTPUT]?: SerializedPortInfo[]
  * }} SerializedChipInfo
  * @typedef {{
  *   name: string,
@@ -24,8 +24,8 @@ import { INPUT, OUTPUT } from './constants.mjs';
  *   execute?: string,
  *   canonical?: boolean,
  *   concealed?: boolean | 'hidden',
- *   variadic?: any,
- *   defaultValue?: any,
+ *   variadic?: unknown,
+ *   defaultValue?: unknown,
  *   compute?: string,
  *   computeOn?: string[],
  *   inline?: boolean | 'once',
@@ -41,8 +41,8 @@ import { INPUT, OUTPUT } from './constants.mjs';
 /**
  * Serializes a runtime chip instance into constructor args/init data.
  *
- * @param {any} chip
- * @param {any} [registry]
+ * @param {import('./chip.mjs').Chip} chip
+ * @param {import('./registry.mjs').Registry} [registry]
  * @returns {SerializedChipInstance}
  */
 export function serializeChipInstance(chip, registry) {
@@ -54,10 +54,10 @@ export function serializeChipInstance(chip, registry) {
       (registry && registry.name(chip.constructor)) || chip.chipURI,
   };
 
-  const chipInfo = info(chip);
-  /** @type {any[]} */
+  const chipInfo = /** @type {import('./chip.mjs').ChipInfo} */ (info(chip));
+  /** @type {unknown[]} */
   let canonicalData = [];
-  /** @type {Record<string, any>} */
+  /** @type {Record<string, unknown>} */
   const initData = {};
   for (const portOutlet of chipInfo.inputDataPorts) {
     const portInfo = info(portOutlet);
@@ -98,12 +98,12 @@ export function serializeChipInstance(chip, registry) {
 /**
  * Serializes chip definition metadata (outlets, sub-chips, and connections).
  *
- * @param {any} chipInfo
- * @param {any} [registry]
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {import('./registry.mjs').Registry} [registry]
  * @returns {SerializedChipInfo}
  */
 export function serializeChipInfo(chipInfo, registry) {
-  /** @param {any} x */
+  /** @param {{ toJSON: (registry?: import('./registry.mjs').Registry) => any }} x */
   const toJSON = (x) => x.toJSON(registry);
   const inputs = chipInfo.inputs.map(toJSON);
   const outputs = chipInfo.outputs.map(toJSON);
@@ -156,7 +156,7 @@ export function serializeChipInfo(chipInfo, registry) {
 /**
  * Serializes a PortInfo instance into wire format.
  *
- * @param {any} portInfo
+ * @param {import('./ports.mjs').PortInfo} portInfo
  * @returns {SerializedPortInfo}
  */
 export function serializePortInfo(portInfo) {
@@ -204,6 +204,8 @@ export function serializePortInfo(portInfo) {
 }
 
 /**
+ * Serialize an executable/function value into source code persisted in JSON.
+ *
  * @param {Function} func
  * @returns {string}
  */
