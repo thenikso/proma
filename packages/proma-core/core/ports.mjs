@@ -84,7 +84,7 @@ import { INPUT, OUTPUT } from './constants.mjs';
  */
 export class Port extends Function {
   /**
-   * @param {any} chip
+   * @param {unknown} chip
    * @param {PortInfo} portInfo
    * @param {number} [variadicIndex]
    */
@@ -99,6 +99,7 @@ export class Port extends Function {
     info(self, portInfo);
 
     const isVariadic = typeof variadicIndex === 'number' && variadicIndex >= 0;
+    const chipRef = /** @type {{ id: string }} */ (chip);
 
     Object.defineProperties(self, {
       chip: {
@@ -118,7 +119,7 @@ export class Port extends Function {
       fullName: {
         enumerable: true,
         get() {
-          return `${chip.id}.${portInfo.isInput ? INPUT : OUTPUT}.${self.name}`;
+          return `${chipRef.id}.${portInfo.isInput ? INPUT : OUTPUT}.${self.name}`;
         },
       },
       // Common port accessors
@@ -234,7 +235,7 @@ export class Port extends Function {
     return self;
   }
 
-  /** @returns {any} */
+  /** @returns {*} */
   get chip() {
     return undefined;
   }
@@ -282,7 +283,7 @@ export class Port extends Function {
 
 export class PortList {
   /**
-   * @param {any} chip
+   * @param {unknown} chip
    * @param {Port[]} ports
    */
   constructor(chip, ports) {
