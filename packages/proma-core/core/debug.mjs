@@ -52,10 +52,11 @@ class ChipDebugger {
     return c[portSide][portName].$runValue;
   }
 
-  // Returns a snapshot of all data port $runValues for all chips.
-  // The result is an object keyed by chip id (root chip uses '$'),
-  // where each value is an object of 'in.portName' / 'out.portName' -> value.
   /**
+   * Returns a snapshot of all data port $runValues for all chips.
+   * The result is an object keyed by chip id (root chip uses '$'),
+   * where each value is an object of 'in.portName' / 'out.portName' -> value.
+   *
    * @returns {Record<string, PortValueMap>}
    */
   snapshot() {
@@ -69,10 +70,11 @@ class ChipDebugger {
     return result;
   }
 
-  // Returns an array of port descriptors for the given chip (by id).
-  // Use '$' or omit chipId to inspect the root chip.
-  // Each descriptor has: { name, side, kind, value, type }
   /**
+   * Returns an array of port descriptors for the given chip (by id).
+   * Use '$' or omit chipId to inspect the root chip.
+   * Each descriptor has: { name, side, kind, value, type }
+   *
    * @param {string} [chipId]
    * @returns {PortDebugDescriptor[] | null}
    */
@@ -117,10 +119,11 @@ class ChipDebugger {
     return result;
   }
 
-  // Captures the current values of the given port paths before execution,
-  // then provides a capture() method to record the after values.
-  // portPaths use the same dot-separated format as runValue: 'ChipId.in.portName'
   /**
+   * Captures the current values of the given port paths before execution,
+   * then provides a capture() method to record the after values.
+   * portPaths use the same dot-separated format as runValue: 'ChipId.in.portName'
+   *
    * @param {string[]} portPaths
    * @returns {{ before: PortValueMap, capture: () => { before: PortValueMap, after: PortValueMap } }}
    */

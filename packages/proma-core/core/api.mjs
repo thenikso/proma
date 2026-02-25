@@ -297,11 +297,12 @@ export function switchChip(name, type = 'any') {
   return SwitchChip;
 }
 
-// NOTE externalReferenceObj must be specified as `{ myReference }` so that
-// the engine can extract both a compiletime name and a runtime reference.
-// If the name is not somehow provided to the compiled code (ie: by adding a
-// value to `window.myReference`), the compiled code will fail to execute.
 /**
+ * NOTE externalReferenceObj must be specified as `{ myReference }` so that
+ * the engine can extract both a compiletime name and a runtime reference.
+ * If the name is not somehow provided to the compiled code (ie: by adding a
+ * value to `window.myReference`), the compiled code will fail to execute.
+ *
  * @param {object} externalReferenceObj
  * @returns {ExternalReference}
  */

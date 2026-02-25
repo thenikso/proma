@@ -49,9 +49,10 @@ export class Registry {
     return Array.from(this.#chipToQualifiers.keys());
   }
 
-  // Add a chip to the registry. You can pass a valid Chip or an array of Chips
-  // or an object with other valid `add` values.
   /**
+   * Add a chip to the registry. You can pass a valid Chip or an array of Chips
+   * or an object with other valid `add` values.
+   *
    * @param {any} chip
    * @param {string} [qualifier]
    * @returns {Registry}
@@ -99,12 +100,13 @@ export class Registry {
     return this;
   }
 
-  // Adds a resolver to be used when `use` or `load` is called.
-  // `test` should be a regular expression matching a qualified chip name.
-  // `load` should be a function receiving the `add` method of this registry
-  // and the `test` match result. The function should return a promise resolving
-  // when the requested match has been added to the registry.
   /**
+   * Adds a resolver to be used when `use` or `load` is called.
+   * `test` should be a regular expression matching a qualified chip name.
+   * `load` should be a function receiving the `add` method of this registry
+   * and the `test` match result. The function should return a promise resolving
+   * when the requested match has been added to the registry.
+   *
    * @param {RegExp} test
    * @param {ResolverLoadFn} load
    * @returns {Registry}
@@ -168,9 +170,10 @@ export class Registry {
     });
   }
 
-  // Given a string, attempts to resolve it with a `resolver` and
-  // loads in the registry all the chips returned by the resolver.
   /**
+   * Given a string, attempts to resolve it with a `resolver` and
+   * loads in the registry all the chips returned by the resolver.
+   *
    * @param {string} qualifiedName
    * @returns {Promise<Registry>}
    */
@@ -214,9 +217,10 @@ export class Registry {
     return this;
   }
 
-  // Returns true if there is at least one chip with the given name
-  // in the registry.
   /**
+   * Returns true if there is at least one chip with the given name
+   * in the registry.
+   *
    * @param {string} name
    * @returns {boolean}
    */
@@ -224,10 +228,11 @@ export class Registry {
     return this.#qualifiedToChip.has(name) || this.#uriToChip.has(name);
   }
 
-  // Get the chip class in the registry with the given name.
-  // If the chip is not found or the name is ambiguous, throws an error.
-  // Returns either the chip or a promise resolving to the chip.
   /**
+   * Get the chip class in the registry with the given name.
+   * If the chip is not found or the name is ambiguous, throws an error.
+   * Returns either the chip or a promise resolving to the chip.
+   *
    * @param {string} name
    * @returns {any | Promise<any>}
    */
@@ -254,10 +259,11 @@ export class Registry {
     return getChip();
   }
 
-  // Returns the shortest name for the given chip according to this
-  // registry. That could be the `qualifiedName` or the chip `URI`
-  // if the chip is registered via the `use` method.
   /**
+   * Returns the shortest name for the given chip according to this
+   * registry. That could be the `qualifiedName` or the chip `URI`
+   * if the chip is registered via the `use` method.
+   *
    * @param {any} chip
    * @returns {string | undefined}
    */
@@ -267,9 +273,10 @@ export class Registry {
     return localQualifiedName || fullQualifiedName;
   }
 
-  // If the given chip is registered, returns the qualified name
-  // according to this registry.
   /**
+   * If the given chip is registered, returns the qualified name
+   * according to this registry.
+   *
    * @param {any} chip
    * @returns {string | undefined}
    */

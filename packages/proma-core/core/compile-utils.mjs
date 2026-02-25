@@ -232,11 +232,13 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
       ast = replaceAstPath(ast, path, res);
     }
 
-    // Blocks compiled by `compileOutputData` must always `blockStatement`s
-    // with declarations and the last expression being a way to read the output
-    // port. Declarations are saved in this `injectInScope` array to be injected
-    // later
-    /** @type {ScopeInjection[]} */
+    /**
+     * Blocks compiled by `compileOutputData` must always `blockStatement`s
+     * with declarations and the last expression being a way to read the output
+     * port. Declarations are saved in this `injectInScope` array to be injected
+     * later
+     *
+     */
     const injectInScope = [];
 
     for (let {
@@ -333,11 +335,12 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   };
 }
 
-// Be careful with cleaning, you might remove code that the user
-// intendet to have there like just `myObj.something;` could actually trigger
-// a getter but we might be tempted to remove it here. Aim to produce clean
-// code when compiling instead.
 /**
+ * Be careful with cleaning, you might remove code that the user
+ * intendet to have there like just `myObj.something;` could actually trigger
+ * a getter but we might be tempted to remove it here. Aim to produce clean
+ * code when compiling instead.
+ *
  * @param {any} ast
  * @returns {any}
  */

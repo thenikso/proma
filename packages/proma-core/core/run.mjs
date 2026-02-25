@@ -403,12 +403,13 @@ const {
   types: { namedTypes, builders },
 } = recast;
 
-// Similar to what we do in `compile-utils` we need to visit all the calls
-// to gather which ports are used (in order to reconstruct the function passing
-// port references). Transform all inner function declarations to their wrapped
-// version using `scope.wrapFunction(f);`.
-// This enables using ports in callbacks or async functions.
 /**
+ * Similar to what we do in `compile-utils` we need to visit all the calls
+ * to gather which ports are used (in order to reconstruct the function passing
+ * port references). Transform all inner function declarations to their wrapped
+ * version using `scope.wrapFunction(f);`.
+ * This enables using ports in callbacks or async functions.
+ *
  * Rewrites function bodies so direct port calls (`input()`, `output(x)`) are
  * rebound to the scope-aware wrappers during runtime execution.
  *

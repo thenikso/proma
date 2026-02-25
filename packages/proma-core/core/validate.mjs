@@ -237,9 +237,11 @@ function checkMissingFlowEntry(chipInfo, diagnostics) {
  * @param {ValidationDiagnostic[]} diagnostics
  */
 function checkDataCycles(chipInfo, diagnostics) {
-  // Build adjacency: source Port → [sink Port]
-  // Only for data ports (output data source → input data sink)
-  /** @type {Map<Port, Port[]>} */
+  /**
+   * Build adjacency: source Port → [sink Port]
+   * Only for data ports (output data source → input data sink)
+   *
+   */
   const dataAdj = new Map();
 
   for (const [source, sinks] of chipInfo.sourceConnections.entries()) {

@@ -480,8 +480,9 @@ export class ChipInfo {
     return portOutlet;
   }
 
-  // TODO accept a beforePort param to insert in specific position?
   /**
+   * TODO accept a beforePort param to insert in specific position?
+   *
    * @param {string} name
    * @param {object | boolean | string} [config]
    * @returns {PortOutlet}

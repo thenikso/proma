@@ -68,6 +68,28 @@ This document tracks architecture and implementation smells found during the JSD
   - Easy to introduce subtle control-flow bugs when extending resolver logic.
   - Harder to provide strongly typed, predictable public API ergonomics.
 
+## 8) Compilation mutates shared port metadata as implicit cache/state
+
+- Location: `packages/proma-core/core/compile.mjs`
+- Pattern:
+  - Compiler functions are cached by mutating `portInfo.compiler`, `portInfo.computeCompiler`, `portInfo.executeCompiler`.
+  - Runtime compilation state also mutates `portInfo.$isPushing`.
+- Risks:
+  - Compilation order can influence behavior in subtle ways.
+  - Parallel/overlapping compilations against shared `ChipInfo` graphs are hard to make safe.
+  - Side effects blur boundaries between immutable model metadata and transient compilation state.
+
+## 9) `compile.mjs` is a high-complexity monolith
+
+- Location: `packages/proma-core/core/compile.mjs`
+- Pattern:
+  - A single ~1k-line module mixes traversal, scope resolution, AST generation, compiler caching, and wrapper adaptation.
+  - Multiple nested compiler factories rely on shared mutable conventions and implicit invariants.
+- Risks:
+  - High regression risk for small edits.
+  - Difficult onboarding and weak locality of reasoning for new contributors.
+  - Type coverage improvements are slower because signatures are deeply nested.
+
 ## Suggested follow-up backlog (after typing phases)
 
 1. Design RFC for replacing callable `Function`-subclass ports with a plain-object callable wrapper model.
