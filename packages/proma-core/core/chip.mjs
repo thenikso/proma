@@ -1,3 +1,4 @@
+// @ts-check
 import { info, shortUID, assert, assertInfo } from './utils.mjs';
 import {
   Port,
@@ -477,11 +478,14 @@ export class ChipInfo {
         throw new Error('Can not wire flow port with data port');
       }
     }
-    if ((isOutletA ^ infoA.isInput) === (isOutletB ^ infoB.isInput)) {
+    if (
+      (Number(isOutletA) ^ Number(infoA.isInput)) ===
+      (Number(isOutletB) ^ Number(infoB.isInput))
+    ) {
       throw new Error('Can not wire ports of the same input/output side');
     }
     let source, sink;
-    if (infoA.isSource ^ isOutletA) {
+    if (Boolean(Number(infoA.isSource) ^ Number(isOutletA))) {
       source = portA;
       sink = portB;
     } else {
@@ -580,7 +584,7 @@ export class ChipInfo {
         if (outletInfo instanceof PortInfo) {
           const parentPort =
             chipInstance[outletInfo.isInput ? INPUT : OUTPUT][outletInfo.name];
-          if (info(parentPort) !== outletInfo) {
+          if (!parentPort || info(/** @type {any} */ (parentPort)) !== outletInfo) {
             throw new Error('Invalid port found in given parent');
           }
           res.push(parentPort);

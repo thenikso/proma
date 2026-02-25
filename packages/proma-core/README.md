@@ -649,6 +649,12 @@ pnpm build
 # Run tests
 pnpm test
 
+# Type-check JSDoc-typed core API surface
+pnpm run check:types
+
+# Emit type declarations from JSDoc
+pnpm run build:types
+
 # Start development server (serves test.html)
 pnpm dev
 ```
@@ -657,6 +663,10 @@ The package builds to:
 
 - `dist/index.mjs` - ES module
 - `dist/index.js` - UMD module (for browsers)
+- `dist/core/*.d.mts` - TypeScript declarations generated from JSDoc
+
+`proma-core` uses JSDoc for source-level type annotations and emits declarations
+from those annotations for downstream packages.
 
 ## Architecture
 
@@ -715,7 +725,12 @@ proma-core/
 1. Make changes in `core/` directory
 2. Run `pnpm build` to compile
 3. Test changes using `test.html` or automated tests
-4. Ensure `pnpm lint` passes
+4. Ensure `pnpm run check:types` passes for core API typing
+5. Ensure `pnpm lint` passes
+
+Note: type enforcement is currently scoped to `@proma/core` via
+`pnpm --filter @proma/core run check:types`. Workspace-wide `pnpm check`
+includes existing unrelated strict-JS errors in other packages.
 
 ## Examples
 

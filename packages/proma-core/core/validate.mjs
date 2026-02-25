@@ -1,3 +1,4 @@
+// @ts-check
 import { info } from './utils.mjs';
 import { Chip, ChipInfo } from './chip.mjs';
 import { Port, PortInfo } from './ports.mjs';

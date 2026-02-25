@@ -1,3 +1,4 @@
+// @ts-check
 import { info } from './utils.mjs';
 import { variadicStringNameToFunc } from './variadic.mjs';
 import { makePortRun } from './run.mjs';
@@ -5,13 +6,22 @@ import { serializePortInfo } from './serialize.mjs';
 import { type } from './types.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';
 
-export { INPUT, OUTPUT };
-
 //
 // Public
 //
 
 export class Port extends Function {
+  /** @type {any} */
+  explicitValue;
+  /** @type {any} */
+  defaultValue;
+  /** @type {any} */
+  chip;
+  /** @type {boolean} */
+  isData;
+  /** @type {boolean} */
+  isInput;
+
   constructor(chip, portInfo, variadicIndex) {
     super();
 
@@ -179,7 +189,9 @@ export class PortList {
           const portInfo = info(port);
           if (portInfo.hasName(key)) {
             if (portInfo.isHidden) {
-              throw new Error(`Attempting to access hidden port "${key}"`);
+              throw new Error(
+                `Attempting to access hidden port "${String(key)}"`,
+              );
             }
             if (!portInfo.isData || !portInfo.isInput) {
               throw new Error('Can only set initial value to input data ports');
@@ -333,9 +345,12 @@ function makeVariadicAccessors(ownerPort, makePortAtIndex) {
   return new Proxy([], {
     get(target, key) {
       const index = getIndex(key);
+      /** @type {string | symbol | number} */
+      let lookupKey = key;
       if (index >= 0) {
-        key = index;
-        if (typeof target[key] === 'undefined') {
+        const indexKey = index;
+        lookupKey = indexKey;
+        if (typeof target[indexKey] === 'undefined') {
           const variadicPort = makePortAtIndex(index);
           Object.defineProperties(variadicPort, {
             variadicIndex: {
@@ -352,10 +367,10 @@ function makeVariadicAccessors(ownerPort, makePortAtIndex) {
               },
             },
           });
-          target[key] = variadicPort;
+          target[indexKey] = variadicPort;
         }
       }
-      return Reflect.get(target, key);
+      return Reflect.get(target, lookupKey);
     },
     deleteProperty(target, key) {
       const index = getIndex(key);
@@ -433,24 +448,28 @@ export class PortInfo {
     return this.name;
   }
 
+  /** @returns {boolean} */
   get isInput() {
     throw new Error('unimplmeneted');
   }
 
+  /** @returns {boolean} */
   get isOutput() {
     throw new Error('unimplmeneted');
   }
 
+  /** @returns {boolean} */
   get isFlow() {
     throw new Error('unimplmeneted');
   }
 
+  /** @returns {boolean} */
   get isData() {
     throw new Error('unimplmeneted');
   }
 
   get isSink() {
-    return !!(this.isFlow ^ this.isInput);
+    return Boolean(Number(this.isFlow) ^ Number(this.isInput));
   }
 
   get isSource() {

@@ -1,3 +1,4 @@
+// @ts-check
 import recast from '../vendor/recast.mjs';
 
 export function type(signature) {
@@ -98,7 +99,7 @@ export class Type {
         },
         definitionKind: {
           enumerable: true,
-          value: this.definitionKinds[0],
+          value: definitions.map(serializeKind)[0],
         },
         definition: {
           value: definition,

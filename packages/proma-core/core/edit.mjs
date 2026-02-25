@@ -1,3 +1,4 @@
+// @ts-check
 import { context, info, assert } from './utils.mjs';
 import { Chip, isChipClass } from './chip.mjs';
 import { PortOutlet } from './ports.mjs';
@@ -108,6 +109,11 @@ function addConnectionsToMaps(chipInfo, connections) {
 }
 
 class EditableChipInfo {
+  /** @type {any} */
+  Chip;
+  /** @type {(eventName: string, detail?: any) => boolean} */
+  dispatch;
+
   constructor(chipClass, registry = defaultRegistry) {
     const chipInfo = info(chipClass);
     info(this, chipInfo);

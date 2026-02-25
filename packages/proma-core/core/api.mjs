@@ -1,3 +1,4 @@
+// @ts-check
 import { context, assert, info } from './utils.mjs';
 import { Chip as ChipBase, ChipInfo } from './chip.mjs';
 import { runFlowPorts } from './run.mjs';
@@ -17,16 +18,24 @@ export const chip = makeChipFactory(
   },
   {
     onCreate: {
+      /**
+       * @param {any} chip
+       * @returns {any[] | undefined}
+       */
       selectPorts(chip) {
         if (chip instanceof OnCreate) {
-          return [chip.out.then];
+          return [/** @type {any} */ (chip).out.then];
         }
       },
     },
     onDestroy: {
+      /**
+       * @param {any} chip
+       * @returns {any[] | undefined}
+       */
       selectPorts(chip) {
         if (chip instanceof OnDestroy) {
-          return [chip.out.then];
+          return [/** @type {any} */ (chip).out.then];
         }
       },
     },
@@ -58,6 +67,10 @@ export function wire(portA, portB) {
   chipInfo.addConnection(portA, portB);
 }
 
+/**
+ * @param {string} name
+ * @param {{ defaultValue?: any, required?: boolean }} [config]
+ */
 export function inputConfig(name, { defaultValue, required } = {}) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputDataPort(name, {

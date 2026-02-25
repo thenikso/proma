@@ -1,6 +1,12 @@
+// @ts-check
 import { INPUT, OUTPUT } from './constants.mjs';
 import { edit } from './edit.mjs';
 
+/**
+ * @param {any} chip
+ * @param {any} data
+ * @param {{ registry?: any, withErrors?: (errors: unknown[]) => void }} [options]
+ */
 export async function fromJSON(chip, data, { registry, withErrors } = {}) {
   if (typeof data === 'string') {
     data = JSON.parse(data);
@@ -17,6 +23,7 @@ export async function fromJSON(chip, data, { registry, withErrors } = {}) {
 async function deserializeChip(chip, data, registry, withErrors) {
   // TODO validate `data`
   const res = chip(data.URI, null, { editable: true });
+  /** @type {any} */
   const build = edit(res, registry);
   const useSet = new Set(data.use);
   useSet.add('proma/std');

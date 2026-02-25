@@ -1,3 +1,4 @@
+// @ts-check
 import { Chip } from './chip.mjs';
 import { info, assert } from './utils.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';

@@ -1,3 +1,4 @@
+// @ts-check
 import { isChipClass } from './chip.mjs';
 
 import * as lib from './library/index.mjs';
