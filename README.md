@@ -14,7 +14,6 @@ A visual programming language for JavaScript inspired by Unreal Engine Blueprint
 
 ```bash
 pnpm install
-pnpm bootstrap
 ```
 
 Run web app:
@@ -29,7 +28,11 @@ pnpm dev
 Root commands:
 
 ```bash
-pnpm bootstrap
+pnpm install
+pnpm dev
+pnpm build
+pnpm check
+pnpm test
 pnpm lint
 pnpm format
 ```

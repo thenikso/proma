@@ -3,18 +3,18 @@
   "repository": "https://github.com/thenikso/proma",
   "private": true,
   "license": "UNLICENSED",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
-    "bootstrap": "lerna bootstrap --use-workspaces",
-    "lint": "prettier --check packages",
-    "format": "prettier --write packages"
+    "bootstrap": "pnpm install",
+    "dev": "pnpm --filter @proma/web dev",
+    "build": "pnpm -r --if-present build",
+    "check": "pnpm -r --if-present check",
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint",
+    "format": "pnpm -r --if-present format"
   },
   "devDependencies": {
-    "lerna": "^4.0.0",
     "prettier": "^2.5.1",
     "prettier-plugin-svelte": "^2.5.0"
-  },
-  "defaultNamespace": "@proma",
-  "workspaces": [
-    "packages/*"
-  ]
+  }
 }

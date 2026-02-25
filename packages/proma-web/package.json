@@ -48,7 +48,6 @@
 		"file-saver": "2.0.5",
 		"fuse.js": "6.4.6",
 		"jszip": "3.7.1",
-		"lerna": "^4.0.0",
 		"lz-string": "1.4.4",
 		"serve": "13.0.2"
 	},
