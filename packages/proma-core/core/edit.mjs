@@ -11,7 +11,13 @@ import { EditHistory } from './history.mjs';
 /**
  * @typedef {{ source: unknown, sink: unknown }} PortConnection
  * @typedef {(event: CustomEvent) => void} EditEventListener
- * @typedef {(eventName: string, detail?: unknown) => boolean} EditDispatch
+ * @typedef {{
+ *   undo?: () => unknown,
+ *   redo?: () => unknown,
+ *   replaying?: boolean,
+ *   [key: string]: unknown
+ * }} EditEventDetail
+ * @typedef {(eventName: string, detail?: EditEventDetail) => boolean} EditDispatch
  * @typedef {(uri: string, ...args: unknown[]) => typeof Chip} CustomChipFactory
  */
 
@@ -249,7 +255,7 @@ class EditableChipInfo {
       dispatch: {
         /**
          * @param {string} eventName
-         * @param {any} [detail]
+         * @param {EditEventDetail} [detail]
          * @returns {boolean}
          */
         value: function dispatch(eventName, detail) {
@@ -370,7 +376,7 @@ class EditableChipInfo {
    * Adds a chip instance/class/uri to the editable graph.
    *
    * @param {string | typeof Chip | Chip | PlaceholderChip} chipToAdd
-   * @param {any} [canonicalValues]
+   * @param {unknown} [canonicalValues]
    * @param {string} [id]
    * @returns {EditableChipInfo}
    */
@@ -412,14 +418,16 @@ class EditableChipInfo {
         chipToAdd = new PlaceholderChip(chipClass, chipToAdd, canonicalValues);
       }
     } else if (chipToAdd instanceof Chip) {
-      id = canonicalValues;
+      id = typeof canonicalValues === 'string' ? canonicalValues : id;
       canonicalValues = undefined;
     }
 
     if (isChipClass(chipToAdd)) {
       context.push(chipInfo);
       try {
-        chipToAdd = new chipToAdd(...(canonicalValues || []));
+        chipToAdd = new chipToAdd(
+          .../** @type {unknown[]} */ (canonicalValues || []),
+        );
       } catch (e) {
         context.pop();
         throw e;
