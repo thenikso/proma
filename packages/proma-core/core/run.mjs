@@ -2,6 +2,28 @@ import { context, info, assertInfo } from './utils.mjs';
 import { ExternalReference } from './external.mjs';
 import recast from '../vendor/recast.mjs';
 
+/**
+ * Callable runtime port produced by `makePortRun`. Concrete runtime members
+ * are attached by `Port`/`PortOutlet` constructors.
+ *
+ * @typedef {((value?: any) => any) & {
+ *   chip?: any,
+ *   name?: string,
+ *   value?: any,
+ *   type?: any,
+ *   variadic?: Iterable<any>,
+ *   defaultValue?: any,
+ *   $runValue?: any,
+ *   $runExecute?: Function
+ * }} PortRuntimeCallable
+ */
+
+/**
+ * Walks a chip subtree and triggers selected flow ports for each sub-chip.
+ *
+ * @param {any} ownerChip
+ * @param {(chip: any) => Array<PortRuntimeCallable | undefined> | undefined} selectPortsToRun
+ */
 export function runFlowPorts(ownerChip, selectPortsToRun) {
   const scope = Scope.current;
   scope.with(ownerChip, () => {
@@ -18,7 +40,15 @@ export function runFlowPorts(ownerChip, selectPortsToRun) {
   });
 }
 
+/**
+ * Creates the callable runtime implementation for a port or port outlet.
+ *
+ * @param {any} portInfo
+ * @param {boolean} [isOutlet]
+ * @returns {PortRuntimeCallable}
+ */
 export function makePortRun(portInfo, isOutlet) {
+  /** @type {PortRuntimeCallable} */
   let port;
   if (portInfo.isInput) {
     if (portInfo.isData) {
@@ -215,6 +245,9 @@ export function makePortRun(portInfo, isOutlet) {
 }
 
 class Scope {
+  /**
+   * @param {any[]} [chips]
+   */
   constructor(chips) {
     this.chips = chips || [];
   }
@@ -231,6 +264,9 @@ class Scope {
     return this.chips[this.chips.length - 2];
   }
 
+  /**
+   * @param {any} chip
+   */
   push(chip) {
     this.chips.push(chip);
   }
@@ -245,6 +281,13 @@ class Scope {
     return newScope;
   }
 
+  /**
+   * Executes `f` with `chip` as current scope.
+   *
+   * @param {any} chip
+   * @param {Function} f
+   * @returns {any}
+   */
   with(chip, f) {
     let didPushChip = false;
     if (this.chip !== chip) {
@@ -277,6 +320,13 @@ class Scope {
     return res;
   }
 
+  /**
+   * Executes `f` replacing only the current chip frame.
+   *
+   * @param {any} chip
+   * @param {Function} f
+   * @returns {any}
+   */
   withReplace(chip, f) {
     let oldChip;
     let didChangeChip = false;
@@ -309,6 +359,12 @@ class Scope {
     return scope;
   }
 
+  /**
+   * Captures a callable with the current scope.
+   *
+   * @param {Function} func
+   * @returns {(...args: any[]) => any}
+   */
   wrapFunction(func) {
     const scope = this.clone();
     return function scopeWrapped(...args) {
@@ -328,6 +384,10 @@ class Scope {
   }
 }
 
+/**
+ * @param {PortRuntimeCallable} port
+ * @param {any} value
+ */
 function checkValueType(port, value) {
   if (port.type && !port.type.check(value)) {
     console.warn(
@@ -348,6 +408,14 @@ const {
 // port references). Transform all inner function declarations to their wrapped
 // version using `scope.wrapFunction(f);`.
 // This enables using ports in callbacks or async functions.
+/**
+ * Rewrites function bodies so direct port calls (`input()`, `output(x)`) are
+ * rebound to the scope-aware wrappers during runtime execution.
+ *
+ * @param {PortRuntimeCallable} port
+ * @param {Function} func
+ * @returns {() => any}
+ */
 function prepareFunctionToRun(port, func) {
   let funcAst = parse(String(func)).program.body[0];
   if (
