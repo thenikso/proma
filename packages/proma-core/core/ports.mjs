@@ -175,6 +175,7 @@ export class Port extends Function {
 
     if (
       portInfo instanceof VariadicPortInfo &&
+      portInfo.isVariadic &&
       typeof variadicIndex === 'undefined'
     ) {
       if (!Array.isArray(self.explicitValue)) {
@@ -202,11 +203,13 @@ export class Port extends Function {
 
   /** @returns {any} */
   get explicitValue() {
-    return undefined;
+    return this[PORT_EXPLICIT_VALUE];
   }
 
   /** @param {any} value */
-  set explicitValue(value) {}
+  set explicitValue(value) {
+    this[PORT_EXPLICIT_VALUE] = value;
+  }
 
   /** @returns {any} */
   get defaultValue() {
@@ -253,6 +256,7 @@ export class PortList {
             if (portInfo.hasName(key)) {
               if (
                 portInfo instanceof VariadicPortInfo &&
+                portInfo.isVariadic &&
                 portInfo.variadicIndex(key) >= 0
               ) {
                 return port.variadic[key];
@@ -275,7 +279,7 @@ export class PortList {
             if (!portInfo.isData || !portInfo.isInput) {
               throw new Error('Can only set initial value to input data ports');
             }
-            if (portInfo instanceof VariadicPortInfo) {
+            if (portInfo instanceof VariadicPortInfo && portInfo.isVariadic) {
               const variadicIndex = portInfo.variadicIndex(key);
               if (variadicIndex >= 0) {
                 // Make sure to access the variadic port to create its instance
@@ -503,6 +507,7 @@ function makeVariadicAccessors(ownerPort, makePortAtIndex) {
 //
 
 const validPortName = /^[a-z_$][a-z_$0-9]*$/i;
+const PORT_EXPLICIT_VALUE = Symbol('portExplicitValue');
 
 export class PortInfo {
   constructor(chipInfo, name) {
