@@ -135,6 +135,19 @@ This document tracks architecture and implementation smells found during the JSD
   - Validation errors are pushed to runtime and can surface late.
   - Makes API behavior less predictable for contributors extending registry logic.
 
+## 14) Port runtime shape diverges from declared class surface
+
+- Location: `packages/proma-core/core/ports.mjs`, consumers in `edit.mjs`
+- Pattern:
+  - `Port` instances receive key members (`isInput`, `isData`, `type`, etc.)
+    via `Object.defineProperties` at construction time.
+  - Those members are not fully represented as explicit class members/getters,
+    so static typing sees a narrower surface than runtime.
+- Risks:
+  - Editor/type-checking requires repeated casts even in valid call paths.
+  - Refactors may accidentally rely on undeclared runtime-only properties.
+  - Public API typing remains weaker than actual behavior, slowing Phase 1+ progress.
+
 ## Suggested follow-up backlog (after typing phases)
 
 1. Design RFC for replacing callable `Function`-subclass ports with a plain-object callable wrapper model.

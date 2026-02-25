@@ -9,7 +9,10 @@ import { type } from './types.mjs';
 import { EditHistory } from './history.mjs';
 
 /**
- * @typedef {{ source: unknown, sink: unknown }} PortConnection
+ * @typedef {import('./chip.mjs').PortSelector} PortSelector
+ * @typedef {import('./chip.mjs').ConnectionEndpointSelector} ConnectionEndpointSelector
+ * @typedef {import('./chip.mjs').ChipConnectionEndpoint} ChipConnectionEndpoint
+ * @typedef {{ source: ChipConnectionEndpoint, sink: ChipConnectionEndpoint }} PortConnection
  * @typedef {{
  *   editable?: boolean,
  *   customChipClasses?: Record<string, unknown>
@@ -70,16 +73,12 @@ export function edit(ChipClass, registry) {
  * Resolve and validate an outlet belonging to the provided chip info.
  *
  * @param {import('./chip.mjs').ChipInfo} chipInfo
- * @param {unknown} outlet
+ * @param {PortSelector} outlet
  * @returns {PortOutlet}
  */
 function resolveOutlet(chipInfo, outlet) {
   const resolved =
-    outlet instanceof PortOutlet
-      ? outlet
-      : chipInfo.getPort(
-          /** @type {import('./chip.mjs').PortSelector} */ (outlet),
-        );
+    outlet instanceof PortOutlet ? outlet : chipInfo.getPort(outlet);
   if (!(resolved instanceof PortOutlet)) {
     throw new Error('Can only use chip outlets');
   }
@@ -93,13 +92,11 @@ function resolveOutlet(chipInfo, outlet) {
  * Resolve a sub-chip port from any accepted selector.
  *
  * @param {import('./chip.mjs').ChipInfo} chipInfo
- * @param {unknown} port
+ * @param {PortSelector} port
  * @returns {EditablePortLike}
  */
 function resolvePort(chipInfo, port) {
-  return /** @type {EditablePortLike} */ (
-    chipInfo.getPort(/** @type {import('./chip.mjs').PortSelector} */ (port))
-  );
+  return /** @type {EditablePortLike} */ (chipInfo.getPort(port));
 }
 
 /** @type {WeakMap<import('./chip.mjs').ChipInfo, Map<string, Set<EditEventListener>>>} */
@@ -176,7 +173,7 @@ function collectConnectionsForChip(chipInfo, chip) {
 
 /**
  * @param {import('./chip.mjs').ChipInfo} chipInfo
- * @param {unknown} portInfo
+ * @param {ChipConnectionEndpoint} portInfo
  * @returns {PortConnection[]}
  */
 function collectConnectionsForPort(chipInfo, portInfo) {
@@ -662,9 +659,9 @@ class EditableChipInfo {
   //
 
   /**
-   * @param {string | string[] | unknown} path
+   * @param {PortSelector} path
    * @param {'in' | 'out'} [side]
-   * @returns {unknown}
+   * @returns {import('./ports.mjs').Port | PortOutlet | null}
    */
   getPort(path, side) {
     const chipInfo = info(this);
@@ -803,7 +800,7 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {unknown} outlet
+   * @param {PortSelector} outlet
    * @param {string} newName
    * @param {boolean} [dryRun]
    * @returns {EditableChipInfo}
@@ -833,8 +830,8 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {unknown} port
-   * @param {unknown} [beforePort]
+   * @param {PortSelector} port
+   * @param {PortSelector} [beforePort]
    * @returns {EditableChipInfo}
    */
   moveOutlet(port, beforePort) {
@@ -898,7 +895,7 @@ class EditableChipInfo {
   /**
    * Removes an outlet and any connections touching it.
    *
-   * @param {unknown} port
+   * @param {PortSelector} port
    * @returns {EditableChipInfo}
    */
   removeOutlet(port) {
@@ -986,7 +983,7 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {unknown} port
+   * @param {PortSelector} port
    * @param {unknown} newType
    * @returns {EditableChipInfo}
    */
@@ -1027,7 +1024,7 @@ class EditableChipInfo {
   //
 
   /**
-   * @param {unknown} port
+   * @param {PortSelector} port
    * @param {unknown} value
    * @returns {EditableChipInfo}
    */
@@ -1044,8 +1041,10 @@ class EditableChipInfo {
     }
     const oldValue = resolvedPort.explicitValue;
     resolvedPort.explicitValue = value;
-    const undo = () => this.setPortValue(resolvedPort, oldValue);
-    const redo = () => this.setPortValue(resolvedPort, value);
+    const undo = () =>
+      this.setPortValue(/** @type {PortSelector} */ (resolvedPort), oldValue);
+    const redo = () =>
+      this.setPortValue(/** @type {PortSelector} */ (resolvedPort), value);
     this.dispatch('port:value', {
       subject: 'port',
       operation: 'value',
@@ -1057,7 +1056,7 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {unknown} port
+   * @param {PortSelector} port
    * @param {number | string} variadicCount
    * @returns {EditableChipInfo}
    */
@@ -1107,8 +1106,15 @@ class EditableChipInfo {
       }
     }
     const undo = () =>
-      this.setPortVariadicCount(resolvedPort, oldVariadicCount);
-    const redo = () => this.setPortVariadicCount(resolvedPort, variadicCount);
+      this.setPortVariadicCount(
+        /** @type {PortSelector} */ (resolvedPort),
+        oldVariadicCount,
+      );
+    const redo = () =>
+      this.setPortVariadicCount(
+        /** @type {PortSelector} */ (resolvedPort),
+        variadicCount,
+      );
     this.dispatch('port:variadicCount', {
       subject: 'port',
       operation: 'variadicCount',
@@ -1212,7 +1218,7 @@ class EditableChipInfo {
   //
 
   /**
-   * @param {unknown} port
+   * @param {PortSelector} port
    * @returns {boolean}
    */
   hasConnections(port) {
@@ -1221,8 +1227,8 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {unknown} portA
-   * @param {unknown} portB
+   * @param {ConnectionEndpointSelector} portA
+   * @param {ConnectionEndpointSelector} portB
    * @returns {EditableChipInfo}
    */
   probeConnection(portA, portB) {
@@ -1234,8 +1240,8 @@ class EditableChipInfo {
   }
 
   /**
-   * @param {unknown} portA
-   * @param {unknown} portB
+   * @param {ConnectionEndpointSelector} portA
+   * @param {ConnectionEndpointSelector} portB
    * @returns {EditableChipInfo}
    */
   addConnection(portA, portB) {
@@ -1257,8 +1263,8 @@ class EditableChipInfo {
   /**
    * Removes one or many connections depending on provided endpoints.
    *
-   * @param {unknown} portA
-   * @param {unknown} [portB]
+   * @param {ConnectionEndpointSelector} portA
+   * @param {ConnectionEndpointSelector} [portB]
    * @returns {EditableChipInfo}
    */
   removeConnection(portA, portB) {

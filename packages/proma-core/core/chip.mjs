@@ -1,5 +1,5 @@
 // @ts-check
-import { info, shortUID, assert, assertInfo } from "./utils.mjs";
+import { info, shortUID, assert, assertInfo } from './utils.mjs';
 import {
   Port,
   PortList,
@@ -9,10 +9,10 @@ import {
   OutputDataSourcePortInfo,
   InputDataSinkPortInfo,
   OutputFlowSinkPortInfo,
-} from "./ports.mjs";
-import { INPUT, OUTPUT } from "./constants.mjs";
-import { serializeChipInfo, serializeChipInstance } from "./serialize.mjs";
-import { PlaceholderChip, PlaceholderPort } from "./placeholder.mjs";
+} from './ports.mjs';
+import { INPUT, OUTPUT } from './constants.mjs';
+import { serializeChipInfo, serializeChipInstance } from './serialize.mjs';
+import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
 
 /**
  * @typedef {Port | PlaceholderPort} ChipPortInstance
@@ -51,8 +51,8 @@ export class Chip {
           return id;
         },
         set(value) {
-          if (typeof value !== "string") {
-            throw new Error("A chip ID must be a string");
+          if (typeof value !== 'string') {
+            throw new Error('A chip ID must be a string');
           }
           id = value;
         },
@@ -104,7 +104,7 @@ export class Chip {
         }
         if (!portInfo.isData) {
           console.warn(
-            `Can not set value for port "${portInfo.name}" on chip "${id}"`
+            `Can not set value for port "${portInfo.name}" on chip "${id}"`,
           );
         }
         const port = inputPorts.find((p) => p.name === portInfo.name);
@@ -126,7 +126,7 @@ export class Chip {
       // If canonical values have not been used, we issue a warning
       if (i < canonicalValues.length) {
         throw new Error(
-          `Specified ${canonicalValues.length} canonical values but accepting only ${i}`
+          `Specified ${canonicalValues.length} canonical values but accepting only ${i}`,
         );
       }
     }
@@ -149,7 +149,7 @@ export class Chip {
 export function isChipClass(obj) {
   return (
     !!obj &&
-    (typeof obj === "function" || typeof obj === "object") &&
+    (typeof obj === 'function' || typeof obj === 'object') &&
     Reflect.getPrototypeOf(obj) === Chip
   );
 }
@@ -170,7 +170,7 @@ export class ChipInfo {
      *
      * @type {string}
      */
-    this.URI = URI || "local/" + shortUID();
+    this.URI = URI || 'local/' + shortUID();
     /** @type {Array<Chip | PlaceholderChip>} */
     this.chips = [];
     /** @type {any[]} */
@@ -217,24 +217,24 @@ export class ChipInfo {
       return `${this.name}_${++idCount}`;
     };
 
-    if (typeof makeLabel === "function") {
+    if (typeof makeLabel === 'function') {
       /** @type {ChipLabelFactory} */
       this.makeChipLabel = makeLabel;
-    } else if (typeof makeLabel === "string") {
+    } else if (typeof makeLabel === 'string') {
       /** @type {ChipLabelFactory} */
       this.makeChipLabel = () => makeLabel;
     } else {
       /** @type {ChipLabelFactory} */
       this.makeChipLabel = (chipInstance) => {
-        const parts = this.URI.split("/");
+        const parts = this.URI.split('/');
         const lastPart = parts[parts.length - 1];
         const wordsRegExp = /[A-Z][^A-Z\d]+|\d+|[A-Z]+(?![a-z])/g;
         const words = [];
         let wordMatch;
         while ((wordMatch = wordsRegExp.exec(lastPart))) {
-          words.push(wordMatch[0].replace(/_/g, "").trim());
+          words.push(wordMatch[0].replace(/_/g, '').trim());
         }
-        return words.filter((x) => !!x).join(" ");
+        return words.filter((x) => !!x).join(' ');
       };
     }
   }
@@ -242,7 +242,7 @@ export class ChipInfo {
   // Name given to the javascript entity representing this chip
   // TODO rename to `jsName`
   get name() {
-    return this.URI.replace(/[^_$a-z0-9]/gi, "_");
+    return this.URI.replace(/[^_$a-z0-9]/gi, '_');
   }
 
   get isFlowless() {
@@ -275,9 +275,9 @@ export class ChipInfo {
       if (this.chips.includes(id)) {
         return id;
       }
-    } else if (typeof id === "number") {
+    } else if (typeof id === 'number') {
       return this.chips[id] || null;
-    } else if (typeof id === "string") {
+    } else if (typeof id === 'string') {
       for (const chip of this.chips) {
         if (chip.id === id) return chip;
       }
@@ -302,7 +302,7 @@ export class ChipInfo {
             this.replaceChip(chip, actualChip);
             this.chipLoaders.delete(chip);
           }
-        })
+        }),
       );
     }
     this.chips.push(chip);
@@ -313,7 +313,7 @@ export class ChipInfo {
    * @param {Chip} actualChip
    */
   replaceChip(chip, actualChip) {
-    assert(actualChip instanceof Chip, "Expected a Chip instance");
+    assert(actualChip instanceof Chip, 'Expected a Chip instance');
     const chipIndex = this.chips.indexOf(chip);
     this.chips[chipIndex] = actualChip;
     // Replace all connected placeholder ports
@@ -399,19 +399,19 @@ export class ChipInfo {
   getPort(path, defaultSide) {
     if (path instanceof Port) {
       if (!this.chips.includes(path.chip)) {
-        throw new Error("port is not visible to this Chip");
+        throw new Error('port is not visible to this Chip');
       }
       return path;
     }
     if (path instanceof PortOutlet) {
       if (!this.inputs.includes(path) && !this.outputs.includes(path)) {
-        throw new Error("port is not an outlet of this Chip");
+        throw new Error('port is not an outlet of this Chip');
       }
       return path;
     }
     // TODO path could be an Outlet
-    if (typeof path === "string") {
-      path = path.split(".");
+    if (typeof path === 'string') {
+      path = path.split('.');
     }
     if (!Array.isArray(path)) {
       return null;
@@ -419,20 +419,20 @@ export class ChipInfo {
     /** @type {Array<string | number | undefined>} */
     let [chipId, side, portName] = path;
     // Case like `in.exec`
-    if (typeof portName === "undefined") {
+    if (typeof portName === 'undefined') {
       portName = side;
       side = chipId;
       chipId = undefined;
     }
     // Case like `exec`, in this case we will try to find a input outlet first
-    if (typeof portName === "undefined") {
+    if (typeof portName === 'undefined') {
       portName = side;
       side = chipId;
       chipId = undefined;
     }
     if (chipId) {
       const chipIndex =
-        typeof chipId === "string" ? /^\$(\d+)$/.exec(chipId) : null;
+        typeof chipId === 'string' ? /^\$(\d+)$/.exec(chipId) : null;
       if (chipIndex) {
         chipId = parseInt(chipIndex[1], 10);
       }
@@ -440,12 +440,12 @@ export class ChipInfo {
       if (!chip) {
         return null;
       }
-      if ((side !== INPUT && side !== OUTPUT) || typeof portName !== "string") {
+      if ((side !== INPUT && side !== OUTPUT) || typeof portName !== 'string') {
         return null;
       }
       return chip[side][portName];
     }
-    if (typeof portName !== "string") {
+    if (typeof portName !== 'string') {
       return null;
     }
     if (side === INPUT || (!side && defaultSide === INPUT)) {
@@ -533,11 +533,11 @@ export class ChipInfo {
     portInfo.assertValidName(name, INPUT);
     if (portInfo.isRequired) {
       const otherCanonicalInputs = this.inputs.filter(
-        (outlet) => outlet.isData && outlet.isCanonical && !outlet.isRequired
+        (outlet) => outlet.isData && outlet.isCanonical && !outlet.isRequired,
       );
       if (otherCanonicalInputs.length !== 0) {
         throw new Error(
-          `Required canonical inputs must be declared before non-required ones: ${name}`
+          `Required canonical inputs must be declared before non-required ones: ${name}`,
         );
       }
     }
@@ -561,10 +561,10 @@ export class ChipInfo {
    * @returns {{source: ChipConnectionEndpoint, sink: ChipConnectionEndpoint}}
    */
   addConnection(portA, portB, dryRun, shouldReplace) {
-    if (typeof portA === "string" || Array.isArray(portA)) {
+    if (typeof portA === 'string' || Array.isArray(portA)) {
       portA = this.getPort(portA, INPUT);
     }
-    if (typeof portB === "string" || Array.isArray(portB)) {
+    if (typeof portB === 'string' || Array.isArray(portB)) {
       portB = this.getPort(portB, OUTPUT);
     }
     if (portA instanceof PortOutlet) {
@@ -586,14 +586,14 @@ export class ChipInfo {
       throw new Error(
         `Must have two ports or outlet pair. ${portA && portA.name} -> ${
           portB && portB.name
-        }`
+        }`,
       );
     }
     if (
       !(isOutletA || this.chips.includes(portA.chip)) ||
       !(isOutletB || this.chips.includes(portB.chip))
     ) {
-      throw new Error("Both ports must be in the chip body");
+      throw new Error('Both ports must be in the chip body');
     }
     const infoA = isOutletA ? portA : info(portA);
     const infoB = isOutletB ? portB : info(portB);
@@ -605,14 +605,14 @@ export class ChipInfo {
         infoB.isFlow = infoA.isFlow;
         infoB.isData = infoA.isData;
       } else {
-        throw new Error("Can not wire flow port with data port");
+        throw new Error('Can not wire flow port with data port');
       }
     }
     if (
       (Number(isOutletA) ^ Number(infoA.isInput)) ===
       (Number(isOutletB) ^ Number(infoB.isInput))
     ) {
-      throw new Error("Can not wire ports of the same input/output side");
+      throw new Error('Can not wire ports of the same input/output side');
     }
     let source, sink;
     if (Boolean(Number(infoA.isSource) ^ Number(isOutletA))) {
@@ -630,12 +630,12 @@ export class ChipInfo {
     }
     if (source.type && sink.type && !source.type.match(sink.type)) {
       throw new Error(
-        `Invalid types: ${source.fullName} (${source.type.signature}) -> ${sink.fullName} (${sink.type.signature})`
+        `Invalid types: ${source.fullName} (${source.type.signature}) -> ${sink.fullName} (${sink.type.signature})`,
       );
     }
     if (this.sinkConnection.has(sink)) {
       if (!shouldReplace) {
-        throw new Error("Sink port already connected");
+        throw new Error('Sink port already connected');
       }
       // Replace existing connection
       if (!dryRun) {
@@ -691,7 +691,7 @@ export class ChipInfo {
       portInfo = port;
       port = null;
     } else {
-      throw new Error("Can only get connections from a port");
+      throw new Error('Can only get connections from a port');
     }
     let conn;
     if (portInfo.isSource) {
@@ -725,7 +725,7 @@ export class ChipInfo {
             !parentPort ||
             info(/** @type {Port} */ (parentPort)) !== outletInfo
           ) {
-            throw new Error("Invalid port found in given parent");
+            throw new Error('Invalid port found in given parent');
           }
           res.push(parentPort);
         } else {
