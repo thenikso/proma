@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": false,
+    "noResolve": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "rootDir": "./core",
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": [
+    "./core/index.mjs",
+    "./core/api.mjs",
+    "./core/chip.mjs",
+    "./core/ports.mjs",
+    "./core/registry.mjs",
+    "./core/edit.mjs",
+    "./core/history.mjs",
+    "./core/library/index.mjs",
+    "./core/types.mjs",
+    "./core/debug.mjs",
+    "./core/validate.mjs",
+    "./core/deserialize.mjs"
+  ],
+  "exclude": ["./dist/**", "./vendor/**", "./test/**", "./scripts/**"]
+}

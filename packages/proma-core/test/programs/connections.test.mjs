@@ -8,7 +8,83 @@ import {
   wire,
 } from '../../core/index.mjs';
 import { js, compileAndRun, compileAndRunResult } from '../utils.mjs';
-import { Log } from '../lib.mjs';
+import { Log, Pass } from '../lib.mjs';
+
+describe('[programs/connections] wire selector paths', async (assert) => {
+  assert({
+    given: 'string-based selector paths passed to wire',
+    should: 'resolve top-level and sub-chip ports',
+    actual: chip('SelectorStringWire', () => {
+      const exec = inputFlow('exec');
+      const input = inputData('input');
+      const then = outputFlow('then');
+      const output = outputData('output');
+
+      const pass = new Pass();
+      pass.id = 'Pass';
+
+      wire('exec', 'Pass.in.exec');
+      wire('input', 'Pass.in.input');
+      wire('Pass.out.then', 'then');
+      wire('Pass.out.output', 'output');
+    }).toJSON(),
+    expected: {
+      URI: 'SelectorStringWire',
+      in: [
+        { name: 'exec', kind: 'flow' },
+        { name: 'input', kind: 'data' },
+      ],
+      out: [
+        { name: 'then', kind: 'flow' },
+        { name: 'output', kind: 'data', computeOn: ['then'] },
+      ],
+      chips: [{ id: 'Pass', chipURI: 'Pass' }],
+      connections: [
+        { source: 'in.exec', sink: 'Pass.in.exec' },
+        { source: 'in.input', sink: 'Pass.in.input' },
+        { source: 'Pass.out.then', sink: 'out.then' },
+        { source: 'Pass.out.output', sink: 'out.output' },
+      ],
+    },
+  });
+
+  assert({
+    given: 'array-based selector paths passed to wire',
+    should: 'resolve selector tokens as connection endpoints',
+    actual: chip('SelectorArrayWire', () => {
+      const exec = inputFlow('exec');
+      const input = inputData('input');
+      const then = outputFlow('then');
+      const output = outputData('output');
+
+      const pass = new Pass();
+      pass.id = 'Pass';
+
+      wire(['in', 'exec'], ['Pass', 'in', 'exec']);
+      wire(['in', 'input'], ['Pass', 'in', 'input']);
+      wire(['Pass', 'out', 'then'], ['out', 'then']);
+      wire(['Pass', 'out', 'output'], ['out', 'output']);
+    }).toJSON(),
+    expected: {
+      URI: 'SelectorArrayWire',
+      in: [
+        { name: 'exec', kind: 'flow' },
+        { name: 'input', kind: 'data' },
+      ],
+      out: [
+        { name: 'then', kind: 'flow' },
+        { name: 'output', kind: 'data', computeOn: ['then'] },
+      ],
+      chips: [{ id: 'Pass', chipURI: 'Pass' }],
+      connections: [
+        { source: 'in.exec', sink: 'Pass.in.exec' },
+        { source: 'in.input', sink: 'Pass.in.input' },
+        { source: 'Pass.out.then', sink: 'out.then' },
+        { source: 'Pass.out.output', sink: 'out.output' },
+      ],
+    },
+  });
+});
 
 describe('[programs/connections] input flow (execs) multi-connections', async (assert) => {
   assert({

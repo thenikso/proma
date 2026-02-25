@@ -2,11 +2,44 @@ import recast from '../vendor/recast.mjs';
 import { info } from './utils.mjs';
 import { ExternalReference } from './external.mjs';
 
+/**
+ * @typedef {{ body: unknown[] }} BlockStatementLike
+ * @typedef {{ chipInfo: { getInputPortOutlet: (portName: string) => unknown, getOutputPortOutlet: (portName: string) => unknown }, [sourceProp: string]: unknown }} AstPortInfo
+ */
+
+/**
+ * @typedef {{
+ *   portName: string,
+ *   path: Array<string | number>
+ * }} InputOrFlowReplacement
+ * @typedef {InputOrFlowReplacement & {
+ *   argPath: Array<string | number>,
+ *   scopeBlockPath: Array<string | number>,
+ *   scopeBlockBodyIndex: number
+ * }} OutputDataReplacement
+ * @typedef {{
+ *   scopeBlockPath: Array<string | number>,
+ *   scopeBlockBodyIndex: number,
+ *   injectBlock: BlockStatementLike
+ * }} ScopeInjection
+ * @typedef {{
+ *   compileInputData: (portName: string) => unknown,
+ *   compileOutputFlow: (portName: string) => unknown,
+ *   compileOutputData: (portName: string, argBlock: unknown) => unknown
+ * }} AstBuilderTools
+ */
+
 const {
   parse,
   types: { namedTypes, visit, builders },
 } = recast;
 
+/**
+ * Compile JS literal-ish values into a recast AST expression.
+ *
+ * @param {unknown} value
+ * @returns {unknown}
+ */
 export function literalCompiler(value) {
   if (value instanceof ExternalReference) {
     return builders.identifier(value.reference);
@@ -41,6 +74,10 @@ export function literalCompiler(value) {
   }
 }
 
+/**
+ * @param {unknown} funcAst
+ * @returns {unknown}
+ */
 export function getFunction(funcAst) {
   if (namedTypes.FunctionDeclaration.check(funcAst)) {
     return funcAst;
@@ -53,46 +90,81 @@ export function getFunction(funcAst) {
   return null;
 }
 
+/**
+ * @param {{ name: string | number | null, parentPath?: unknown }} nodePath
+ * @returns {Array<string | number>}
+ */
 export function pathFromNodePath(nodePath) {
   const res = [];
   while (nodePath && nodePath.name !== null && nodePath.name !== 'root') {
     res.unshift(nodePath.name);
-    nodePath = nodePath.parentPath;
+    nodePath =
+      /** @type {{ name: string | number | null, parentPath?: unknown }} */ (
+        nodePath.parentPath
+      );
   }
   return res;
 }
 
+/**
+ * Get a nested value from an object-like value following a path.
+ *
+ * @param {unknown} obj
+ * @param {Array<string | number>} path
+ * @returns {unknown}
+ */
 export function getPath(obj, path) {
   let cursor = obj;
   for (let i = 0, l = path.length; i < l; i++) {
     const segment = path[i];
-    if (!cursor) return cursor;
-    cursor = cursor[segment];
+    if (cursor === null || typeof cursor !== 'object') return undefined;
+    cursor = /** @type {Record<string | number, unknown>} */ (cursor)[segment];
   }
   return cursor;
 }
 
+/**
+ * Replace a nested value by path and return the mutated root object.
+ *
+ * @param {unknown} obj
+ * @param {Array<string | number>} path
+ * @param {unknown} value
+ * @returns {unknown}
+ */
 export function replaceAstPath(obj, path, value) {
   if (!path || path.length === 0) {
     return value;
   }
-  let cursor = obj;
+  if (obj === null || typeof obj !== 'object') return obj;
+  let cursor = /** @type {Record<string | number, unknown>} */ (obj);
   for (let i = 0, l = path.length; i < l; i++) {
     const segment = path[i];
     if (i === l - 1) {
       cursor[segment] = value;
       break;
     }
-    cursor = cursor[segment];
+    const next = cursor[segment];
+    if (next === null || typeof next !== 'object') break;
+    cursor = /** @type {Record<string | number, unknown>} */ (next);
   }
   return obj;
 }
 
+/**
+ * Builds an AST compiler adapter around a port function (`execute`, `compute`).
+ *
+ * @param {AstPortInfo} portInfo
+ * @param {string} [sourceProp]
+ * @returns {(tools: AstBuilderTools) => unknown}
+ */
 export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   const chipInfo = portInfo.chipInfo;
 
+  /** @type {InputOrFlowReplacement[]} */
   const replaceInputData = [];
+  /** @type {InputOrFlowReplacement[]} */
   const replaceOutputFlows = [];
+  /** @type {OutputDataReplacement[]} */
   const replaceOutputData = [];
 
   const func = getFunction(parse(String(portInfo[sourceProp])).program.body[0]);
@@ -177,10 +249,14 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
       ast = replaceAstPath(ast, path, res);
     }
 
-    // Blocks compiled by `compileOutputData` must always `blockStatement`s
-    // with declarations and the last expression being a way to read the output
-    // port. Declarations are saved in this `injectInScope` array to be injected
-    // later
+    /**
+     * Blocks compiled by `compileOutputData` must always `blockStatement`s
+     * with declarations and the last expression being a way to read the output
+     * port. Declarations are saved in this `injectInScope` array to be injected
+     * later
+     *
+     */
+    /** @type {ScopeInjection[]} */
     const injectInScope = [];
 
     for (let {
@@ -231,13 +307,18 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
     // Inject output declarations in the proper scope (that is, the scope of
     // the statement that used the output port)
     if (injectInScope.length > 0) {
-      // Prepare injection cursors. These are on a per scope block basis and
-      // inside there is a map of original insertion point to current cursors.
-      // This allow for the insertion of output blocks just before the usage of
-      // the output.
+      /**
+       * Prepare per-scope insertion cursors.
+       * The inner record maps original insertion points to current cursor
+       * positions as new declarations are injected.
+       *
+       * @type {Map<BlockStatementLike, Record<string, number>>}
+       */
       const cursors = new Map();
       for (const { scopeBlockPath, scopeBlockBodyIndex } of injectInScope) {
-        const scopeBlock = getPath(ast, scopeBlockPath);
+        const scopeBlock = /** @type {BlockStatementLike} */ (
+          getPath(ast, scopeBlockPath)
+        );
         const cursorsByInsertionIndex = cursors.get(scopeBlock) || {};
         cursorsByInsertionIndex[scopeBlockBodyIndex] = scopeBlockBodyIndex;
         cursors.set(scopeBlock, cursorsByInsertionIndex);
@@ -248,7 +329,9 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
         scopeBlockBodyIndex,
         injectBlock,
       } of injectInScope) {
-        const scopeBlock = getPath(ast, scopeBlockPath);
+        const scopeBlock = /** @type {BlockStatementLike} */ (
+          getPath(ast, scopeBlockPath)
+        );
         const cursorsByInsertionIndex = cursors.get(scopeBlock);
         const cursor = cursorsByInsertionIndex[scopeBlockBodyIndex];
 
@@ -260,12 +343,10 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
 
         const injectionLength = injectBlock.body.length;
         for (const insertionIndex in cursorsByInsertionIndex) {
-          if (insertionIndex >= cursors) {
+          if (Number(insertionIndex) >= scopeBlockBodyIndex) {
             cursorsByInsertionIndex[insertionIndex] += injectionLength;
           }
         }
-
-        cursors.set(scopeBlock, cursor);
       }
     }
 
@@ -279,10 +360,15 @@ export function makeAstBuilder(portInfo, sourceProp = 'execute') {
   };
 }
 
-// Be careful with cleaning, you might remove code that the user
-// intendet to have there like just `myObj.something;` could actually trigger
-// a getter but we might be tempted to remove it here. Aim to produce clean
-// code when compiling instead.
+/**
+ * Be careful with cleaning, you might remove code that the user
+ * intendet to have there like just `myObj.something;` could actually trigger
+ * a getter but we might be tempted to remove it here. Aim to produce clean
+ * code when compiling instead.
+ *
+ * @param {unknown} ast
+ * @returns {unknown}
+ */
 export function cleanAst(ast) {
   visit(ast, {
     visitNoop(path) {

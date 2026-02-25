@@ -1,8 +1,23 @@
+// @ts-check
 import { context, assert, info } from './utils.mjs';
 import { Chip as ChipBase, ChipInfo } from './chip.mjs';
 import { runFlowPorts } from './run.mjs';
 import { Compilation } from './compile.mjs';
 import { ExternalReference } from './external.mjs';
+
+/**
+ * @typedef {{ name: string, type?: string }} EventPortDescriptor
+ * @typedef {{ selectPorts?: (chip: unknown) => unknown[] | undefined }} ChipHookSelector
+ * @typedef {{ onCreate?: ChipHookSelector, onDestroy?: ChipHookSelector }} ChipHooks
+ * @typedef {{ [name: string]: typeof ChipBase }} ChipCustomClasses
+ * @typedef {{
+ *   editable?: boolean,
+ *   metadata?: unknown,
+ *   label?: string | ((chipInstance?: import('./chip.mjs').Chip) => string),
+ *   imports?: Record<string, string>
+ * }} ChipConfiguration
+ * @typedef {(uri?: string | Function, build?: Function | ChipConfiguration, configuration?: ChipConfiguration) => typeof ChipBase} ChipFactory
+ */
 
 // Creates a chip
 export const plainChip = makeChipFactory();
@@ -17,47 +32,91 @@ export const chip = makeChipFactory(
   },
   {
     onCreate: {
+      /**
+       * @param {unknown} chip
+       * @returns {unknown[] | undefined}
+       */
       selectPorts(chip) {
         if (chip instanceof OnCreate) {
-          return [chip.out.then];
+          const thenPort = /** @type {{ out?: { then?: unknown } }} */ (chip)
+            .out?.then;
+          if (thenPort) return [thenPort];
         }
       },
     },
     onDestroy: {
+      /**
+       * @param {unknown} chip
+       * @returns {unknown[] | undefined}
+       */
       selectPorts(chip) {
         if (chip instanceof OnDestroy) {
-          return [chip.out.then];
+          const thenPort = /** @type {{ out?: { then?: unknown } }} */ (chip)
+            .out?.then;
+          if (thenPort) return [thenPort];
         }
       },
     },
   },
 );
 
+/**
+ * Adds an input flow outlet to the chip currently in build context.
+ *
+ * @param {string} name
+ * @param {object | Function} [config]
+ * @returns {import('./ports.mjs').PortOutlet}
+ */
 export function inputFlow(name, config) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputFlowPort(name, config);
 }
 
+/**
+ * @param {string} name
+ * @param {object | boolean | string} [config]
+ * @returns {import('./ports.mjs').PortOutlet}
+ */
 export function inputData(name, config) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputDataPort(name, config);
 }
 
+/**
+ * @param {string} name
+ * @param {object} [config]
+ * @returns {import('./ports.mjs').PortOutlet}
+ */
 export function outputFlow(name, config) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addOutputFlowPort(name, config);
 }
 
+/**
+ * @param {string} name
+ * @param {object | Function | string | unknown[]} [config]
+ * @returns {import('./ports.mjs').PortOutlet}
+ */
 export function outputData(name, config) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addOutputDataPort(name, config);
 }
 
+/**
+ * Wires two ports in the current chip build context.
+ *
+ * @param {import('./chip.mjs').ConnectionEndpointSelector} portA
+ * @param {import('./chip.mjs').ConnectionEndpointSelector} portB
+ */
 export function wire(portA, portB) {
   const chipInfo = context(ChipInfo);
   chipInfo.addConnection(portA, portB);
 }
 
+/**
+ * @param {string} name
+ * @param {{ defaultValue?: unknown, required?: boolean }} [config]
+ */
 export function inputConfig(name, { defaultValue, required } = {}) {
   const chipInfo = context(ChipInfo);
   return chipInfo.addInputDataPort(name, {
@@ -67,6 +126,14 @@ export function inputConfig(name, { defaultValue, required } = {}) {
   });
 }
 
+/**
+ * Creates an output data handle port that exposes a callable value.
+ *
+ * @param {string} name
+ * @param {Function} execHandle
+ * @param {string} [type]
+ * @returns {import('./ports.mjs').PortOutlet}
+ */
 export function outputHandle(name, execHandle, type) {
   assert(
     typeof execHandle === 'function',
@@ -87,19 +154,28 @@ export function outputHandle(name, execHandle, type) {
   return handlePort;
 }
 
+/**
+ * Creates an event chip class exposing `handle` and `then` plus custom outputs.
+ *
+ * @param {string} name
+ * @param {...(string | EventPortDescriptor)} ports
+ * @returns {typeof ChipBase}
+ */
 export function event(name, ...ports) {
-  ports = (ports || []).map((p) => {
+  /** @type {EventPortDescriptor[]} */
+  const normalizedPorts = (ports || []).map((p) => {
     if (typeof p === 'string') {
-      const [name, type] = p.split(':');
-      return { name, type: type || 'any' };
+      const [portName, portType] = p.split(':');
+      return { name: portName, type: portType || 'any' };
     }
     return p;
   });
-  const handleArgs = ports
+  const handleArgs = normalizedPorts
     .map(({ name, type }) => `${name}:${type || 'any'}`)
     .join(', ');
   const handleType = `(${handleArgs}) => void`;
   const EventChip = plainChip(name, () => {
+    /** @param {...unknown} args */
     const handler = (...args) => {
       for (let i = 0, l = outputs.length; i < l; i++) {
         outputs[i](args[i]);
@@ -107,12 +183,14 @@ export function event(name, ...ports) {
       then();
     };
     handler.toString = () => `(...args) => {
-      ${ports.map(({ name }, i) => `${name}(args[${i}]);`).join('\n')}
+      ${normalizedPorts.map(({ name }, i) => `${name}(args[${i}]);`).join('\n')}
       then();
     }`;
     const handle = outputHandle('handle', handler, handleType);
     const then = outputFlow('then');
-    const outputs = ports.map(({ name, type }) => outputData(name, { type }));
+    const outputs = normalizedPorts.map(({ name, type }) =>
+      outputData(name, { type }),
+    );
   });
   Object.defineProperties(EventChip.prototype, {
     customChipKind: {
@@ -122,12 +200,19 @@ export function event(name, ...ports) {
     chipURI: {
       enumerable: true,
       value:
-        ports.length === 0 ? `${name}:event` : `${name}:event(${handleArgs})`,
+        normalizedPorts.length === 0
+          ? `${name}:event`
+          : `${name}:event(${handleArgs})`,
     },
   });
   return EventChip;
 }
 
+/**
+ * @param {string} name
+ * @param {string} [type]
+ * @returns {typeof ChipBase}
+ */
 export function switchChip(name, type = 'any') {
   const SwitchChip = plainChip(name, () => {
     const exec = inputFlow('exec', {
@@ -144,6 +229,27 @@ export function switchChip(name, type = 'any') {
         }
         thenDefault();
       },
+      /**
+       * @param {unknown} port
+       * @param {unknown} scope
+       * @param {unknown} codeWrapper
+       * @param {{
+       *   compile: Function,
+       *   getPortAndChipInstance: Function,
+       *   recast: {
+       *     types: {
+       *       namedTypes: { Statement: { check: Function } },
+       *       builders: {
+       *         expressionStatement: Function,
+       *         switchCase: Function,
+       *         breakStatement: Function,
+       *         switchStatement: Function
+       *       }
+       *     }
+       *   }
+       * }} tools
+       * @returns {unknown}
+       */
       executeCompiler: (port, scope, codeWrapper, tools) => {
         const disc = tools.compile(discriminant, scope, codeWrapper, tools);
         if (!disc) return;
@@ -209,10 +315,15 @@ export function switchChip(name, type = 'any') {
   return SwitchChip;
 }
 
-// NOTE externalReferenceObj must be specified as `{ myReference }` so that
-// the engine can extract both a compiletime name and a runtime reference.
-// If the name is not somehow provided to the compiled code (ie: by adding a
-// value to `window.myReference`), the compiled code will fail to execute.
+/**
+ * NOTE externalReferenceObj must be specified as `{ myReference }` so that
+ * the engine can extract both a compiletime name and a runtime reference.
+ * If the name is not somehow provided to the compiled code (ie: by adding a
+ * value to `window.myReference`), the compiled code will fail to execute.
+ *
+ * @param {object} externalReferenceObj
+ * @returns {ExternalReference}
+ */
 export function externalRef(externalReferenceObj) {
   return new ExternalReference(externalReferenceObj);
 }
@@ -225,15 +336,21 @@ const ExternalGetInt = plainChip('ExternalGet', () => {
   outputData('value', () => externalDataRef());
 });
 
+/**
+ * @param {string | object} externalReferenceObj
+ * @returns {typeof ExternalGetInt}
+ */
 export function externalGet(externalReferenceObj) {
   if (typeof externalReferenceObj === 'string') {
     externalReferenceObj = {
       [externalReferenceObj]: undefined,
     };
   }
+  /** @type {object} */
+  const normalizedExternalRef = /** @type {object} */ (externalReferenceObj);
   return class ExternalGet extends ExternalGetInt {
     constructor() {
-      super(externalRef(externalReferenceObj));
+      super(externalRef(normalizedExternalRef));
     }
   };
 }
@@ -255,10 +372,15 @@ const ExternalSetInt = plainChip('ExternalSet', () => {
   wire(value, outValue);
 });
 
+/**
+ * @param {object} externalReferenceObj
+ * @returns {typeof ExternalSetInt}
+ */
 export function externalSet(externalReferenceObj) {
   return class ExternalSet extends ExternalSetInt {
+    /** @param {...unknown} args */
     constructor(...args) {
-      super(externalRef(externalReferenceObj), ...args);
+      super(externalRef(externalReferenceObj), .../** @type {any[]} */ (args));
     }
   };
 }
@@ -267,11 +389,26 @@ export function externalSet(externalReferenceObj) {
 // Implementations
 //
 
+/**
+ * Creates a chip-class factory with optional custom chips and lifecycle hooks.
+ *
+ * @param {((config?: ChipConfiguration) => ChipCustomClasses) | ChipCustomClasses} [$customChips]
+ * @param {ChipHooks} [$hooks]
+ * @returns {ChipFactory & { extend: (customChips: ChipCustomClasses | (() => ChipCustomClasses), hooks?: ChipHooks) => ChipFactory }}
+ */
 function makeChipFactory($customChips, $hooks) {
+  /**
+   * @param {string | Function} [uri]
+   * @param {Function | ChipConfiguration} [build]
+   * @param {ChipConfiguration} [configuration]
+   * @returns {typeof ChipBase}
+   */
   function chip(uri, build, configuration) {
+    /** @type {string | undefined} */
+    let chipURI = typeof uri === 'string' ? uri : undefined;
     if (typeof uri !== 'string') {
       build = uri;
-      uri = undefined;
+      chipURI = undefined;
     }
     const config = Object.assign(
       {
@@ -280,14 +417,16 @@ function makeChipFactory($customChips, $hooks) {
       },
       configuration,
     );
-    const chipInfo = new ChipInfo(uri, config.label);
+    const chipInfo = new ChipInfo(chipURI, config.label);
     context.push(chipInfo);
-    let customChips;
+    /** @type {ChipCustomClasses} */
+    let customChips = {};
     try {
-      customChips =
-        (typeof $customChips === 'function' && $customChips(config)) ||
-        $customChips ||
-        {};
+      const resolvedCustomChips =
+        (typeof $customChips === 'function'
+          ? $customChips(config)
+          : $customChips) || {};
+      customChips = resolvedCustomChips;
       if (typeof build === 'function') {
         build.call(undefined, customChips);
       }
@@ -300,8 +439,9 @@ function makeChipFactory($customChips, $hooks) {
     // - if input data but not flow it may not do what you expect
     // - if not using all input data in outputs/execs
     class Chip extends ChipBase {
+      /** @param {...unknown} canonicalValues */
       constructor(...canonicalValues) {
-        super(chipInfo, canonicalValues);
+        super(chipInfo, /** @type {any[]} */ (canonicalValues));
         const parentChipInfo = context();
         // Add to current chip `build` execution
         if (parentChipInfo instanceof ChipInfo) {
@@ -327,6 +467,10 @@ function makeChipFactory($customChips, $hooks) {
         }
       }
 
+      /**
+       * @param {unknown} [wrapper]
+       * @returns {string}
+       */
       compile(wrapper) {
         const compilation = new Compilation(chipInfo, this);
         return compilation.compile(wrapper, $hooks);
@@ -348,22 +492,36 @@ function makeChipFactory($customChips, $hooks) {
         return Object.assign(
           {},
           config.imports,
-          ...chipInfo.chips.map((c) => c.constructor.imports),
+          ...chipInfo.chips.map(
+            (c) =>
+              /** @type {{ imports?: Record<string, string> }} */ (
+                c.constructor
+              ).imports,
+          ),
         );
       }
 
+      /**
+       * @param {unknown} [wrapper]
+       * @returns {string}
+       */
       static compile(wrapper) {
         const compilation = new Compilation(chipInfo, null);
         return compilation.compile(wrapper, $hooks);
       }
 
+      /**
+       * @param {Record<string, unknown>} [context]
+       * @param {(url: string) => unknown | Promise<unknown>} [importModule]
+       * @returns {Promise<unknown>}
+       */
       static async compiledClass(context, importModule) {
         const imports = Object.entries(this.imports);
         const importsNames = imports.map(([name]) => name);
         const importsValues = imports.map(([, url]) =>
           (importModule
             ? Promise.resolve(importModule(url))
-            : import(/* @vite-ignore */url).catch((e) => {
+            : import(/* @vite-ignore */ url).catch((e) => {
                 console.warn('Could not import: ', url);
                 return Promise.reject(e);
               })
@@ -386,6 +544,10 @@ function makeChipFactory($customChips, $hooks) {
         );
       }
 
+      /**
+       * @param {import('./registry.mjs').Registry} [registry]
+       * @returns {Record<string, unknown>}
+       */
       static toJSON(registry) {
         const chipData = chipInfo.toJSON(registry);
         if (!this.editable) {
@@ -462,13 +624,19 @@ function makeChipFactory($customChips, $hooks) {
 
     return Chip;
   }
+  /**
+   * @param {ChipCustomClasses | (() => ChipCustomClasses)} customChips
+   * @param {ChipHooks} [hooks]
+   * @returns {ChipFactory}
+   */
   chip.extend = function extendChip(customChips, hooks) {
     return makeChipFactory(
-      () =>
+      (config) =>
         Object.assign(
           {},
-          (typeof $customChips === 'function' && $customChips()) ||
-            $customChips,
+          (typeof $customChips === 'function'
+            ? $customChips(config)
+            : $customChips) || {},
           (typeof customChips === 'function' && customChips()) || customChips,
         ),
       Object.assign({}, $hooks, hooks),

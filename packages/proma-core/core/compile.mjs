@@ -4,17 +4,45 @@ import ClassWrapper from './wrappers/ClassWrapper.mjs';
 import { literalCompiler, makeAstBuilder } from './compile-utils.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';
 
+/**
+ * @typedef {import('./chip.mjs').ChipInfo} ChipInfo
+ * @typedef {import('./ports.mjs').Port} Port
+ * @typedef {import('./ports.mjs').PortInfo} PortInfo
+ * @typedef {{
+ *   selectPorts: (chip: unknown) => Port[] | undefined
+ * }} CompilationHook
+ * @typedef {{ [label: string]: CompilationHook }} CompilationHooks
+ * @typedef {unknown[]} CompilationScope
+ * @typedef {(portInstance: Port, scope: CompilationScope, codeWrapper: unknown, tools?: unknown) => unknown} PortCompiler
+ */
+
 const {
   prettyPrint,
   types: { namedTypes, builders },
 } = recast;
 
+/**
+ * Compiles a fully loaded chip model into wrapper-specific executable code.
+ */
 export class Compilation {
+  /**
+   * @param {ChipInfo} rootChipInfo
+   * @param {unknown} rootChip
+   */
   constructor(rootChipInfo, rootChip) {
+    /** @type {unknown} */
     this.rootChip = rootChip;
+    /** @type {ChipInfo} */
     this.rootChipInfo = rootChipInfo;
   }
 
+  /**
+   * Compiles the root chip with the provided wrapper and optional hooks.
+   *
+   * @param {unknown} [codeWrapper]
+   * @param {CompilationHooks} [hooks]
+   * @returns {string}
+   */
   compile(codeWrapper, hooks) {
     if (!this.rootChipInfo.isLoaded) {
       throw new Error('Cannot compile non-fully loaded chip');
@@ -25,11 +53,19 @@ export class Compilation {
     // TODO compile each input exec ports
     const rootInfo = this.rootChipInfo;
     const rootChip = this.rootChip || makeChipInstanceMock(this.rootChipInfo);
+    /** @type {CompilationScope} */
     const scope = [rootChip];
+    /** @type {{ [name: string]: unknown }} */
     const outputBlocksByPort = {};
+    /** @type {{ [name: string]: unknown }} */
     const executeBlocksByPort = {};
-    // A map of hook label to array of compiled blocks for the hook
+    /**
+     * A map of hook label to array of compiled blocks for the hook
+     *
+     * @type {{ [label: string]: unknown[] }}
+     */
     const hooksBlocksByLabel = {};
+    /** @type {{ [name: string]: unknown[] }} */
     const updateBlocksByPort = {};
 
     if (codeWrapper.compileBegin) {
@@ -143,6 +179,9 @@ export class Compilation {
     return prettyPrint(program, { tabWidth: 2 }).code;
   }
 
+  /**
+   * @returns {string}
+   */
   toString() {
     return this.compile();
   }
@@ -152,10 +191,19 @@ export class Compilation {
 // Visiting
 //
 
+/**
+ * Recursively collects hook-eligible output flow ports from child chips.
+ *
+ * @param {unknown} chip
+ * @param {(chip: unknown) => Port[] | undefined} selectPorts
+ * @param {CompilationScope} [scope]
+ * @returns {Array<{ port: Port, scope: CompilationScope }>}
+ */
 function getHookPorts(chip, selectPorts, scope) {
   if (!scope) {
     scope = [chip];
   }
+  /** @type {Array<{ port: Port, scope: CompilationScope }>} */
   const hookPorts = [];
   const chipInfo = info(chip);
   for (const subChip of chipInfo.chips) {
@@ -182,20 +230,45 @@ function getHookPorts(chip, selectPorts, scope) {
   return hookPorts;
 }
 
+/**
+ * @param {unknown} port
+ * @param {CompilationScope} scope
+ * @returns {boolean}
+ */
 function isOutlet(port, scope) {
   const rootInfo = info(scope[scope.length - 1]);
   return rootInfo === info(port).chipInfo;
 }
 
+/**
+ * @param {ChipInfo} chipInfo
+ * @returns {unknown}
+ */
 function makeChipInstanceMock(chipInfo) {
-  const input = chipInfo.inputs.reduce((acc, outlet) => {
-    acc[outlet.name] = outlet;
-    return acc;
-  }, {});
-  const output = chipInfo.outputs.reduce((acc, outlet) => {
-    acc[outlet.name] = outlet;
-    return acc;
-  }, {});
+  /** @type {{ [name: string]: unknown }} */
+  const input = chipInfo.inputs.reduce(
+    /**
+     * @param {{ [name: string]: unknown }} acc
+     * @param {{ name: string }} outlet
+     */
+    (acc, outlet) => {
+      acc[outlet.name] = outlet;
+      return acc;
+    },
+    /** @type {{ [name: string]: unknown }} */ ({}),
+  );
+  /** @type {{ [name: string]: unknown }} */
+  const output = chipInfo.outputs.reduce(
+    /**
+     * @param {{ [name: string]: unknown }} acc
+     * @param {{ name: string }} outlet
+     */
+    (acc, outlet) => {
+      acc[outlet.name] = outlet;
+      return acc;
+    },
+    /** @type {{ [name: string]: unknown }} */ ({}),
+  );
 
   return info(
     {
@@ -207,8 +280,14 @@ function makeChipInstanceMock(chipInfo) {
   );
 }
 
-// When using `compile` from a custom compilation function, we allow users
-// to use the local outlet to refer to the chip instance port.
+/**
+ * When using `compile` from a custom compilation function, we allow users
+ * to use the local outlet to refer to the chip instance port.
+ *
+ * @param {unknown} port
+ * @param {CompilationScope} scope
+ * @returns {{ port: unknown, chip: unknown, parentChip: unknown }}
+ */
 function getPortAndChipInstance(port, scope) {
   const [chip, parentChip] = scope;
   if (port.isOutlet && !isOutlet(port, scope)) {
@@ -217,6 +296,11 @@ function getPortAndChipInstance(port, scope) {
   return { port, chip, parentChip };
 }
 
+/**
+ * @param {unknown} port
+ * @param {CompilationScope} scope
+ * @returns {unknown[]}
+ */
 function getConnectedPorts(port, scope) {
   const { port: resolvedPort, parentChip } = getPortAndChipInstance(
     port,
@@ -238,12 +322,25 @@ const CUSTOM_COMPILER_TOOLS = {
   getConnectedPorts,
 };
 
+/**
+ * Compiles a port instance in a specific chip scope.
+ *
+ * @param {unknown} port
+ * @param {CompilationScope} scope
+ * @param {unknown} codeWrapper
+ * @returns {unknown}
+ */
 function compile(port, scope, codeWrapper) {
   const { port: resolvedPort } = getPortAndChipInstance(port, scope);
   return compiler(info(resolvedPort))(resolvedPort, scope, codeWrapper);
 }
 
-// Get the compiler for a port
+/**
+ * Get the compiler for a port
+ *
+ * @param {PortInfo} portInfo
+ * @returns {PortCompiler}
+ */
 function compiler(portInfo) {
   if (portInfo.compiler) return portInfo.compiler;
   if (portInfo.isFlow) {
@@ -262,6 +359,14 @@ function compiler(portInfo) {
   return portInfo.compiler;
 }
 
+/**
+ * Creates/caches a compiler for an output-data `compute` function.
+ *
+ * @param {PortInfo} portInfo
+ * @param {string} [prop]
+ * @param {string} [compilerProp]
+ * @returns {PortCompiler}
+ */
 function computeCompiler(
   portInfo,
   prop = 'compute',
@@ -276,25 +381,28 @@ function computeCompiler(
   const astBuilder = makeAstBuilder(portInfo, prop);
 
   portInfo[compilerProp] = function compileCompute(
-    portInstance,
-    outterScope,
-    codeWrapper,
+    /** @type {unknown} */ portInstance,
+    /** @type {CompilationScope} */ outterScope,
+    /** @type {unknown} */ codeWrapper,
   ) {
     const [chip, ...scope] = outterScope;
     assertInfo(chip, portInfo.chipInfo);
 
     return astBuilder({
       // Input data ports are compiled in
-      compileInputData(portName) {
+      compileInputData(/** @type {string} */ portName) {
         const port = chip.in[portName];
         return compile(port, [chip, ...scope], codeWrapper);
       },
       // This should not happen
-      compileOutputFlow(portName) {
+      compileOutputFlow(/** @type {string} */ portName) {
         throw new Error('Can not use output flow ports in a compute');
       },
       // This should not happen
-      compileOutputData(portName, assignExpressionBlock) {
+      compileOutputData(
+        /** @type {string} */ portName,
+        /** @type {unknown} */ assignExpressionBlock,
+      ) {
         throw new Error('Can not use output data ports in a compute');
       },
     });
@@ -303,6 +411,14 @@ function computeCompiler(
   return portInfo[compilerProp];
 }
 
+/**
+ * Creates/caches a compiler for an input-flow `execute` (or side-effectful compute) function.
+ *
+ * @param {PortInfo} portInfo
+ * @param {string} [prop]
+ * @param {string} [compilerProp]
+ * @returns {PortCompiler}
+ */
 function executeCompiler(
   portInfo,
   prop = 'execute',
@@ -313,19 +429,19 @@ function executeCompiler(
   const astBuilder = makeAstBuilder(portInfo, prop);
 
   portInfo[compilerProp] = function compileExecute(
-    portInstance,
-    outterScope,
-    codeWrapper,
+    /** @type {unknown} */ portInstance,
+    /** @type {CompilationScope} */ outterScope,
+    /** @type {unknown} */ codeWrapper,
   ) {
     const [chip, ...scope] = outterScope;
     assertInfo(chip, portInfo.chipInfo);
 
     return astBuilder({
-      compileInputData(portName) {
+      compileInputData(/** @type {string} */ portName) {
         const port = chip.in[portName];
         return compile(port, [chip, ...scope], codeWrapper);
       },
-      compileOutputFlow(portName) {
+      compileOutputFlow(/** @type {string} */ portName) {
         const port = chip.out[portName];
         return compile(port, [chip, ...scope], codeWrapper);
       },
@@ -340,7 +456,10 @@ function executeCompiler(
        * expression of the block should always be something to read the value
        * of the output.
        */
-      compileOutputData(portName, assignExpressionBlock) {
+      compileOutputData(
+        /** @type {string} */ portName,
+        /** @type {unknown} */ assignExpressionBlock,
+      ) {
         const port = chip.out[portName];
         const portInfo = info(port);
 
@@ -369,7 +488,7 @@ function executeCompiler(
           `Can not assign to "${
             port.fullName
           }" as it is computed on [${portInfo.computeOn
-            .map((p) => p.name)
+            .map((/** @type {{ name: string }} */ p) => p.name)
             .join(', ')}]`,
         );
 
@@ -466,11 +585,16 @@ function executeCompiler(
   return portInfo[compilerProp];
 }
 
-// Output flows ("then" ports)
-// These can be connected to a single input flow.
-//
-//     const then = outputFlow('then');
-//
+/**
+ * Output flows ("then" ports)
+ * These can be connected to a single input flow.
+ *     const then = outputFlow('then');
+ *
+ * Builds compiler logic for output flow ports.
+ *
+ * @param {PortInfo} portInfo
+ * @returns {PortCompiler}
+ */
 function makeOutputFlowSinkCompiler(portInfo) {
   assert(
     portInfo.isOutput && portInfo.isFlow,
@@ -625,16 +749,21 @@ function makeOutputFlowSinkCompiler(portInfo) {
   };
 }
 
-// Input flows ("exec" ports)
-// These can be connected from multiple output flow ports or have an `execute`.
-// Execute input flows must call the next output flow(s) by themself.
-//
-//     const exec = inputFlow('exec');
-//     const exec = inputFlow('exec', () => {
-//        console.log('side effect');
-//        then();
-//     });
-//
+/**
+ * Input flows ("exec" ports)
+ * These can be connected from multiple output flow ports or have an `execute`.
+ * Execute input flows must call the next output flow(s) by themself.
+ *     const exec = inputFlow('exec');
+ *     const exec = inputFlow('exec', () => {
+ *        console.log('side effect');
+ *        then();
+ *     });
+ *
+ * Builds compiler logic for input flow ports.
+ *
+ * @param {PortInfo} portInfo
+ * @returns {PortCompiler}
+ */
 function makeInputFlowSourceCompiler(portInfo) {
   assert(
     portInfo.isInput && portInfo.isFlow,
@@ -733,9 +862,16 @@ function makeInputFlowSourceCompiler(portInfo) {
   };
 }
 
-// Input data ports are always passive elements (ie: can not specify any kind
-// of execution) and can be connected to take data from an output data port or
-// have a `defaultValue` compiled as a literal.
+/**
+ * Input data ports are always passive elements (ie: can not specify any kind
+ * of execution) and can be connected to take data from an output data port or
+ * have a `defaultValue` compiled as a literal.
+ *
+ * Builds compiler logic for input data ports.
+ *
+ * @param {PortInfo} portInfo
+ * @returns {PortCompiler}
+ */
 function makeInputDataSinkCompiler(portInfo) {
   assert(
     portInfo.isInput && portInfo.isData,
@@ -801,11 +937,16 @@ function makeInputDataSinkCompiler(portInfo) {
   };
 }
 
-// Compile an output data port like:
-//
-//     const o = outputData('o', () => in1() + in2());
-//     const o = outputData('o', then);
-//
+/**
+ * Compile an output data port like:
+ *     const o = outputData('o', () => in1() + in2());
+ *     const o = outputData('o', then);
+ *
+ * Builds compiler logic for output data ports.
+ *
+ * @param {PortInfo} portInfo
+ * @returns {PortCompiler}
+ */
 function makeOutputDataSourceCompiler(portInfo) {
   assert(
     portInfo.isOutput && portInfo.isData,

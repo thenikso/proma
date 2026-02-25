@@ -4,13 +4,25 @@
   "description": "Core engine of Proma",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
+  "types": "dist/core/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.mjs"
+    }
+  },
   "author": "Nicola Peduzzi <thenikso@gmail.com>",
   "license": "MIT",
   "scripts": {
     "dev": "serve -p 4000 .",
     "test": "node test/index.mjs",
+    "check": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --write .",
-    "build": "rollup -c",
+    "build:types": "tsc -p tsconfig.json",
+    "build:types:watch": "tsc -p tsconfig.json --watch",
+    "build": "rollup -c && pnpm run build:types",
     "build:vendors:recast": "node ./scripts/browserify.js ../../node_modules/recast/main.js ./vendor/recast.mjs",
     "build:vendors:fast-deep-equal": "node ./scripts/browserify.js ../../node_modules/fast-deep-equal/es6/index.js ./vendor/fast-deep-equal.mjs"
   },

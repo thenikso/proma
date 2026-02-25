@@ -1,3 +1,4 @@
+// @ts-check
 import { info } from './utils.mjs';
 import { variadicStringNameToFunc } from './variadic.mjs';
 import { makePortRun } from './run.mjs';
@@ -5,24 +6,100 @@ import { serializePortInfo } from './serialize.mjs';
 import { type } from './types.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';
 
-export { INPUT, OUTPUT };
+/**
+ * @typedef {{ signature?: string }} PortTypeLike
+ * @typedef {{
+ *   inputs: PortOutlet[],
+ *   outputs: PortOutlet[]
+ * }} ChipInfoLike
+ */
+
+/**
+ * Runtime shape injected into callable `Port` and `PortOutlet` instances.
+ * These members are defined through `Object.defineProperties` on top of the
+ * function returned by `makePortRun`.
+ *
+ * @typedef {object} PortRuntimeShape
+ * @property {any} chip
+ * @property {unknown} explicitValue
+ * @property {unknown} defaultValue
+ * @property {boolean} isInput
+ * @property {boolean} isOutput
+ * @property {boolean} isFlow
+ * @property {boolean} isData
+ * @property {string} name
+ * @property {string} fullName
+ * @property {PortTypeLike | undefined} type
+ * @property {boolean} isConcealed
+ * @property {boolean} isCanonical
+ * @property {boolean} isRequired
+ * @property {boolean} isHidden
+ * @property {PortVariadicAccessors | undefined} variadic
+ */
+
+/**
+ * Proxy-backed list for variadic ports.
+ *
+ * @typedef {(Array<Port | undefined> & {[name: string]: Port | undefined})} PortVariadicAccessors
+ */
+
+/**
+ * @typedef {{
+ *   execute?: Function,
+ *   executeCompiler?: Function
+ * }} InputFlowConfig
+ *
+ * @typedef {{
+ *   compute?: Function,
+ *   computeCompiler?: Function,
+ *   inline?: boolean | 'once',
+ *   allowSideEffects?: boolean,
+ *   type?: unknown,
+ *   defaultValue?: unknown,
+ *   concealed?: boolean | 'hidden',
+ *   computeOn?: Array<PortOutlet | PortInfo>
+ * }} OutputDataConfig
+ *
+ * @typedef {{
+ *   variadic?: string | Function | false,
+ *   canonical?: boolean | 'required',
+ *   concealed?: boolean | 'hidden',
+ *   defaultValue?: unknown,
+ *   type?: unknown
+ * }} InputDataConfig
+ *
+ * @typedef {{
+ *   variadic?: string | Function | false
+ * }} OutputFlowConfig
+ */
 
 //
 // Public
 //
 
+/**
+ * Runtime port instance mounted on a chip instance (e.g. `chip.in.value`).
+ * A `Port` is callable because it extends `Function` and its constructor
+ * replaces `this` with a wrapped function from `makePortRun`.
+ */
 export class Port extends Function {
+  /**
+   * @param {unknown} chip
+   * @param {PortInfo} portInfo
+   * @param {number} [variadicIndex]
+   */
   constructor(chip, portInfo, variadicIndex) {
     super();
 
-    const self = makePortRun(portInfo);
+    const self = /** @type {Port & PortRuntimeShape} */ (makePortRun(portInfo));
     Object.setPrototypeOf(self, Port.prototype);
 
     self.explicitValue = undefined;
 
     info(self, portInfo);
 
-    const isVariadic = variadicIndex >= 0;
+    const isVariadic = typeof variadicIndex === 'number' && variadicIndex >= 0;
+    const chipRef = /** @type {{ id: string }} */ (chip);
 
     Object.defineProperties(self, {
       chip: {
@@ -33,15 +110,18 @@ export class Port extends Function {
       name: {
         enumerable: true,
         get() {
-          return isVariadic
-            ? portInfo.variadicName(variadicIndex)
-            : portInfo.name;
+          if (isVariadic && portInfo instanceof VariadicPortInfo) {
+            return portInfo.variadicName(variadicIndex);
+          }
+          return portInfo.name;
         },
       },
       fullName: {
         enumerable: true,
         get() {
-          return `${chip.id}.${portInfo.isInput ? INPUT : OUTPUT}.${self.name}`;
+          return `${chipRef.id}.${portInfo.isInput ? INPUT : OUTPUT}.${
+            self.name
+          }`;
         },
       },
       // Common port accessors
@@ -72,31 +152,38 @@ export class Port extends Function {
     });
 
     if (portInfo.isData) {
+      const dataPortInfo =
+        /** @type {InputDataSinkPortInfo | OutputDataSourcePortInfo} */ (
+          portInfo
+        );
       Object.defineProperties(self, {
         type: {
           enumerable: true,
           get() {
             // TODO account for variadic
-            return portInfo.type;
+            return dataPortInfo.type;
           },
         },
         defaultValue: {
           enumerable: true,
           get() {
             return isVariadic
-              ? portInfo.defaultValue[variadicIndex]
-              : portInfo.defaultValue;
+              ? dataPortInfo.defaultValue[variadicIndex]
+              : dataPortInfo.defaultValue;
           },
         },
         isConcealed: {
           enumerable: true,
           get() {
-            return portInfo.isConcealed;
+            return dataPortInfo.isConcealed;
           },
         },
       });
 
       if (portInfo.isInput) {
+        const inputDataPortInfo = /** @type {InputDataSinkPortInfo} */ (
+          portInfo
+        );
         Object.defineProperties(self, {
           // value: {
           //   enumerable: true,
@@ -108,26 +195,30 @@ export class Port extends Function {
           isCanonical: {
             enumerable: true,
             get() {
-              return portInfo.isCanonical;
+              return inputDataPortInfo.isCanonical;
             },
           },
           isRequired: {
             enumerable: true,
             get() {
-              return portInfo.isRequired;
+              return inputDataPortInfo.isRequired;
             },
           },
           isHidden: {
             enumerable: true,
             get() {
-              return portInfo.isHidden;
+              return inputDataPortInfo.isHidden;
             },
           },
         });
       }
     }
 
-    if (portInfo.isVariadic && typeof variadicIndex === 'undefined') {
+    if (
+      portInfo instanceof VariadicPortInfo &&
+      portInfo.isVariadic &&
+      typeof variadicIndex === 'undefined'
+    ) {
       if (!Array.isArray(self.explicitValue)) {
         self.explicitValue = [];
       }
@@ -146,6 +237,41 @@ export class Port extends Function {
     return self;
   }
 
+  /** @returns {*} */
+  get chip() {
+    return undefined;
+  }
+
+  /** @returns {unknown} */
+  get explicitValue() {
+    return this[PORT_EXPLICIT_VALUE];
+  }
+
+  /** @param {unknown} value */
+  set explicitValue(value) {
+    this[PORT_EXPLICIT_VALUE] = value;
+  }
+
+  /** @returns {unknown} */
+  get defaultValue() {
+    return undefined;
+  }
+
+  /** @returns {boolean} */
+  get isData() {
+    return false;
+  }
+
+  /** @returns {PortVariadicAccessors | undefined} */
+  get variadic() {
+    return undefined;
+  }
+
+  /** @returns {string} */
+  get fullName() {
+    return '';
+  }
+
   get value() {
     return this.explicitValue !== undefined
       ? this.explicitValue
@@ -158,6 +284,10 @@ export class Port extends Function {
 }
 
 export class PortList {
+  /**
+   * @param {unknown} chip
+   * @param {Port[]} ports
+   */
   constructor(chip, ports) {
     return new Proxy(ports, {
       get(target, key) {
@@ -165,8 +295,18 @@ export class PortList {
           for (const port of ports) {
             const portInfo = info(port);
             if (portInfo.hasName(key)) {
-              if (portInfo.isVariadic && portInfo.variadicIndex(key) >= 0) {
-                return port.variadic[key];
+              if (
+                portInfo instanceof VariadicPortInfo &&
+                portInfo.isVariadic &&
+                portInfo.variadicIndex(key) >= 0
+              ) {
+                const variadicPorts = port.variadic;
+                if (!variadicPorts) {
+                  throw new Error(
+                    `Variadic port "${portInfo.name}" has no variadic accessors`,
+                  );
+                }
+                return variadicPorts[key];
               }
               return port;
             }
@@ -175,20 +315,37 @@ export class PortList {
         return Reflect.get(target, key);
       },
       set(target, key, value) {
+        if (typeof key !== 'string') {
+          return Reflect.set(target, key, value);
+        }
         for (const port of ports) {
           const portInfo = info(port);
           if (portInfo.hasName(key)) {
             if (portInfo.isHidden) {
-              throw new Error(`Attempting to access hidden port "${key}"`);
+              throw new Error(
+                `Attempting to access hidden port "${String(key)}"`,
+              );
             }
             if (!portInfo.isData || !portInfo.isInput) {
               throw new Error('Can only set initial value to input data ports');
             }
-            if (portInfo.isVariadic) {
+            if (portInfo instanceof VariadicPortInfo && portInfo.isVariadic) {
               const variadicIndex = portInfo.variadicIndex(key);
               if (variadicIndex >= 0) {
                 // Make sure to access the variadic port to create its instance
-                port.variadic[variadicIndex].explicitValue = value;
+                const variadicPorts = port.variadic;
+                if (!variadicPorts) {
+                  throw new Error(
+                    `Variadic port "${portInfo.name}" has no variadic accessors`,
+                  );
+                }
+                const variadicPort = variadicPorts[variadicIndex];
+                if (!variadicPort) {
+                  throw new Error(
+                    `Could not resolve variadic port "${portInfo.name}[${variadicIndex}]"`,
+                  );
+                }
+                variadicPort.explicitValue = value;
               } else if (Array.isArray(value)) {
                 port.explicitValue = value;
               } else {
@@ -207,13 +364,28 @@ export class PortList {
 }
 
 export class PortOutlet extends Function {
+  /**
+   * @param {PortInfo} portInfo
+   * @param {number} [variadicIndex]
+   */
   constructor(portInfo, variadicIndex) {
     super();
 
-    const outlet = makePortRun(portInfo, true);
+    const outlet = /** @type {PortOutlet & PortRuntimeShape} */ (
+      makePortRun(portInfo, true)
+    );
     Object.setPrototypeOf(outlet, PortOutlet.prototype);
 
     info(outlet, portInfo);
+
+    const inputDataPortInfo = portInfo.isInput
+      ? /** @type {InputDataSinkPortInfo} */ (portInfo)
+      : null;
+    const dataPortInfo = portInfo.isData
+      ? /** @type {InputDataSinkPortInfo | OutputDataSourcePortInfo} */ (
+          portInfo
+        )
+      : null;
 
     Object.defineProperties(outlet, {
       isOutlet: {
@@ -231,7 +403,7 @@ export class PortOutlet extends Function {
       canonical: {
         enumerable: true,
         get() {
-          return portInfo.canonical;
+          return inputDataPortInfo ? inputDataPortInfo.canonical : false;
         },
       },
 
@@ -273,19 +445,19 @@ export class PortOutlet extends Function {
         type: {
           enumerable: true,
           get() {
-            return portInfo.type;
+            return dataPortInfo && dataPortInfo.type;
           },
         },
         defaultValue: {
           enumerable: true,
           get() {
-            return portInfo.defaultValue;
+            return dataPortInfo && dataPortInfo.defaultValue;
           },
         },
         isConcealed: {
           enumerable: true,
           get() {
-            return portInfo.isConcealed;
+            return dataPortInfo ? dataPortInfo.isConcealed : false;
           },
         },
       });
@@ -295,19 +467,19 @@ export class PortOutlet extends Function {
           isCanonical: {
             enumerable: true,
             get() {
-              return portInfo.isCanonical;
+              return inputDataPortInfo ? inputDataPortInfo.isCanonical : false;
             },
           },
           isRequired: {
             enumerable: true,
             get() {
-              return portInfo.isRequired;
+              return inputDataPortInfo ? inputDataPortInfo.isRequired : false;
             },
           },
           isHidden: {
             enumerable: true,
             get() {
-              return portInfo.isHidden;
+              return inputDataPortInfo ? inputDataPortInfo.isHidden : false;
             },
           },
         });
@@ -318,24 +490,42 @@ export class PortOutlet extends Function {
   }
 }
 
+/**
+ * Creates lazy accessors for a variadic port.
+ *
+ * @param {Port & PortRuntimeShape} ownerPort
+ * @param {(index: number) => Port} makePortAtIndex
+ * @returns {PortVariadicAccessors}
+ */
 function makeVariadicAccessors(ownerPort, makePortAtIndex) {
-  const portInfo = info(ownerPort);
+  const portInfo = /** @type {VariadicPortInfo} */ (info(ownerPort));
+  /**
+   * @param {string | symbol | number} key
+   * @returns {number}
+   */
   const getIndex = (key) => {
     let index = -1;
     if (typeof key === 'string') {
-      index = parseInt(key);
+      index = parseInt(key, 10);
       if (isNaN(index)) {
         index = portInfo.variadicIndex(key);
       }
     }
     return index;
   };
-  return new Proxy([], {
+  return new Proxy(/** @type {PortVariadicAccessors} */ ([]), {
+    /**
+     * @param {PortVariadicAccessors} target
+     * @param {string | symbol | number} key
+     */
     get(target, key) {
       const index = getIndex(key);
+      /** @type {string | symbol | number} */
+      let lookupKey = key;
       if (index >= 0) {
-        key = index;
-        if (typeof target[key] === 'undefined') {
+        const indexKey = index;
+        lookupKey = indexKey;
+        if (typeof target[indexKey] === 'undefined') {
           const variadicPort = makePortAtIndex(index);
           Object.defineProperties(variadicPort, {
             variadicIndex: {
@@ -352,16 +542,20 @@ function makeVariadicAccessors(ownerPort, makePortAtIndex) {
               },
             },
           });
-          target[key] = variadicPort;
+          target[indexKey] = variadicPort;
         }
       }
-      return Reflect.get(target, key);
+      return Reflect.get(target, lookupKey);
     },
+    /**
+     * @param {PortVariadicAccessors} target
+     * @param {string | symbol | number} key
+     */
     deleteProperty(target, key) {
       const index = getIndex(key);
       if (index < 0) return false;
       target.splice(index, 1);
-      ownerPort.explicitValue.splice(index, 1);
+      /** @type {unknown[]} */ (ownerPort.explicitValue).splice(index, 1);
       return true;
     },
   });
@@ -372,8 +566,13 @@ function makeVariadicAccessors(ownerPort, makePortAtIndex) {
 //
 
 const validPortName = /^[a-z_$][a-z_$0-9]*$/i;
+const PORT_EXPLICIT_VALUE = Symbol('portExplicitValue');
 
 export class PortInfo {
+  /**
+   * @param {ChipInfoLike} chipInfo
+   * @param {string} name
+   */
   constructor(chipInfo, name) {
     this.assertValidName(name);
     this.chipInfo = chipInfo;
@@ -391,6 +590,11 @@ export class PortInfo {
     }
   }
 
+  /**
+   * @param {string} name
+   * @param {string} [side]
+   * @returns {string}
+   */
   assertValidName(name, side) {
     if (!validPortName.test(name)) {
       throw new Error(`Formally invalid port name "${name}"`);
@@ -421,6 +625,10 @@ export class PortInfo {
     return name;
   }
 
+  /**
+   * @param {string} name
+   * @returns {boolean}
+   */
   hasName(name) {
     return this.name === name;
   }
@@ -433,24 +641,28 @@ export class PortInfo {
     return this.name;
   }
 
+  /** @returns {boolean} */
   get isInput() {
     throw new Error('unimplmeneted');
   }
 
+  /** @returns {boolean} */
   get isOutput() {
     throw new Error('unimplmeneted');
   }
 
+  /** @returns {boolean} */
   get isFlow() {
     throw new Error('unimplmeneted');
   }
 
+  /** @returns {boolean} */
   get isData() {
     throw new Error('unimplmeneted');
   }
 
   get isSink() {
-    return !!(this.isFlow ^ this.isInput);
+    return Boolean(Number(this.isFlow) ^ Number(this.isInput));
   }
 
   get isSource() {
@@ -463,6 +675,11 @@ export class PortInfo {
 }
 
 export class VariadicPortInfo extends PortInfo {
+  /**
+   * @param {ChipInfoLike} chipInfo
+   * @param {string} name
+   * @param {string | Function | false | undefined} variadic
+   */
   constructor(chipInfo, name, variadic) {
     super(chipInfo, name);
 
@@ -486,6 +703,10 @@ export class VariadicPortInfo extends PortInfo {
     return !!this.variadic;
   }
 
+  /**
+   * @param {string} name
+   * @returns {boolean}
+   */
   hasName(name) {
     if (this.isVariadic && this.variadic(undefined, name) >= 0) {
       return true;
@@ -493,10 +714,18 @@ export class VariadicPortInfo extends PortInfo {
     return super.hasName(name);
   }
 
+  /**
+   * @param {number} index
+   * @returns {string}
+   */
   variadicName(index) {
     return this.variadic(index);
   }
 
+  /**
+   * @param {string} name
+   * @returns {number}
+   */
   variadicIndex(name) {
     return this.variadic(undefined, name);
   }
@@ -507,17 +736,21 @@ export class VariadicPortInfo extends PortInfo {
 //
 
 export class InputFlowSourcePortInfo extends PortInfo {
+  /**
+   * @param {ChipInfoLike} chipInfo
+   * @param {string} name
+   * @param {InputFlowConfig | Function} [config]
+   */
   constructor(chipInfo, name, config = {}) {
     super(chipInfo, name);
 
-    if (typeof config === 'function') {
-      config = {
-        execute: config,
-      };
-    }
+    /** @type {InputFlowConfig} */
+    const cfg = /** @type {InputFlowConfig} */ (
+      typeof config === 'function' ? { execute: config } : config
+    );
 
-    this.execute = config.execute;
-    this.executeCompiler = config.executeCompiler;
+    this.execute = cfg.execute;
+    this.executeCompiler = cfg.executeCompiler;
     this.compiler = undefined;
   }
 
@@ -539,36 +772,45 @@ export class InputFlowSourcePortInfo extends PortInfo {
 }
 
 export class OutputDataSourcePortInfo extends PortInfo {
+  /**
+   * @param {ChipInfoLike} chipInfo
+   * @param {string} name
+   * @param {OutputDataConfig | PortOutlet | PortOutlet[] | Function | string} [config]
+   */
   constructor(chipInfo, name, config = {}) {
     super(chipInfo, name);
 
+    /** @type {OutputDataConfig} */
+    let cfg = {};
     if (config instanceof Port) {
       throw new Error('Can only compute on outlets');
     } else if (config instanceof PortOutlet) {
-      config = {
+      cfg = {
         computeOn: [config],
       };
     } else if (Array.isArray(config)) {
-      config = {
+      cfg = {
         computeOn: config.slice(),
       };
     } else if (typeof config === 'function') {
-      config = {
+      cfg = {
         compute: config,
       };
     } else if (typeof config === 'string') {
-      config = {
+      cfg = {
         type: config,
       };
+    } else if (typeof config === 'object' && config) {
+      cfg = { ...config };
     }
 
     // Type
-    if (typeof config.type === 'string') {
-      config.type = type(config.type);
+    if (typeof cfg.type === 'string') {
+      cfg.type = type(cfg.type);
     }
 
-    this.compute = config.compute;
-    this.computeCompiler = config.computeCompiler;
+    this.compute = cfg.compute;
+    this.computeCompiler = cfg.computeCompiler;
     this.compiler = undefined;
     // `inline` can be:
     // - `undefined` and will be automatically be decided in
@@ -577,19 +819,19 @@ export class OutputDataSourcePortInfo extends PortInfo {
     //   the computation if used in multiple places)
     // - `false` to never attempt to inline. A variable will be used instead
     // - `"once"` to never inline but also to compute the output value only once
-    this.inline = config.inline;
-    this.allowSideEffects = config.allowSideEffects || false;
-    this.type = config.type;
+    this.inline = cfg.inline;
+    this.allowSideEffects = cfg.allowSideEffects || false;
+    this.type = cfg.type;
     // Output ports can be used as internal state (ie: being wrote to and red).
     // When reading a output port, if no value has been assigned to it yet, it
     // will default to its `defaultValue`
-    this.defaultValue = config.defaultValue;
+    this.defaultValue = cfg.defaultValue;
     // Concealed indicates how the port is hidden:
     // - `true` the port can not be connected from the outside
     // - `'hidden'` the port is not accessible from the outside.
     //    Use this to create internal chip states.
     // TODO 'hidden' output data ports are not enforced in any way
-    this.concealed = config.concealed || false;
+    this.concealed = cfg.concealed || false;
 
     // Used by compiler to indicate a port that is being
     // set by an execution (rather than be computed)
@@ -619,7 +861,7 @@ export class OutputDataSourcePortInfo extends PortInfo {
       },
     });
 
-    this.computeOn = config.computeOn || [];
+    this.computeOn = cfg.computeOn || [];
   }
 
   get isConcealed() {
@@ -652,37 +894,50 @@ export class OutputDataSourcePortInfo extends PortInfo {
 //
 
 export class InputDataSinkPortInfo extends VariadicPortInfo {
+  /**
+   * @param {ChipInfoLike} chipInfo
+   * @param {string} name
+   * @param {InputDataConfig | boolean | string} [config]
+   */
   constructor(chipInfo, name, config = {}) {
-    super(chipInfo, name, config.variadic);
+    /** @type {InputDataConfig | boolean | string} */
+    let cfg = config;
+    super(
+      chipInfo,
+      name,
+      typeof cfg === 'object' && cfg ? cfg.variadic : undefined,
+    );
 
-    if (config === true) {
-      config = {
+    if (cfg === true) {
+      cfg = {
         canonical: true,
       };
     }
 
-    if (typeof config === 'string') {
-      config = {
-        type: config,
+    if (typeof cfg === 'string') {
+      cfg = {
+        type: cfg,
       };
     }
-    if (typeof config.type === 'string') {
-      config.type = type(config.type);
+    /** @type {InputDataConfig} */
+    const normalized = typeof cfg === 'object' && cfg ? { ...cfg } : {};
+    if (typeof normalized.type === 'string') {
+      normalized.type = type(normalized.type);
     }
 
     // Canonical indicates how the port value can be initialized in the
     // wrapper canonical form (by default as a parameter to the new chip constructor)
     // - `true` the port can receive default value from the chip constructor
     // - `'required'` the port must receive a value from the chip constructor
-    this.canonical = config.canonical || false;
+    this.canonical = normalized.canonical || false;
     // Concealed indicates how the port is hidden
     // - `true` the port can not be connected but only receive a direct value
     // - `'hidden'` the port is not accessible. use only with `defaultValue` or
     //   `canonical` to give any meaninful value
-    this.concealed = config.concealed || false;
+    this.concealed = normalized.concealed || false;
     // The default value the port should be having
-    this.defaultValue = config.defaultValue;
-    this.type = config.type;
+    this.defaultValue = normalized.defaultValue;
+    this.type = normalized.type;
 
     // Variadic port
     if (this.isVariadic && !Array.isArray(this.defaultValue)) {
@@ -724,6 +979,11 @@ export class InputDataSinkPortInfo extends VariadicPortInfo {
 }
 
 export class OutputFlowSinkPortInfo extends VariadicPortInfo {
+  /**
+   * @param {ChipInfoLike} chipInfo
+   * @param {string} name
+   * @param {OutputFlowConfig} [config]
+   */
   constructor(chipInfo, name, config = {}) {
     super(chipInfo, name, config.variadic);
 

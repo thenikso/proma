@@ -38,6 +38,9 @@ importers:
       serve:
         specifier: 13.0.2
         version: 13.0.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/proma-svelte-components:
     devDependencies:

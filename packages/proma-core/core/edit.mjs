@@ -1,3 +1,4 @@
+// @ts-check
 import { context, info, assert } from './utils.mjs';
 import { Chip, isChipClass } from './chip.mjs';
 import { PortOutlet } from './ports.mjs';
@@ -7,26 +8,105 @@ import { event, switchChip, externalGet } from './api.mjs';
 import { type } from './types.mjs';
 import { EditHistory } from './history.mjs';
 
+/**
+ * @typedef {import('./chip.mjs').PortSelector} PortSelector
+ * @typedef {import('./chip.mjs').ConnectionEndpointSelector} ConnectionEndpointSelector
+ * @typedef {import('./chip.mjs').ChipConnectionEndpoint} ChipConnectionEndpoint
+ * @typedef {{ source: ChipConnectionEndpoint, sink: ChipConnectionEndpoint }} PortConnection
+ * @typedef {{
+ *   editable?: boolean,
+ *   customChipClasses?: Record<string, unknown>
+ * }} EditableChipClassMeta
+ * @typedef {typeof Chip & EditableChipClassMeta} EditableChipClass
+ * @typedef {{
+ *   isOutlet?: boolean,
+ *   isData?: boolean,
+ *   isInput?: boolean,
+ *   isFlow?: boolean,
+ *   name?: string,
+ *   type?: { check: (value: unknown) => boolean, signature?: string },
+ *   explicitValue?: unknown,
+ *   variadic?: Array<unknown>
+ * }} EditablePortLike
+ * @typedef {(event: CustomEvent) => void} EditEventListener
+ * @typedef {{
+ *   undo?: () => unknown,
+ *   redo?: () => unknown,
+ *   replaying?: boolean,
+ *   [key: string]: unknown
+ * }} EditEventDetail
+ * @typedef {(eventName: string, detail?: EditEventDetail) => boolean} EditDispatch
+ * @typedef {(uri: string, ...args: unknown[]) => typeof Chip} CustomChipFactory
+ */
+
+/** @type {{ [kind: string]: CustomChipFactory }} */
 const VALID_CUSTOM_CHIPS = {
+  /** @param {string} uri */
   event,
+  /** @param {string} uri */
   switch: switchChip,
-  external: (_, ext) => externalGet(ext),
+  /** @param {string} _ @param {unknown} ext */
+  external: (_, ext) => externalGet(/** @type {string | object} */ (ext)),
 };
 const CUSTOM_CHIP_REGEXP = new RegExp(
   `^(.+?):(${Object.keys(VALID_CUSTOM_CHIPS).join('|')})(?:\\((.+)\\))?$`,
   'i',
 );
 
+/**
+ * Creates an editable facade for a chip class.
+ *
+ * @param {unknown} ChipClass
+ * @param {import('./registry.mjs').Registry} [registry]
+ * @returns {EditableChipInfo}
+ */
 export function edit(ChipClass, registry) {
   // TODO accept an optional new "build" function that can have deleteChip..?
-  if (!ChipClass.editable) {
+  const editableChipClass = /** @type {EditableChipClass} */ (ChipClass);
+  if (!editableChipClass.editable) {
     throw new Error('Chip is not editable');
   }
-  return new EditableChipInfo(ChipClass, registry);
+  return new EditableChipInfo(editableChipClass, registry);
 }
 
+/**
+ * Resolve and validate an outlet belonging to the provided chip info.
+ *
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {PortSelector} outlet
+ * @returns {PortOutlet}
+ */
+function resolveOutlet(chipInfo, outlet) {
+  const resolved =
+    outlet instanceof PortOutlet ? outlet : chipInfo.getPort(outlet);
+  if (!(resolved instanceof PortOutlet)) {
+    throw new Error('Can only use chip outlets');
+  }
+  if (!(/** @type {{ isOutlet?: boolean }} */ (resolved).isOutlet)) {
+    throw new Error(`Can only use chip outlets, got "${resolved}"`);
+  }
+  return resolved;
+}
+
+/**
+ * Resolve a sub-chip port from any accepted selector.
+ *
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {PortSelector} port
+ * @returns {EditablePortLike}
+ */
+function resolvePort(chipInfo, port) {
+  return /** @type {EditablePortLike} */ (chipInfo.getPort(port));
+}
+
+/** @type {WeakMap<import('./chip.mjs').ChipInfo, Map<string, Set<EditEventListener>>>} */
 const sharedEventsByChipInfo = new WeakMap();
 
+/**
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {string} eventName
+ * @param {EditEventListener} listener
+ */
 function onSharedEvent(chipInfo, eventName, listener) {
   const sharedEvents = sharedEventsByChipInfo.get(chipInfo) || new Map();
 
@@ -37,6 +117,12 @@ function onSharedEvent(chipInfo, eventName, listener) {
   sharedEventsByChipInfo.set(chipInfo, sharedEvents);
 }
 
+/**
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {string} [eventName]
+ * @param {EditEventListener} [listener]
+ * @returns {boolean}
+ */
 function offSharedEvent(chipInfo, eventName, listener) {
   const sharedEvents = sharedEventsByChipInfo.get(chipInfo);
   if (sharedEvents) {
@@ -57,6 +143,11 @@ function offSharedEvent(chipInfo, eventName, listener) {
   return false;
 }
 
+/**
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {string} eventName
+ * @returns {EditEventListener[]}
+ */
 function getSharedEvents(chipInfo, eventName) {
   const sharedEvents = sharedEventsByChipInfo.get(chipInfo);
   if (!sharedEvents) return [];
@@ -66,6 +157,11 @@ function getSharedEvents(chipInfo, eventName) {
 // Private helpers for compound operations — remove connections without firing
 // individual connection:remove events that would each create undo entries.
 
+/**
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {Chip | PlaceholderChip} chip
+ * @returns {PortConnection[]}
+ */
 function collectConnectionsForChip(chipInfo, chip) {
   const connections = [];
   for (const [sink, source] of chipInfo.sinkConnection.entries()) {
@@ -75,6 +171,11 @@ function collectConnectionsForChip(chipInfo, chip) {
   return connections;
 }
 
+/**
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {ChipConnectionEndpoint} portInfo
+ * @returns {PortConnection[]}
+ */
 function collectConnectionsForPort(chipInfo, portInfo) {
   const connections = [];
   const sinkTarget = chipInfo.sinkConnection.get(portInfo);
@@ -84,6 +185,11 @@ function collectConnectionsForPort(chipInfo, portInfo) {
   return connections;
 }
 
+/**
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {PortConnection[]} connections
+ * @returns {void}
+ */
 function removeConnectionsFromMaps(chipInfo, connections) {
   for (const { source, sink } of connections) {
     chipInfo.sinkConnection.delete(sink);
@@ -95,6 +201,11 @@ function removeConnectionsFromMaps(chipInfo, connections) {
   }
 }
 
+/**
+ * @param {import('./chip.mjs').ChipInfo} chipInfo
+ * @param {PortConnection[]} connections
+ * @returns {void}
+ */
 function addConnectionsToMaps(chipInfo, connections) {
   for (const { source, sink } of connections) {
     chipInfo.sinkConnection.set(sink, source);
@@ -108,9 +219,17 @@ function addConnectionsToMaps(chipInfo, connections) {
 }
 
 class EditableChipInfo {
+  /**
+   * @param {EditableChipClass} chipClass
+   * @param {import('./registry.mjs').Registry} [registry]
+   */
   constructor(chipClass, registry = defaultRegistry) {
     const chipInfo = info(chipClass);
     info(this, chipInfo);
+    /** @type {EditableChipClass} */
+    this.Chip = chipClass;
+    /** @type {EditDispatch} */
+    this.dispatch = () => true;
 
     // We always copy the registry so that we can load new things in it
     // and keep those local to the chip.
@@ -141,6 +260,12 @@ class EditableChipInfo {
 
     Object.defineProperties(this, {
       on: {
+        /**
+         * @param {string} eventName
+         * @param {EditEventListener} listener
+         * @param {boolean} [onAllChipEditors]
+         * @returns {EditableChipInfo}
+         */
         value: function on(eventName, listener, onAllChipEditors) {
           if (onAllChipEditors) {
             onSharedEvent(chipInfo, eventName, listener);
@@ -153,6 +278,11 @@ class EditableChipInfo {
         },
       },
       off: {
+        /**
+         * @param {string} [eventName]
+         * @param {EditEventListener} [listener]
+         * @returns {EditableChipInfo}
+         */
         value: function off(eventName, listener) {
           if (!offSharedEvent(chipInfo, eventName, listener)) {
             if (typeof eventName === 'undefined') {
@@ -172,6 +302,11 @@ class EditableChipInfo {
         },
       },
       dispatch: {
+        /**
+         * @param {string} eventName
+         * @param {EditEventDetail} [detail]
+         * @returns {boolean}
+         */
         value: function dispatch(eventName, detail) {
           // Auto-record when undo/redo closures are embedded and not replaying
           if (!history.isReplaying && detail?.undo && detail?.redo) {
@@ -239,6 +374,12 @@ class EditableChipInfo {
   // Use
   //
 
+  /**
+   * Loads a library namespace into the local editable registry.
+   *
+   * @param {string} libraryURI
+   * @returns {Promise<EditableChipInfo>}
+   */
   async addUse(libraryURI) {
     const chipInfo = info(this);
     const registry = chipInfo.registry;
@@ -246,6 +387,12 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * Removes a previously loaded library namespace.
+   *
+   * @param {string} libraryURI
+   * @returns {EditableChipInfo}
+   */
   removeUse(libraryURI) {
     const chipInfo = info(this);
     const registry = chipInfo.registry;
@@ -257,16 +404,31 @@ class EditableChipInfo {
   // Chips
   //
 
+  /**
+   * @returns {(Chip | PlaceholderChip)[]}
+   */
   allChips() {
     const chipInfo = info(this);
     return chipInfo.chips.slice();
   }
 
+  /**
+   * @param {string} id
+   * @returns {Chip | PlaceholderChip}
+   */
   getChip(id) {
     const chipInfo = info(this);
     return chipInfo.getChip(id);
   }
 
+  /**
+   * Adds a chip instance/class/uri to the editable graph.
+   *
+   * @param {string | typeof Chip | Chip | PlaceholderChip} chipToAdd
+   * @param {unknown[] | string} [canonicalValues]
+   * @param {string} [id]
+   * @returns {EditableChipInfo}
+   */
   addChip(chipToAdd, canonicalValues, id) {
     const chipInfo = info(this);
     if (typeof chipToAdd === 'string') {
@@ -305,14 +467,16 @@ class EditableChipInfo {
         chipToAdd = new PlaceholderChip(chipClass, chipToAdd, canonicalValues);
       }
     } else if (chipToAdd instanceof Chip) {
-      id = canonicalValues;
+      id = typeof canonicalValues === 'string' ? canonicalValues : id;
       canonicalValues = undefined;
     }
 
     if (isChipClass(chipToAdd)) {
       context.push(chipInfo);
       try {
-        chipToAdd = new chipToAdd(...(canonicalValues || []));
+        chipToAdd = new chipToAdd(
+          .../** @type {unknown[]} */ (canonicalValues || []),
+        );
       } catch (e) {
         context.pop();
         throw e;
@@ -352,6 +516,12 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * Removes a sub-chip and all of its connections.
+   *
+   * @param {string | Chip | PlaceholderChip} chip
+   * @returns {EditableChipInfo}
+   */
   removeChip(chip) {
     const chipInfo = info(this);
     if (typeof chip === 'string') {
@@ -428,6 +598,12 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {string | Chip | PlaceholderChip} chip
+   * @param {string} id
+   * @param {boolean} [dryRun]
+   * @returns {EditableChipInfo}
+   */
   setChipId(chip, id, dryRun) {
     const chipInfo = info(this);
     chip = chipInfo.getChip(chip);
@@ -455,6 +631,11 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {string | Chip | PlaceholderChip} chip
+   * @param {string} label
+   * @returns {EditableChipInfo}
+   */
   setChipLabel(chip, label) {
     const chipInfo = info(this);
     chip = chipInfo.getChip(chip);
@@ -477,11 +658,21 @@ class EditableChipInfo {
   // Outlets
   //
 
+  /**
+   * @param {PortSelector} path
+   * @param {'in' | 'out'} [side]
+   * @returns {import('./ports.mjs').Port | PortOutlet | null}
+   */
   getPort(path, side) {
     const chipInfo = info(this);
     return chipInfo.getPort(path, side);
   }
 
+  /**
+   * @param {string} name
+   * @param {object | Function} [config]
+   * @returns {EditableChipInfo}
+   */
   addInputFlowOutlet(name, config) {
     const chipInfo = info(this);
     const outlet = chipInfo.addInputFlowPort(name, config);
@@ -510,6 +701,11 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {string} name
+   * @param {object | boolean | string} [config]
+   * @returns {EditableChipInfo}
+   */
   addInputDataOutlet(name, config) {
     const chipInfo = info(this);
     const outlet = chipInfo.addInputDataPort(name, config);
@@ -538,6 +734,10 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {string} name
+   * @returns {EditableChipInfo}
+   */
   addOutputFlowOutlet(name) {
     const chipInfo = info(this);
     const outlet = chipInfo.addOutputFlowPort(name);
@@ -566,6 +766,11 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {string} name
+   * @param {object | Function | PortOutlet | PortOutlet[] | string} [config]
+   * @returns {EditableChipInfo}
+   */
   addOutputDataOutlet(name, config) {
     const chipInfo = info(this);
     const outlet = chipInfo.addOutputDataPort(name, config);
@@ -594,28 +799,29 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {PortSelector} outlet
+   * @param {string} newName
+   * @param {boolean} [dryRun]
+   * @returns {EditableChipInfo}
+   */
   renameOutlet(outlet, newName, dryRun) {
     const chipInfo = info(this);
-    if (!(outlet instanceof PortOutlet)) {
-      outlet = chipInfo.getPort(outlet);
-    }
-    if (!outlet.isOutlet) {
-      throw new Error(`Can only rename chip outlets, got "${outlet}"`);
-    }
-    const portInfo = info(outlet);
+    const resolvedOutlet = resolveOutlet(chipInfo, outlet);
+    const portInfo = info(resolvedOutlet);
     if (portInfo.chipInfo !== chipInfo) {
       throw new Error('Port outlet is not owned by chip');
     }
     newName = portInfo.assertValidName(newName);
     if (!dryRun) {
-      const oldName = outlet.name;
+      const oldName = resolvedOutlet.name;
       portInfo.name = newName;
-      const undo = () => this.renameOutlet(outlet, oldName);
-      const redo = () => this.renameOutlet(outlet, newName);
+      const undo = () => this.renameOutlet(resolvedOutlet, oldName);
+      const redo = () => this.renameOutlet(resolvedOutlet, newName);
       this.dispatch('outlet:rename', {
         subject: 'outlet',
         operation: 'rename',
-        data: { outlet, name: newName, oldName },
+        data: { outlet: resolvedOutlet, name: newName, oldName },
         undo,
         redo,
       });
@@ -623,75 +829,79 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {PortSelector} port
+   * @param {PortSelector} [beforePort]
+   * @returns {EditableChipInfo}
+   */
   moveOutlet(port, beforePort) {
     const chipInfo = info(this);
-    if (typeof port === 'string') {
-      port = chipInfo.getPort(port);
-    }
-    if (!(port instanceof PortOutlet)) {
-      throw new Error('Can only move chip outlets');
-    }
-    const portInfo = info(port);
+    const resolvedPort = resolveOutlet(chipInfo, port);
+    const portInfo = info(resolvedPort);
     if (portInfo.chipInfo !== chipInfo) {
       throw new Error('Port outlet is not owned by chip');
     }
     const list = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
 
+    /** @type {PortOutlet | undefined} */
+    let resolvedBeforePort;
     if (beforePort !== undefined) {
-      if (typeof beforePort === 'string') {
-        beforePort = chipInfo.getPort(beforePort);
-      }
-      if (!(beforePort instanceof PortOutlet)) {
-        throw new Error('beforePort must be a chip outlet');
-      }
-      const beforePortInfo = info(beforePort);
+      resolvedBeforePort = resolveOutlet(chipInfo, beforePort);
+      const beforePortInfo = info(resolvedBeforePort);
       if (beforePortInfo.chipInfo !== chipInfo) {
         throw new Error('beforePort outlet is not owned by chip');
       }
       if (beforePortInfo.isInput !== portInfo.isInput) {
         throw new Error('Cannot move outlet across sides (input/output)');
       }
-      if (beforePort === port) {
+      if (resolvedBeforePort === resolvedPort) {
         return this;
       }
     }
 
     // Remove from current position
-    const idx = list.indexOf(port);
+    const idx = list.indexOf(resolvedPort);
     const oldBeforeOutlet = list[idx + 1] ?? null;
     list.splice(idx, 1);
 
     // Insert before beforePort, or append to end
-    if (beforePort === undefined) {
-      list.push(port);
+    if (resolvedBeforePort === undefined) {
+      list.push(resolvedPort);
     } else {
-      const beforeIdx = list.indexOf(beforePort);
-      list.splice(beforeIdx, 0, port);
+      const beforeIdx = list.indexOf(resolvedBeforePort);
+      list.splice(beforeIdx, 0, resolvedPort);
     }
 
-    const undo = () => this.moveOutlet(port, oldBeforeOutlet ?? undefined);
-    const redo = () => this.moveOutlet(port, beforePort ?? undefined);
+    const undo = () =>
+      this.moveOutlet(resolvedPort, oldBeforeOutlet ?? undefined);
+    const redo = () =>
+      this.moveOutlet(resolvedPort, resolvedBeforePort ?? undefined);
     this.dispatch('outlet:move', {
       subject: 'outlet',
       operation: 'move',
       side: portInfo.isInput ? 'input' : 'output',
       kind: portInfo.isFlow ? 'flow' : 'data',
-      data: { outlet: port, beforeOutlet: beforePort ?? null, oldBeforeOutlet },
+      data: {
+        outlet: resolvedPort,
+        beforeOutlet: resolvedBeforePort ?? null,
+        oldBeforeOutlet,
+      },
       undo,
       redo,
     });
     return this;
   }
 
+  /**
+   * Removes an outlet and any connections touching it.
+   *
+   * @param {PortSelector} port
+   * @returns {EditableChipInfo}
+   */
   removeOutlet(port) {
     const chipInfo = info(this);
-    if (typeof port === 'string') {
-      port = chipInfo.getPort(port);
-    }
-    if (!(port instanceof PortOutlet)) {
-      throw new Error('Can only remove chip outlets');
-    }
-    const portInfo = info(port);
+    const resolvedPort = resolveOutlet(chipInfo, port);
+    const portInfo = info(resolvedPort);
     if (portInfo.chipInfo !== chipInfo) {
       throw new Error('Port outlet is not owned by chip');
     }
@@ -710,13 +920,13 @@ class EditableChipInfo {
     }
     // Remove from inputs or outputs array
     const list = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
-    const idx = list.indexOf(port);
+    const idx = list.indexOf(resolvedPort);
     if (idx !== -1) {
       list.splice(idx, 1);
     }
     const undo = () => {
       const l = portInfo.isInput ? chipInfo.inputs : chipInfo.outputs;
-      l.splice(Math.min(idx, l.length), 0, port);
+      l.splice(Math.min(idx, l.length), 0, resolvedPort);
       if (removedConnections.length > 0) {
         addConnectionsToMaps(chipInfo, removedConnections);
         this.dispatch('connection:add', {
@@ -730,22 +940,26 @@ class EditableChipInfo {
         operation: 'add',
         side,
         kind,
-        data: { outlet: port },
+        data: { outlet: resolvedPort },
       });
     };
-    const redo = () => this.removeOutlet(port);
+    const redo = () => this.removeOutlet(resolvedPort);
     this.dispatch('outlet:remove', {
       subject: 'outlet',
       operation: 'remove',
       side,
       kind,
-      data: { outlet: port, index: idx },
+      data: { outlet: resolvedPort, index: idx },
       undo,
       redo,
     });
     return this;
   }
 
+  /**
+   * @param {string} name
+   * @returns {EditableChipInfo}
+   */
   removeInputOutlet(name) {
     const chipInfo = info(this);
     const port = chipInfo.getInputPortOutlet(name);
@@ -755,6 +969,10 @@ class EditableChipInfo {
     return this.removeOutlet(port);
   }
 
+  /**
+   * @param {string} name
+   * @returns {EditableChipInfo}
+   */
   removeOutputOutlet(name) {
     const chipInfo = info(this);
     const port = chipInfo.getOutputPortOutlet(name);
@@ -764,29 +982,37 @@ class EditableChipInfo {
     return this.removeOutlet(port);
   }
 
+  /**
+   * @param {PortSelector} port
+   * @param {unknown} newType
+   * @returns {EditableChipInfo}
+   */
   setOutletType(port, newType) {
     const chipInfo = info(this);
-    if (!(port instanceof PortOutlet)) {
-      port = chipInfo.getPort(port);
+    const resolvedOutlet = resolveOutlet(chipInfo, port);
+    if (!(/** @type {EditablePortLike} */ (resolvedOutlet).isData)) {
+      throw new Error(
+        `Can only set data type for data outlets, got "${String(
+          resolvedOutlet,
+        )}"`,
+      );
     }
-    if (!port.isOutlet) {
-      throw new Error(`Can only set chip outlet type, got "${port}"`);
-    }
-    if (!port.isData) {
-      throw new Error(`Can only set data type for data outlets, got "${port}"`);
-    }
-    const portInfo = info(port);
+    const portInfo = info(resolvedOutlet);
     if (portInfo.chipInfo !== chipInfo) {
       throw new Error('Port outlet is not owned by chip');
     }
     const oldType = portInfo.type;
     portInfo.type = newType !== undefined ? type(newType) : undefined;
-    const undo = () => this.setOutletType(port, oldType);
-    const redo = () => this.setOutletType(port, newType);
+    const undo = () => this.setOutletType(resolvedOutlet, oldType);
+    const redo = () => this.setOutletType(resolvedOutlet, newType);
     this.dispatch('outlet:type', {
       subject: 'outlet',
       operation: 'type',
-      data: { outlet: port, type: port.type, oldType },
+      data: {
+        outlet: resolvedOutlet,
+        type: /** @type {EditablePortLike} */ (resolvedOutlet).type,
+        oldType,
+      },
       undo,
       redo,
     });
@@ -797,39 +1023,51 @@ class EditableChipInfo {
   // Ports (of sub-chips)
   //
 
+  /**
+   * @param {PortSelector} port
+   * @param {unknown} value
+   * @returns {EditableChipInfo}
+   */
   setPortValue(port, value) {
     const chipInfo = info(this);
-    port = chipInfo.getPort(port);
-    if (!port.isData || !port.isInput) {
+    const resolvedPort = resolvePort(chipInfo, port);
+    if (!resolvedPort.isData || !resolvedPort.isInput) {
       throw new Error('port is not a data input');
     }
-    if (port.type && !port.type.check(value)) {
+    if (resolvedPort.type && !resolvedPort.type.check(value)) {
       throw new Error(
-        `invalid type for default value. expected: ${port.type.signature}`,
+        `invalid type for default value. expected: ${resolvedPort.type.signature}`,
       );
     }
-    const oldValue = port.explicitValue;
-    port.explicitValue = value;
-    const undo = () => this.setPortValue(port, oldValue);
-    const redo = () => this.setPortValue(port, value);
+    const oldValue = resolvedPort.explicitValue;
+    resolvedPort.explicitValue = value;
+    const undo = () =>
+      this.setPortValue(/** @type {PortSelector} */ (resolvedPort), oldValue);
+    const redo = () =>
+      this.setPortValue(/** @type {PortSelector} */ (resolvedPort), value);
     this.dispatch('port:value', {
       subject: 'port',
       operation: 'value',
-      data: { port, value, oldValue },
+      data: { port: resolvedPort, value, oldValue },
       undo,
       redo,
     });
     return this;
   }
 
+  /**
+   * @param {PortSelector} port
+   * @param {number | string} variadicCount
+   * @returns {EditableChipInfo}
+   */
   setPortVariadicCount(port, variadicCount) {
     const chipInfo = info(this);
-    port = chipInfo.getPort(port);
+    const resolvedPort = resolvePort(chipInfo, port);
     // Only operate on variadic ports
-    if (!port.variadic) {
+    if (!resolvedPort.variadic) {
       throw new Error('port is not variadic');
     }
-    const oldVariadicCount = Array.from(port.variadic).length;
+    const oldVariadicCount = Array.from(resolvedPort.variadic).length;
     // Allow for `setPortVariadicCount(port, "+1")`
     if (typeof variadicCount === 'string') {
       const countDelta = parseInt(variadicCount);
@@ -845,18 +1083,18 @@ class EditableChipInfo {
       for (let i = oldVariadicCount; i < variadicCount; i++) {
         // Accessing the port will create a new variadic port instance via
         // the `variadic` access Proxy
-        port.variadic[i];
+        resolvedPort.variadic[i];
       }
     }
     // Disconnect and delete variadic ports atomically (no individual undo entries)
     else {
       const allRemovedConnections = [];
       for (let i = variadicCount; i < oldVariadicCount; i++) {
-        const portToRemove = port.variadic[i];
+        const portToRemove = resolvedPort.variadic[i];
         const conns = collectConnectionsForPort(chipInfo, info(portToRemove));
         allRemovedConnections.push(...conns);
         removeConnectionsFromMaps(chipInfo, conns);
-        delete port.variadic[i];
+        delete resolvedPort.variadic[i];
       }
       if (allRemovedConnections.length > 0) {
         // Notification-only dispatch (no undo/redo → not recorded)
@@ -867,12 +1105,20 @@ class EditableChipInfo {
         });
       }
     }
-    const undo = () => this.setPortVariadicCount(port, oldVariadicCount);
-    const redo = () => this.setPortVariadicCount(port, variadicCount);
+    const undo = () =>
+      this.setPortVariadicCount(
+        /** @type {PortSelector} */ (resolvedPort),
+        oldVariadicCount,
+      );
+    const redo = () =>
+      this.setPortVariadicCount(
+        /** @type {PortSelector} */ (resolvedPort),
+        variadicCount,
+      );
     this.dispatch('port:variadicCount', {
       subject: 'port',
       operation: 'variadicCount',
-      data: { port, variadicCount, oldVariadicCount },
+      data: { port: resolvedPort, variadicCount, oldVariadicCount },
       undo,
       redo,
     });
@@ -883,6 +1129,11 @@ class EditableChipInfo {
   // Single port
   //
 
+  /**
+   * @param {string} portName
+   * @param {string} code
+   * @returns {EditableChipInfo}
+   */
   setPortExecute(portName, code) {
     if (typeof code !== 'string') {
       throw new Error('code should be a string');
@@ -919,6 +1170,11 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {string} portName
+   * @param {string} code
+   * @returns {EditableChipInfo}
+   */
   setPortCompute(portName, code) {
     if (typeof code !== 'string') {
       throw new Error('code should be a string');
@@ -961,11 +1217,20 @@ class EditableChipInfo {
   // Connections
   //
 
+  /**
+   * @param {PortSelector} port
+   * @returns {boolean}
+   */
   hasConnections(port) {
     const chipInfo = info(this);
     return chipInfo.getConnectedPorts(port).length > 0;
   }
 
+  /**
+   * @param {ConnectionEndpointSelector} portA
+   * @param {ConnectionEndpointSelector} portB
+   * @returns {EditableChipInfo}
+   */
   probeConnection(portA, portB) {
     // TODO return error if not connectable and order from/to
     // and connections that need removal to allow this
@@ -974,6 +1239,11 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * @param {ConnectionEndpointSelector} portA
+   * @param {ConnectionEndpointSelector} portB
+   * @returns {EditableChipInfo}
+   */
   addConnection(portA, portB) {
     const chipInfo = info(this);
     const connection = chipInfo.addConnection(portA, portB, false, true);
@@ -990,6 +1260,13 @@ class EditableChipInfo {
     return this;
   }
 
+  /**
+   * Removes one or many connections depending on provided endpoints.
+   *
+   * @param {ConnectionEndpointSelector} portA
+   * @param {ConnectionEndpointSelector} [portB]
+   * @returns {EditableChipInfo}
+   */
   removeConnection(portA, portB) {
     const chipInfo = info(this);
     if (typeof portA === 'string' || Array.isArray(portA)) {
@@ -1103,6 +1380,13 @@ class EditableChipInfo {
   }
 }
 
+/**
+ * Compiles user-provided code into a function with outlet names in scope.
+ *
+ * @param {string} code
+ * @param {Array<{ name: string }>} outlets
+ * @returns {Function}
+ */
 function makeFunction(code, outlets) {
   const outletsNames = outlets.map((p) => p.name);
   const makeFunc = new Function(...outletsNames, 'return (' + code + ')');
