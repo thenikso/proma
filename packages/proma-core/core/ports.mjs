@@ -7,21 +7,29 @@ import { type } from './types.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';
 
 /**
+ * @typedef {{ signature?: string }} PortTypeLike
+ * @typedef {{
+ *   inputs: PortOutlet[],
+ *   outputs: PortOutlet[]
+ * }} ChipInfoLike
+ */
+
+/**
  * Runtime shape injected into callable `Port` and `PortOutlet` instances.
  * These members are defined through `Object.defineProperties` on top of the
  * function returned by `makePortRun`.
  *
  * @typedef {object} PortRuntimeShape
  * @property {any} chip
- * @property {any} explicitValue
- * @property {any} defaultValue
+ * @property {unknown} explicitValue
+ * @property {unknown} defaultValue
  * @property {boolean} isInput
  * @property {boolean} isOutput
  * @property {boolean} isFlow
  * @property {boolean} isData
  * @property {string} name
  * @property {string} fullName
- * @property {any} type
+ * @property {PortTypeLike | undefined} type
  * @property {boolean} isConcealed
  * @property {boolean} isCanonical
  * @property {boolean} isRequired
@@ -46,8 +54,8 @@ import { INPUT, OUTPUT } from './constants.mjs';
  *   computeCompiler?: Function,
  *   inline?: boolean | 'once',
  *   allowSideEffects?: boolean,
- *   type?: any,
- *   defaultValue?: any,
+ *   type?: unknown,
+ *   defaultValue?: unknown,
  *   concealed?: boolean | 'hidden',
  *   computeOn?: Array<PortOutlet | PortInfo>
  * }} OutputDataConfig
@@ -56,8 +64,8 @@ import { INPUT, OUTPUT } from './constants.mjs';
  *   variadic?: string | Function | false,
  *   canonical?: boolean | 'required',
  *   concealed?: boolean | 'hidden',
- *   defaultValue?: any,
- *   type?: any
+ *   defaultValue?: unknown,
+ *   type?: unknown
  * }} InputDataConfig
  *
  * @typedef {{
@@ -231,17 +239,17 @@ export class Port extends Function {
     return undefined;
   }
 
-  /** @returns {any} */
+  /** @returns {unknown} */
   get explicitValue() {
     return this[PORT_EXPLICIT_VALUE];
   }
 
-  /** @param {any} value */
+  /** @param {unknown} value */
   set explicitValue(value) {
     this[PORT_EXPLICIT_VALUE] = value;
   }
 
-  /** @returns {any} */
+  /** @returns {unknown} */
   get defaultValue() {
     return undefined;
   }
@@ -502,55 +510,52 @@ function makeVariadicAccessors(ownerPort, makePortAtIndex) {
     }
     return index;
   };
-  return new Proxy(
-    /** @type {PortVariadicAccessors} */ (/** @type {any} */ ([])),
-    {
-      /**
-       * @param {PortVariadicAccessors} target
-       * @param {string | symbol | number} key
-       */
-      get(target, key) {
-        const index = getIndex(key);
-        /** @type {string | symbol | number} */
-        let lookupKey = key;
-        if (index >= 0) {
-          const indexKey = index;
-          lookupKey = indexKey;
-          if (typeof target[indexKey] === 'undefined') {
-            const variadicPort = makePortAtIndex(index);
-            Object.defineProperties(variadicPort, {
-              variadicIndex: {
-                enumerable: true,
-                value: index,
+  return new Proxy(/** @type {PortVariadicAccessors} */ ([]), {
+    /**
+     * @param {PortVariadicAccessors} target
+     * @param {string | symbol | number} key
+     */
+    get(target, key) {
+      const index = getIndex(key);
+      /** @type {string | symbol | number} */
+      let lookupKey = key;
+      if (index >= 0) {
+        const indexKey = index;
+        lookupKey = indexKey;
+        if (typeof target[indexKey] === 'undefined') {
+          const variadicPort = makePortAtIndex(index);
+          Object.defineProperties(variadicPort, {
+            variadicIndex: {
+              enumerable: true,
+              value: index,
+            },
+            explicitValue: {
+              enumerable: true,
+              get: () => {
+                return ownerPort.explicitValue[index];
               },
-              explicitValue: {
-                enumerable: true,
-                get: () => {
-                  return ownerPort.explicitValue[index];
-                },
-                set: (value) => {
-                  ownerPort.explicitValue[index] = value;
-                },
+              set: (value) => {
+                ownerPort.explicitValue[index] = value;
               },
-            });
-            target[indexKey] = variadicPort;
-          }
+            },
+          });
+          target[indexKey] = variadicPort;
         }
-        return Reflect.get(target, lookupKey);
-      },
-      /**
-       * @param {PortVariadicAccessors} target
-       * @param {string | symbol | number} key
-       */
-      deleteProperty(target, key) {
-        const index = getIndex(key);
-        if (index < 0) return false;
-        target.splice(index, 1);
-        ownerPort.explicitValue.splice(index, 1);
-        return true;
-      },
+      }
+      return Reflect.get(target, lookupKey);
     },
-  );
+    /**
+     * @param {PortVariadicAccessors} target
+     * @param {string | symbol | number} key
+     */
+    deleteProperty(target, key) {
+      const index = getIndex(key);
+      if (index < 0) return false;
+      target.splice(index, 1);
+      /** @type {unknown[]} */ (ownerPort.explicitValue).splice(index, 1);
+      return true;
+    },
+  });
 }
 
 //
@@ -562,7 +567,7 @@ const PORT_EXPLICIT_VALUE = Symbol('portExplicitValue');
 
 export class PortInfo {
   /**
-   * @param {any} chipInfo
+   * @param {ChipInfoLike} chipInfo
    * @param {string} name
    */
   constructor(chipInfo, name) {
@@ -668,7 +673,7 @@ export class PortInfo {
 
 export class VariadicPortInfo extends PortInfo {
   /**
-   * @param {any} chipInfo
+   * @param {ChipInfoLike} chipInfo
    * @param {string} name
    * @param {string | Function | false | undefined} variadic
    */
@@ -729,7 +734,7 @@ export class VariadicPortInfo extends PortInfo {
 
 export class InputFlowSourcePortInfo extends PortInfo {
   /**
-   * @param {any} chipInfo
+   * @param {ChipInfoLike} chipInfo
    * @param {string} name
    * @param {InputFlowConfig | Function} [config]
    */
@@ -765,7 +770,7 @@ export class InputFlowSourcePortInfo extends PortInfo {
 
 export class OutputDataSourcePortInfo extends PortInfo {
   /**
-   * @param {any} chipInfo
+   * @param {ChipInfoLike} chipInfo
    * @param {string} name
    * @param {OutputDataConfig | PortOutlet | PortOutlet[] | Function | string} [config]
    */
@@ -773,7 +778,7 @@ export class OutputDataSourcePortInfo extends PortInfo {
     super(chipInfo, name);
 
     /** @type {OutputDataConfig} */
-    let cfg = /** @type {any} */ (config);
+    let cfg = {};
     if (config instanceof Port) {
       throw new Error('Can only compute on outlets');
     } else if (config instanceof PortOutlet) {
@@ -792,6 +797,8 @@ export class OutputDataSourcePortInfo extends PortInfo {
       cfg = {
         type: config,
       };
+    } else if (typeof config === 'object' && config) {
+      cfg = { ...config };
     }
 
     // Type
@@ -885,7 +892,7 @@ export class OutputDataSourcePortInfo extends PortInfo {
 
 export class InputDataSinkPortInfo extends VariadicPortInfo {
   /**
-   * @param {any} chipInfo
+   * @param {ChipInfoLike} chipInfo
    * @param {string} name
    * @param {InputDataConfig | boolean | string} [config]
    */
@@ -910,7 +917,7 @@ export class InputDataSinkPortInfo extends VariadicPortInfo {
       };
     }
     /** @type {InputDataConfig} */
-    const normalized = /** @type {any} */ (cfg);
+    const normalized = typeof cfg === 'object' && cfg ? { ...cfg } : {};
     if (typeof normalized.type === 'string') {
       normalized.type = type(normalized.type);
     }
@@ -970,7 +977,7 @@ export class InputDataSinkPortInfo extends VariadicPortInfo {
 
 export class OutputFlowSinkPortInfo extends VariadicPortInfo {
   /**
-   * @param {any} chipInfo
+   * @param {ChipInfoLike} chipInfo
    * @param {string} name
    * @param {OutputFlowConfig} [config]
    */

@@ -7,16 +7,23 @@ const INFO = Symbol('info');
 /**
  * Attaches or retrieves hidden metadata for an object.
  *
+ * @typedef {object | Function} InfoHost
+ */
+
+/**
+ * Attaches or retrieves hidden metadata for an object.
+ *
  * @template T
- * @param {any} obj
+ * @param {InfoHost} obj
  * @param {T} [value]
- * @returns {T | undefined | any}
+ * @returns {T | undefined | InfoHost}
  */
 export function info(obj, value) {
+  const infoHost = /** @type {Record<symbol, unknown>} */ (obj);
   if (typeof value === 'undefined') {
-    return obj[INFO];
+    return /** @type {T | undefined} */ (infoHost[INFO]);
   }
-  return Object.defineProperty(obj, INFO, {
+  return Object.defineProperty(infoHost, INFO, {
     value,
     enumerable: false,
     writable: false,
@@ -28,7 +35,7 @@ export function info(obj, value) {
 // Context
 //
 
-/** @type {any[]} */
+/** @type {unknown[]} */
 const contextStack = [];
 
 /**
@@ -39,7 +46,7 @@ const contextStack = [];
  *
  * @template T
  * @param {new (...args: any[]) => T} [klass]
- * @returns {T | any}
+ * @returns {T | unknown}
  */
 export function context(klass) {
   const value = contextStack[contextStack.length - 1];
@@ -52,7 +59,7 @@ export function context(klass) {
 /**
  * Pushes a context value onto the ambient context stack.
  *
- * @param {any} value
+ * @param {unknown} value
  * @returns {void}
  */
 context.push = function pushContext(value) {
@@ -62,7 +69,7 @@ context.push = function pushContext(value) {
 /**
  * Pops and returns the latest context value.
  *
- * @returns {any}
+ * @returns {unknown}
  */
 context.pop = function popContext() {
   return contextStack.pop();
@@ -75,7 +82,7 @@ context.pop = function popContext() {
 /**
  * Throws when a condition is falsy.
  *
- * @param {any} what
+ * @param {unknown} what
  * @param {string | (() => string)} message
  * @returns {void}
  */
@@ -88,12 +95,14 @@ export function assert(what, message) {
 /**
  * Asserts that `actual` has the provided metadata identity.
  *
- * @param {any} actual
- * @param {any} expectInfo
+ * @param {InfoHost} actual
+ * @param {{ name?: string } | undefined} expectInfo
  * @returns {void}
  */
 export function assertInfo(actual, expectInfo) {
-  const actualInfo = /** @type {any} */ (info(actual));
+  const actualInfo = /** @type {{ name?: string } | undefined} */ (
+    info(actual)
+  );
   assert(
     actualInfo === expectInfo,
     `Invalid type. Expected "${expectInfo.name}", got "${actualInfo.name}"`,
