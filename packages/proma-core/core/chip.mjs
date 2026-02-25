@@ -18,6 +18,7 @@ import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
  * @typedef {Port | PlaceholderPort} ChipPortInstance
  * @typedef {PortInfo | ChipPortInstance} ChipConnectionEndpoint
  * @typedef {string | string[] | number | Chip | Port | PortOutlet | PortInfo} PortSelector
+ * @typedef {(chipInstance?: Chip) => string} ChipLabelFactory
  */
 
 //
@@ -31,6 +32,7 @@ export class Chip {
    */
   constructor(chipInfo, canonicalValues) {
     let id = chipInfo.makeChipId();
+    /** @type {string | undefined} */
     let customLabel;
 
     info(this, chipInfo);
@@ -138,6 +140,10 @@ export class Chip {
   }
 }
 
+/**
+ * @param {any} obj
+ * @returns {boolean}
+ */
 export function isChipClass(obj) {
   return obj.__proto__ === Chip;
 }
@@ -149,41 +155,53 @@ export function isChipClass(obj) {
 export class ChipInfo {
   /**
    * @param {string} [URI]
-   * @param {((chipInstance?: Chip) => string) | string} [makeLabel]
+   * @param {ChipLabelFactory | string} [makeLabel]
    * @param {any} [registry]
    */
   constructor(URI, makeLabel, registry) {
     // TODO validate name, qualifiedName instead?
+    /** @type {string} */
     this.URI = URI || 'local/' + shortUID();
+    /** @type {Array<Chip | PlaceholderChip>} */
     this.chips = [];
+    /** @type {any[]} */
     this.inputs = [];
+    /** @type {any[]} */
     this.outputs = [];
     // If specified, the registry to use to serialize this chip.
     // Serialization may need a registry to produce fully qualified URIs.
+    /** @type {any} */
     this.registry = registry;
     // Wire map from source -> [sink]. Souces can have multiple sinks.
     // Also forwards PortOutlet sinks to [sinks] by saving their PortOutlet.
     // TODO should map to a Set
+    /** @type {Map<ChipConnectionEndpoint, ChipConnectionEndpoint[]>} */
     this.sourceConnections = new Map();
     // Wire map from sink -> source. Sink can only have one source.
     // Also forwards PortOutlet source to source by saving their PortOutlet.
+    /** @type {Map<ChipConnectionEndpoint, ChipConnectionEndpoint>} */
     this.sinkConnection = new Map();
 
     // PlaceholderChip to promises that will replace the placeholder with
     // the actual chip when done
+    /** @type {Map<PlaceholderChip, Promise<void>>} */
     this.chipLoaders = new Map();
 
     let idCount = 0;
     // TODO generate JS usable name
+    /** @type {() => string} */
     this.makeChipId = () => {
       return `${this.name}_${++idCount}`;
     };
 
     if (typeof makeLabel === 'function') {
+      /** @type {ChipLabelFactory} */
       this.makeChipLabel = makeLabel;
     } else if (typeof makeLabel === 'string') {
+      /** @type {ChipLabelFactory} */
       this.makeChipLabel = () => makeLabel;
     } else {
+      /** @type {ChipLabelFactory} */
       this.makeChipLabel = (chipInstance) => {
         const parts = this.URI.split('/');
         const lastPart = parts[parts.length - 1];

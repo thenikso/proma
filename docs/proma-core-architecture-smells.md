@@ -90,6 +90,28 @@ This document tracks architecture and implementation smells found during the JSD
   - Difficult onboarding and weak locality of reasoning for new contributors.
   - Type coverage improvements are slower because signatures are deeply nested.
 
+## 10) `edit.addChip` is a stringly-typed multi-mode entrypoint
+
+- Location: `packages/proma-core/core/edit.mjs`
+- Pattern:
+  - One method accepts chip classes, instances, registry names, and custom URI syntax (`uri:event(...)`) with regex-based parsing.
+  - Control flow branches across registry loading, placeholder creation, and direct instantiation.
+- Risks:
+  - Hard to model and validate inputs statically.
+  - Error paths are non-uniform, making behavior less predictable for callers.
+  - Extending custom chip syntax increases coupling between parser logic and editor behavior.
+
+## 11) Mixed endpoint representations in connection containers
+
+- Location: `packages/proma-core/core/chip.mjs` (and consumers in `edit.mjs`, `compile.mjs`)
+- Pattern:
+  - `inputs/outputs` and connection maps can hold a mix of outlet wrappers (`PortOutlet`), info objects (`PortInfo`), and runtime ports (`Port`/placeholder variants) depending on flow path.
+  - Several methods branch on runtime `instanceof` to normalize endpoints.
+- Risks:
+  - Type modeling becomes weak and forces broad `any` usage.
+  - Higher chance of subtle mismatches when code assumes a specific endpoint shape.
+  - Refactors in one layer (editor/runtime/compiler) can silently break another.
+
 ## Suggested follow-up backlog (after typing phases)
 
 1. Design RFC for replacing callable `Function`-subclass ports with a plain-object callable wrapper model.
