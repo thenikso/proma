@@ -1,5 +1,5 @@
 export default () => ({
-  'endpoints/greet.proma': `{
+	'endpoints/greet.proma': `{
   "URI": "backend/Greet",
   "use": ["proma/node"],
   "target": "node",
@@ -111,7 +111,7 @@ export default () => ({
   }
 }
 `,
-  'www/index.html': `<html lang="en">
+	'www/index.html': `<html lang="en">
 <head>
   <title>Proma Program</title>
 </head>
@@ -128,7 +128,7 @@ export default () => ({
   </script>
 </body>
 </html>`,
-  'www/app.proma': `{
+	'www/app.proma': `{
     "URI": "frontend/App",
     "use": ["proma/web"],
     "in": [
@@ -201,7 +201,7 @@ export default () => ({
       }
     }
   }`,
-  'index.js': `const fs = require('fs');
+	'index.js': `const fs = require('fs');
 const express = require('express');
 const app = express();
 const port = 3000;
@@ -236,5 +236,5 @@ app.listen(port, () => {
   console.log(\`App listening at http://localhost:\${port}\`);
 });
 `,
-  'readme.md': 'Hello world!',
+	'readme.md': 'Hello world!',
 });

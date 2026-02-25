@@ -16,6 +16,7 @@ The deployed application is served via `proma.app` for production and `proma.dev
 ### Frontend
 
 Built with:
+
 - **Svelte** - UI framework
 - **esbuild** - Fast bundling
 - **@proma/core** - Visual programming engine
@@ -25,6 +26,7 @@ Built with:
 ### Backend
 
 Built with:
+
 - **Serverless Framework** - Infrastructure as code
 - **AWS Lambda** - Serverless functions
 - **DynamoDB** - NoSQL database for projects and hosts
@@ -58,6 +60,7 @@ pnpm setup
 ```
 
 This will:
+
 - Download and install DynamoDB Local
 - Create the necessary database tables
 - Seed initial data
@@ -92,6 +95,7 @@ pnpm dev:backend
 ```
 
 This will:
+
 - Start DynamoDB Local on port 8000
 - Start S3 Local (s3rver) on port 4569
 - Start API Gateway on port 3000
@@ -108,6 +112,7 @@ pnpm dev:frontend
 ```
 
 This will:
+
 - Use esbuild to bundle the Svelte app
 - Watch for changes and rebuild automatically
 - Serve the frontend on port 3000
@@ -175,12 +180,13 @@ Retrieve a project's files.
 **Authorization:** Required (must own host or be admin)
 
 **Response:**
+
 ```json
 {
-  "files": {
-    "main.proma": "base64...",
-    "endpoints/greet.proma": "base64..."
-  }
+	"files": {
+		"main.proma": "base64...",
+		"endpoints/greet.proma": "base64..."
+	}
 }
 ```
 
@@ -191,19 +197,21 @@ Save project files.
 **Authorization:** Required (must own host or be admin)
 
 **Request Body:**
+
 ```json
 {
-  "files": {
-    "main.proma": "base64...",
-    "endpoints/greet.proma": "base64..."
-  }
+	"files": {
+		"main.proma": "base64...",
+		"endpoints/greet.proma": "base64..."
+	}
 }
 ```
 
 **Response:**
+
 ```json
 {
-  "success": true
+	"success": true
 }
 ```
 
@@ -212,6 +220,7 @@ Save project files.
 Execute a Proma endpoint publicly (no authentication required).
 
 **Example:**
+
 ```
 POST /run/nikso/default/greet
 Content-Type: application/json
@@ -222,14 +231,16 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
-  "result": "Hello World!",
-  "logs": ["Greeting generated"]
+	"result": "Hello World!",
+	"logs": ["Greeting generated"]
 }
 ```
 
 **How it works:**
+
 1. Loads project from DynamoDB
 2. Retrieves endpoint file (e.g., `endpoints/greet.proma`) from S3
 3. Deserializes the chip from JSON
@@ -248,8 +259,8 @@ Stores host ownership information.
 
 ```json
 {
-  "hostId": "nikso",              // HASH key
-  "ownerUserId": "auth0|123456"   // Owner's Auth0 user ID
+	"hostId": "nikso", // HASH key
+	"ownerUserId": "auth0|123456" // Owner's Auth0 user ID
 }
 ```
 
@@ -259,12 +270,13 @@ Stores project metadata.
 
 ```json
 {
-  "projectSlug": "default",       // HASH key
-  "ownerHostId": "nikso",         // RANGE key
-  "files": {                      // File references
-    "main.proma": "ref",
-    "endpoints/greet.proma": "ref"
-  }
+	"projectSlug": "default", // HASH key
+	"ownerHostId": "nikso", // RANGE key
+	"files": {
+		// File references
+		"main.proma": "ref",
+		"endpoints/greet.proma": "ref"
+	}
 }
 ```
 
@@ -275,11 +287,13 @@ Stores project metadata.
 Project file storage.
 
 **Structure:**
+
 ```
 {hostId}/{projectSlug}/{filename}
 ```
 
 **Example:**
+
 ```
 nikso/default/endpoints/greet.proma
 ```
@@ -301,12 +315,14 @@ aws configure --profile s3local
 ### Upload Files
 
 Upload a single file:
+
 ```bash
 aws --endpoint http://localhost:4569 --profile s3local s3 cp \
   seeds/greet.json s3://dev-proma-projects/nikso/default/greet.json
 ```
 
 Upload recursively:
+
 ```bash
 aws --endpoint http://localhost:4569 --profile s3local s3 cp \
   --recursive seeds/s3rver s3://dev-proma-projects
@@ -330,6 +346,7 @@ Landing page with project list and creation.
 Offline playground editor that runs entirely in the browser. Projects are saved to localStorage.
 
 **Features:**
+
 - No backend required
 - Example projects included
 - Full editor capabilities
@@ -340,6 +357,7 @@ Offline playground editor that runs entirely in the browser. Projects are saved 
 Full project editor with backend sync.
 
 **Features:**
+
 - Visual chip editor
 - File browser
 - Chip registry browser
@@ -407,6 +425,7 @@ pnpm deploy:backend --stage prod
 ```
 
 This will:
+
 - Create DynamoDB tables
 - Create S3 buckets
 - Deploy Lambda functions
@@ -431,10 +450,10 @@ Update `frontend/esbuild.mjs` with production values:
 
 ```javascript
 const env = {
-  BACKEND_ENDPOINT: 'https://api.proma.app',
-  AUTH0_DOMAIN: 'thenikso.eu.auth0.com',
-  AUTH0_CLIENTID: 'YOUR_PRODUCTION_CLIENT_ID',
-  AUTH0_AUDIENCE: 'prod-proma-web'
+	BACKEND_ENDPOINT: 'https://api.proma.app',
+	AUTH0_DOMAIN: 'thenikso.eu.auth0.com',
+	AUTH0_CLIENTID: 'YOUR_PRODUCTION_CLIENT_ID',
+	AUTH0_AUDIENCE: 'prod-proma-web',
 };
 ```
 
@@ -474,6 +493,7 @@ AUTH0_AUDIENCE: 'your-api-identifier'
 **Issue:** DynamoDB Local fails to start
 
 **Solution:**
+
 ```bash
 # Ensure Java is installed
 java -version
@@ -487,6 +507,7 @@ pnpm setup
 **Issue:** Cannot connect to local S3
 
 **Solution:**
+
 ```bash
 # Check s3rver is running (part of dev:backend)
 # Ensure port 4569 is available
@@ -501,6 +522,7 @@ pnpm dev:backend
 **Issue:** Module not found errors
 
 **Solution:**
+
 ```bash
 # Rebuild dependencies
 cd ../proma-core && pnpm build
@@ -513,6 +535,7 @@ cd ../proma-web && pnpm dev:frontend
 **Issue:** 401 Unauthorized on API calls
 
 **Solution:**
+
 - Check Auth0 configuration matches environment variables
 - Verify JWT token is valid and not expired
 - Ensure user has permission for the host
@@ -533,6 +556,7 @@ curl -X POST http://localhost:3000/dev/run/nikso/default/greet \
 ```
 
 Expected response:
+
 ```json
 {
   "result": "Hello World!",

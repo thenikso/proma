@@ -1,24 +1,24 @@
 import fetch from 'node-fetch';
 
 function makeGlobal(overrides) {
-  const entrypointGlobal = {};
-  for (const globalKey of Object.getOwnPropertyNames(global)) {
-    entrypointGlobal[globalKey] = global[globalKey];
-  }
-  entrypointGlobal.global = entrypointGlobal;
-  entrypointGlobal.globalThis = entrypointGlobal;
-  entrypointGlobal.fetch = fetch;
-  entrypointGlobal.process = {};
-  entrypointGlobal.module = {};
-  entrypointGlobal.require = () => {};
-  entrypointGlobal.child_process = {};
-  // TODO mask more keys in a better way
+	const entrypointGlobal = {};
+	for (const globalKey of Object.getOwnPropertyNames(global)) {
+		entrypointGlobal[globalKey] = global[globalKey];
+	}
+	entrypointGlobal.global = entrypointGlobal;
+	entrypointGlobal.globalThis = entrypointGlobal;
+	entrypointGlobal.fetch = fetch;
+	entrypointGlobal.process = {};
+	entrypointGlobal.module = {};
+	entrypointGlobal.require = () => {};
+	entrypointGlobal.child_process = {};
+	// TODO mask more keys in a better way
 
-  if (overrides) {
-    Object.assign(entrypointGlobal, overrides);
-  }
+	if (overrides) {
+		Object.assign(entrypointGlobal, overrides);
+	}
 
-  return entrypointGlobal;
+	return entrypointGlobal;
 }
 
 // All `global` keys:
