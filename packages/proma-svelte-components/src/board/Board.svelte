@@ -180,6 +180,9 @@
 			return wire;
 		},
 		updateWires(limitChip) {
+			// TODO(perf): We currently support either a full refresh (limitChip unset)
+			// or an object-ref filtered refresh. For large boards, consider indexing
+			// wire IDs by chip ID to update only connected wires during drag.
 			if (updateWiresLimit) {
 				if (limitChip) {
 					updateWiresLimit.add(limitChip);
@@ -280,8 +283,10 @@
 			}
 		}
 		updateWiresLimit = new Set();
-		// To force redraw
-		// TODO make more efficient
+		// To force redraw.
+		// TODO(perf): If this becomes expensive, switch to immutable wire object
+		// replacement only for changed wires, so keyed children update without
+		// redrawing the entire array each frame.
 		wires = [...wires];
 	}
 
@@ -458,6 +463,9 @@
 		for (const chip of selectedChipsSet) {
 			chip.movePosition(deltaX, deltaY, snap);
 		}
+		// TODO(perf): Full wire refresh is the most robust behavior for now.
+		// Revisit targeted updates once chip->wire indexing is proven stable
+		// across mount timing and HMR in proma-web.
 		board.updateWires();
 		dragging = { x: event.pageX, y: event.pageY };
 	}
