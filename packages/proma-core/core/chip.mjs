@@ -14,11 +14,21 @@ import { INPUT, OUTPUT } from './constants.mjs';
 import { serializeChipInfo, serializeChipInstance } from './serialize.mjs';
 import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
 
+/**
+ * @typedef {Port | PlaceholderPort} ChipPortInstance
+ * @typedef {PortInfo | ChipPortInstance} ChipConnectionEndpoint
+ * @typedef {string | string[] | number | Chip | Port | PortOutlet | PortInfo} PortSelector
+ */
+
 //
 // Public
 //
 
 export class Chip {
+  /**
+   * @param {ChipInfo} chipInfo
+   * @param {any[]} [canonicalValues]
+   */
   constructor(chipInfo, canonicalValues) {
     let id = chipInfo.makeChipId();
     let customLabel;
@@ -82,7 +92,7 @@ export class Chip {
     if (Array.isArray(canonicalValues) && canonicalValues.length > 0) {
       let i = 0;
       for (const portOutlet of chipInfo.inputs) {
-        const portInfo = info(portOutlet);
+        const portInfo = /** @type {InputDataSinkPortInfo} */ (info(portOutlet));
         if (!portInfo.canonical) {
           continue;
         }
@@ -92,6 +102,9 @@ export class Chip {
           );
         }
         const port = inputPorts.find((p) => p.name === portInfo.name);
+        if (!port) {
+          continue;
+        }
         if (portInfo.isVariadic) {
           // Make sure to generate variadic ports by accessing them
           for (let j = 0, l = canonicalValues.length - i; j < l; j++) {
@@ -132,6 +145,11 @@ export function isChipClass(obj) {
 //
 
 export class ChipInfo {
+  /**
+   * @param {string} [URI]
+   * @param {((chipInstance?: Chip) => string) | string} [makeLabel]
+   * @param {any} [registry]
+   */
   constructor(URI, makeLabel, registry) {
     // TODO validate name, qualifiedName instead?
     this.URI = URI || 'local/' + shortUID();
@@ -205,6 +223,10 @@ export class ChipInfo {
   // Chips
   //
 
+  /**
+   * @param {Chip | string | number} id
+   * @returns {Chip | null}
+   */
   getChip(id) {
     if (id instanceof Chip) {
       if (this.chips.includes(id)) {
@@ -220,6 +242,9 @@ export class ChipInfo {
     return null;
   }
 
+  /**
+   * @param {Chip | PlaceholderChip} chip
+   */
   addChip(chip) {
     // When addin a placeholder chip, we want to replace it with the resolved
     // chip when loaded. We also need to replace all connections
@@ -240,6 +265,10 @@ export class ChipInfo {
     this.chips.push(chip);
   }
 
+  /**
+   * @param {Chip | PlaceholderChip} chip
+   * @param {Chip} actualChip
+   */
   replaceChip(chip, actualChip) {
     assert(actualChip instanceof Chip, 'Expected a Chip instance');
     const chipIndex = this.chips.indexOf(chip);
@@ -290,6 +319,10 @@ export class ChipInfo {
   // Ports
   //
 
+  /**
+   * @param {string} name
+   * @returns {PortOutlet | null}
+   */
   getInputPortOutlet(name) {
     for (const port of this.inputs) {
       if (port.name === name) {
@@ -299,6 +332,10 @@ export class ChipInfo {
     return null;
   }
 
+  /**
+   * @param {string} name
+   * @returns {PortOutlet | null}
+   */
   getOutputPortOutlet(name) {
     for (const port of this.outputs) {
       if (port.name === name) {
@@ -308,6 +345,14 @@ export class ChipInfo {
     return null;
   }
 
+  /**
+   * Resolves a port from a selector. Accepts direct objects, dot-paths
+   * (`chipId.in.name`, `in.name`, `name`), or tokenized path arrays.
+   *
+   * @param {PortSelector} path
+   * @param {string} [defaultSide]
+   * @returns {Port | PortOutlet | null}
+   */
   getPort(path, defaultSide) {
     if (path instanceof Port) {
       if (!this.chips.includes(path.chip)) {
@@ -325,6 +370,10 @@ export class ChipInfo {
     if (typeof path === 'string') {
       path = path.split('.');
     }
+    if (!Array.isArray(path)) {
+      return null;
+    }
+    /** @type {Array<string | number | undefined>} */
     let [chipId, side, portName] = path;
     // Case like `in.exec`
     if (typeof portName === 'undefined') {
@@ -339,15 +388,25 @@ export class ChipInfo {
       chipId = undefined;
     }
     if (chipId) {
-      const chipIndex = /^\$(\d+)$/.exec(chipId);
+      const chipIndex =
+        typeof chipId === 'string' ? /^\$(\d+)$/.exec(chipId) : null;
       if (chipIndex) {
-        chipId = parseInt(chipIndex[1]);
+        chipId = parseInt(chipIndex[1], 10);
       }
       const chip = this.getChip(chipId);
       if (!chip) {
         return null;
       }
+      if (
+        (side !== INPUT && side !== OUTPUT) ||
+        typeof portName !== 'string'
+      ) {
+        return null;
+      }
       return chip[side][portName];
+    }
+    if (typeof portName !== 'string') {
+      return null;
     }
     if (side === INPUT || (!side && defaultSide === INPUT)) {
       return this.getInputPortOutlet(portName);
@@ -381,6 +440,11 @@ export class ChipInfo {
 
   // Sources
 
+  /**
+   * @param {string} name
+   * @param {object | Function} [config]
+   * @returns {PortOutlet}
+   */
   addInputFlowPort(name, config) {
     const portInfo = new InputFlowSourcePortInfo(this, name, config);
     portInfo.assertValidName(name, INPUT);
@@ -389,6 +453,11 @@ export class ChipInfo {
     return portOutlet;
   }
 
+  /**
+   * @param {string} name
+   * @param {object | Function | PortOutlet | PortOutlet[] | string} [config]
+   * @returns {PortOutlet}
+   */
   addOutputDataPort(name, config) {
     const portInfo = new OutputDataSourcePortInfo(this, name, config);
     portInfo.assertValidName(name, OUTPUT);
@@ -399,6 +468,11 @@ export class ChipInfo {
 
   // Sinks
 
+  /**
+   * @param {string} name
+   * @param {object} [config]
+   * @returns {PortOutlet}
+   */
   addOutputFlowPort(name, config) {
     const portInfo = new OutputFlowSinkPortInfo(this, name, config);
     portInfo.assertValidName(name, OUTPUT);
@@ -408,6 +482,11 @@ export class ChipInfo {
   }
 
   // TODO accept a beforePort param to insert in specific position?
+  /**
+   * @param {string} name
+   * @param {object | boolean | string} [config]
+   * @returns {PortOutlet}
+   */
   addInputDataPort(name, config) {
     const portInfo = new InputDataSinkPortInfo(this, name, config);
     portInfo.assertValidName(name, INPUT);
@@ -430,6 +509,16 @@ export class ChipInfo {
   // Connections
   //
 
+  /**
+   * Adds a connection from source to sink. Endpoints can be concrete
+   * port instances, outlets, PortInfo metadata, or path selectors.
+   *
+   * @param {ChipConnectionEndpoint | string | string[]} portA
+   * @param {ChipConnectionEndpoint | string | string[]} portB
+   * @param {boolean} [dryRun]
+   * @param {boolean} [shouldReplace]
+   * @returns {{source: ChipConnectionEndpoint, sink: ChipConnectionEndpoint}}
+   */
   addConnection(portA, portB, dryRun, shouldReplace) {
     if (typeof portA === 'string' || Array.isArray(portA)) {
       portA = this.getPort(portA, INPUT);
@@ -543,6 +632,13 @@ export class ChipInfo {
     };
   }
 
+  /**
+   * Returns connected endpoints for a given port.
+   *
+   * @param {Port | PortOutlet | PortInfo} port
+   * @param {Chip} [chipInstance]
+   * @returns {Array<Port | PortInfo | PlaceholderPort>}
+   */
   getConnectedPorts(port, chipInstance) {
     let portInfo;
     if (port instanceof Port) {
@@ -613,6 +709,10 @@ export class ChipInfo {
   // Serialization
   //
 
+  /**
+   * @param {any} [registry]
+   * @returns {any}
+   */
   toJSON(registry) {
     return serializeChipInfo(this, registry || this.registry);
   }

@@ -4,9 +4,18 @@ import { Chip, ChipInfo } from './chip.mjs';
 import { Port, PortInfo } from './ports.mjs';
 
 /**
+ * @typedef {{
+ *   level: 'error' | 'warning',
+ *   code: string,
+ *   message: string,
+ *   path: string
+ * }} ValidationDiagnostic
+ */
+
+/**
  * Validates a chip definition and returns an array of diagnostic messages.
  * @param {Function|object} chipClassOrInstance - A chip class, chip instance, or ChipInfo to validate
- * @returns {Array<{level: string, code: string, message: string, path: string}>}
+ * @returns {ValidationDiagnostic[]}
  */
 export function validate(chipClassOrInstance) {
   let chipInfo;
@@ -31,6 +40,7 @@ export function validate(chipClassOrInstance) {
     ];
   }
 
+  /** @type {ValidationDiagnostic[]} */
   const diagnostics = [];
 
   checkDisconnectedInputs(chipInfo, diagnostics);
@@ -46,6 +56,9 @@ export function validate(chipClassOrInstance) {
  * Check for sub-chip input data ports that have no connection, no explicit value,
  * and no default value. Concealed ports are skipped since they are user-settable and
  * must have a default value.
+ *
+ * @param {ChipInfo} chipInfo
+ * @param {ValidationDiagnostic[]} diagnostics
  */
 function checkDisconnectedInputs(chipInfo, diagnostics) {
   // Collect all ports that appear as sinks in sinkConnection
@@ -87,6 +100,9 @@ function checkDisconnectedInputs(chipInfo, diagnostics) {
 
 /**
  * Check for sub-chips that have no ports appearing in any connection.
+ *
+ * @param {ChipInfo} chipInfo
+ * @param {ValidationDiagnostic[]} diagnostics
  */
 function checkUnreachableChips(chipInfo, diagnostics) {
   // Collect all chips referenced in any connection
@@ -129,6 +145,9 @@ function checkUnreachableChips(chipInfo, diagnostics) {
  *
  * Sub-chip output flow ports are sinks in the connection map (appear as keys in
  * sinkConnection). A "dangling" flow port is one that does not appear as a key.
+ *
+ * @param {ChipInfo} chipInfo
+ * @param {ValidationDiagnostic[]} diagnostics
  */
 function checkDanglingFlowOutputs(chipInfo, diagnostics) {
   if (chipInfo.isFlowless) return;
@@ -168,6 +187,9 @@ function checkDanglingFlowOutputs(chipInfo, diagnostics) {
  * Input flow outlets are PortInfo keys in sinkConnection when they connect to
  * sub-chip input flow ports. If none of them appear in sinkConnection, the chip
  * has no execution entry point.
+ *
+ * @param {ChipInfo} chipInfo
+ * @param {ValidationDiagnostic[]} diagnostics
  */
 function checkMissingFlowEntry(chipInfo, diagnostics) {
   if (chipInfo.isFlowless) return;
@@ -210,16 +232,23 @@ function checkMissingFlowEntry(chipInfo, diagnostics) {
  * We build a graph: for each source port, find its sinks, then for each sink
  * (input data of a sub-chip), find if the chip's output data ports are sources.
  * If following the chain returns to a port we've already visited, it's a cycle.
+ *
+ * @param {ChipInfo} chipInfo
+ * @param {ValidationDiagnostic[]} diagnostics
  */
 function checkDataCycles(chipInfo, diagnostics) {
   // Build adjacency: source Port → [sink Port]
   // Only for data ports (output data source → input data sink)
+  /** @type {Map<Port, Port[]>} */
   const dataAdj = new Map();
 
   for (const [source, sinks] of chipInfo.sourceConnections.entries()) {
     // Only care about Port instances (not PortInfo outlets) with isData
     if (!(source instanceof Port) || !source.isData) continue;
-    const dataSinks = sinks.filter((s) => s instanceof Port && s.isData);
+    const dataSinks = sinks.filter(
+      /** @param {any} s */
+      (s) => s instanceof Port && s.isData,
+    );
     if (dataSinks.length > 0) {
       dataAdj.set(source, dataSinks);
     }
@@ -232,9 +261,15 @@ function checkDataCycles(chipInfo, diagnostics) {
   // For cycle detection we trace: outDataPort → [inDataPorts it connects to]
   // then for each such inDataPort's chip, its outDataPorts continue the chain.
 
+  /** @type {Set<Port>} */
   const visited = new Set();
+  /** @type {Set<Port>} */
   const inStack = new Set();
 
+  /**
+   * @param {Port} port
+   * @returns {boolean}
+   */
   function dfs(port) {
     if (inStack.has(port)) {
       return true; // cycle detected

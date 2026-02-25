@@ -220,6 +220,11 @@ export class Port extends Function {
     return undefined;
   }
 
+  /** @returns {string} */
+  get fullName() {
+    return '';
+  }
+
   get value() {
     return this.explicitValue !== undefined
       ? this.explicitValue
