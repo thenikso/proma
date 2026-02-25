@@ -9,8 +9,21 @@
 	// - other items will be sent to slot "item"
 	// - if an item is an array it is treated as a nested GroupList
 	let { items = [], getItemOptions, groupStart, groupEnd, item: itemSnippet } = $props();
+	let collapsedByGroup = $state({});
+
+	function getCollapsed(groupId, noCollapse) {
+		return collapsedByGroup[groupId] ?? !noCollapse;
+	}
+
+	function setCollapsed(groupId, collapsed) {
+		collapsedByGroup = {
+			...collapsedByGroup,
+			[groupId]: collapsed,
+		};
+	}
 
 	const ROOT_GROUP = {
+		id: '__root__',
 		get collapsed() {
 			return false;
 		},
@@ -21,17 +34,20 @@
 			(temp, item) => {
 				const options = getItemOptions?.(item) ?? item;
 				if (options.groupStart) {
+					const groupId = options.groupStart;
 					const group = (temp.currentGroup = {
-						id: options.groupStart,
-						collapsed: !options.noCollapse,
+						id: groupId,
+						get collapsed() {
+							return getCollapsed(groupId, options.noCollapse);
+						},
 						open() {
-							group.collapsed = false;
+							setCollapsed(groupId, false);
 						},
 						close() {
-							group.collapsed = true;
+							setCollapsed(groupId, true);
 						},
 						toggle() {
-							group.collapsed = !group.collapsed;
+							setCollapsed(groupId, !group.collapsed);
 						},
 					});
 				}
@@ -52,16 +68,16 @@
 			{@render groupStart({
 				item,
 				options,
-				toggle: () => (group.collapsed = !group.collapsed),
+				toggle: group.toggle,
 				collapsed: group.collapsed,
 			})}
 		{:else}
 			<div
-				onclick={() => (group.collapsed = !group.collapsed)}
+				onclick={group.toggle}
 				onkeydown={(event) => {
 					if (event.key === 'Enter' || event.key === ' ') {
 						event.preventDefault();
-						group.collapsed = !group.collapsed;
+						group.toggle();
 					}
 				}}
 				role="button"

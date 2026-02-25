@@ -10,7 +10,23 @@
 	overlayContainerEl.style.zIndex = '999';
 
 	let dismissFunction;
+	function isEventFromOverlay(event) {
+		const overlayEl = overlayContainerEl.firstChild;
+		if (!overlayEl) return false;
+		if (typeof event?.composedPath === 'function') {
+			const path = event.composedPath();
+			if (path.includes(overlayEl)) {
+				return true;
+			}
+		}
+		const target = event?.target;
+		return !!target && overlayEl.contains(target);
+	}
+
 	function handleDismissOverlay(e) {
+		if (isEventFromOverlay(e)) {
+			return;
+		}
 		e.preventDefault();
 		e.stopPropagation();
 		if (dismissFunction) {

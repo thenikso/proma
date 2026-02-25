@@ -1,5 +1,6 @@
 <script>
 	import Fuse from 'fuse.js';
+	import { onMount, tick } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import GroupList from '$lib/components/GroupList.svelte';
 	import TextWithMatches from '$lib/components/TextWithMatches.svelte';
@@ -21,6 +22,10 @@
 
 	let searchInputEl = $state();
 	let searchValue = $state();
+
+	function focusSearchInput() {
+		searchInputEl?.focus();
+	}
 
 	//
 	// Build registry list
@@ -178,8 +183,11 @@
 			.map((k) => itemsFromEntry(registryMap, k))
 			.flat(1);
 	}
-	$effect(() => {
-		searchInputEl && searchInputEl.focus();
+	onMount(async () => {
+		await tick();
+		requestAnimationFrame(() => {
+			focusSearchInput();
+		});
 	});
 	//
 	// Build context chip list
