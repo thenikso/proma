@@ -20,8 +20,8 @@
     "test": "node test/index.mjs",
     "check": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --write .",
-    "build:types": "tsc -p tsconfig.types.json",
-    "build:types:watch": "tsc -p tsconfig.types.json --watch",
+    "build:types": "tsc -p tsconfig.json",
+    "build:types:watch": "tsc -p tsconfig.json --watch",
     "build": "rollup -c && pnpm run build:types",
     "build:vendors:recast": "node ./scripts/browserify.js ../../node_modules/recast/main.js ./vendor/recast.mjs",
     "build:vendors:fast-deep-equal": "node ./scripts/browserify.js ../../node_modules/fast-deep-equal/es6/index.js ./vendor/fast-deep-equal.mjs"
