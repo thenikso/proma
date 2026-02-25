@@ -1,33 +1,72 @@
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vitest/config';
+import { playwright } from '@vitest/browser-playwright';
+import { sveltekit } from '@sveltejs/kit/vite';
 import path from 'node:path';
-import { defineConfig } from 'vite';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { fileURLToPath } from 'node:url';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+const dirname =
+	typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
+// More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [
-    svelte({
-      compilerOptions: {
-        compatibility: {
-          componentApi: 4,
-        },
-      },
-    }),
-  ],
-  build: {
-    lib: {
-      entry: path.resolve('src/index.js'),
-      name: 'PromaSvelteComponents',
-      formats: ['es', 'umd'],
-      fileName: (format) => (format === 'es' ? 'index.mjs' : 'index.js'),
-    },
-    rollupOptions: {
-      external: ['svelte', 'codemirror', 'fast-deep-equal'],
-      output: {
-        globals: {
-          svelte: 'svelte',
-          codemirror: 'CodeMirror',
-          'fast-deep-equal': 'fastDeepEqual',
-        },
-      },
-    },
-  },
+	plugins: [sveltekit()],
+	test: {
+		expect: {
+			requireAssertions: true,
+		},
+		projects: [
+			{
+				extends: './vite.config.js',
+				test: {
+					name: 'client',
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [
+							{
+								browser: 'chromium',
+								headless: true,
+							},
+						],
+					},
+					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+					exclude: ['src/lib/server/**'],
+				},
+			},
+			{
+				extends: './vite.config.js',
+				test: {
+					name: 'server',
+					environment: 'node',
+					include: ['src/**/*.{test,spec}.{js,ts}'],
+					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+				},
+			},
+			{
+				extends: true,
+				plugins: [
+					// The plugin will run tests for the stories defined in your Storybook config
+					// See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+					storybookTest({
+						configDir: path.join(dirname, '.storybook'),
+					}),
+				],
+				test: {
+					name: 'storybook',
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright({}),
+						instances: [
+							{
+								browser: 'chromium',
+							},
+						],
+					},
+					setupFiles: ['.storybook/vitest.setup.ts'],
+				},
+			},
+		],
+	},
 });

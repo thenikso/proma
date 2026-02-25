@@ -1,32 +1,26 @@
 <script>
-  import { onMount } from 'svelte';
-  import { getBoard } from './context';
-  import WirePath from './WirePath.svelte';
+	import { onMount } from 'svelte';
+	import { getBoard } from './context';
+	import WirePath from './WirePath.svelte';
 
-  export let outputChip;
-  export let outputPort;
-  export let inputChip;
-  export let inputPort;
-  export let path = WirePath;
+	export let outputChip;
+	export let outputPort;
+	export let inputChip;
+	export let inputPort;
+	export let path = WirePath;
 
-  const board = getBoard();
+	const board = getBoard();
 
-  let id;
+	let id;
 
-  onMount(() => {
-    id = board.addWire(
-      outputChip,
-      outputPort,
-      inputChip,
-      inputPort,
-      path,
-    );
-    return () => {
-      if (id) {
-        board.removeWire(id);
-      }
-    };
-  });
+	onMount(() => {
+		id = board.addWire(outputChip, outputPort, inputChip, inputPort, path);
+		return () => {
+			if (id) {
+				board.removeWire(id);
+			}
+		};
+	});
 
-  // $: id = board.addWire(outputChip, outputPort, inputChip, inputPort, path, id);
+	// $: id = board.addWire(outputChip, outputPort, inputChip, inputPort, path, id);
 </script>
