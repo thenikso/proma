@@ -1,12 +1,19 @@
 <script>
 	import { onMount } from 'svelte';
 	import { getChip, setChipSide, INPUT } from './context';
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props} */
+	let { children } = $props();
 
 	setChipSide(INPUT);
 
 	const chip = getChip();
 
-	let containerEl;
+	let containerEl = $state();
 
 	onMount(() => {
 		const parentEl = containerEl.parentElement;
@@ -22,5 +29,5 @@
 </script>
 
 <div bind:this={containerEl}>
-	<slot />
+	{@render children?.()}
 </div>

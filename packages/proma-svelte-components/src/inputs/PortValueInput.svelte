@@ -1,13 +1,15 @@
 <script>
+	import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { onDestroy } from 'svelte';
 	import StringInput from './StringInput.svelte';
 	import JsonInput from './JsonInput.svelte';
 
-	export let edit;
-	export let port;
+	let { edit, port } = $props();
 
-	let portValue = port.explicitValue;
-	let portType = port.type && port.type.definitionKind;
+	let portValue = $state();
+	let portType = $derived(port.type && port.type.definitionKind);
 
 	const handlePortValueChange = ({ detail }) => {
 		if (detail.port === port) {
@@ -17,17 +19,23 @@
 
 	let oldEdit;
 
-	$: if (edit !== oldEdit) {
-		if (oldEdit) {
-			oldEdit.off('port:value', handlePortValueChange, true);
+	$effect(() => {
+		portValue = port.explicitValue;
+	});
+
+	$effect(() => {
+		if (edit !== oldEdit) {
+			if (oldEdit) {
+				oldEdit.off('port:value', handlePortValueChange, true);
+			}
+			oldEdit = edit;
+			edit.on('port:value', handlePortValueChange, true);
 		}
-		oldEdit = edit;
-		edit.on('port:value', handlePortValueChange, true);
-	}
+	});
 
 	onDestroy(() => {
 		if (oldEdit) {
-			edit.off('port:value', handlePortValueChange, true);
+			oldEdit.off('port:value', handlePortValueChange, true);
 		}
 	});
 
@@ -36,7 +44,11 @@
 	}
 </script>
 
-<div on:mousedown|stopPropagation on:keydown|stopPropagation on:keyup|stopPropagation>
+<div
+	onmousedown={stopPropagation(bubble('mousedown'))}
+	onkeydown={stopPropagation(bubble('keydown'))}
+	onkeyup={stopPropagation(bubble('keyup'))}
+>
 	{#if portType === 'string'}
 		<StringInput placeholder={port.defaultValue || ''} value={portValue} on:input={handleInput} />
 	{:else if portType === 'number'}

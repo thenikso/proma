@@ -1,24 +1,31 @@
 <script>
 	import * as proma from '@proma/core';
 	import eq from 'fast-deep-equal';
+	import { untrack } from 'svelte';
 	import { ChipBoardView, Overlay, createShortcutDispatcher } from '@proma/svelte-components';
 	import PromaChipRegistry from './PromaChipRegistry.svelte';
 
-	export let id = 'PromaFile';
-	export let source;
-	export let instance = undefined;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [id]
+	 * @property {any} source
+	 * @property {any} [instance]
+	 * @property {import('svelte').Snippet<[any]>} [children]
+	 */
 
-	//
-	// Data
-	//
+	/** @type {Props} */
+	let { id = 'PromaFile', source, instance = undefined, children } = $props();
 
-	$: sourceJson = source && JSON.parse(source);
+	let sourceChip = $state();
+	let chipEditor = $state();
+	let selectedChips = $state([]);
 
-	let sourceChip;
-	let chipEditor;
-	let selectedChips = [];
-
-	$: updateChipEditor(sourceJson);
+	function getEventPath(event) {
+		if (event?.composedPath) {
+			return event.composedPath();
+		}
+		return event?.path || [];
+	}
 
 	async function updateChipEditor(sourceJson) {
 		// TODO better check to see if soruce changed. maybe just check URI?
@@ -52,30 +59,24 @@
 		getEditedSource,
 	};
 
-	const dispatchShortcut = createShortcutDispatcher([
-		{
-			id,
-			select: (e) => {
-				return !!e.path.find((el) => el.id === id);
+	let dispatchShortcut = $state(() => {});
+	$effect(() => {
+		dispatchShortcut = createShortcutDispatcher([
+			{
+				id,
+				select: (e) => {
+					return !!getEventPath(e).find((el) => el.id === id);
+				},
+				present: actionTarget,
 			},
-			present: actionTarget,
-		},
-	]);
+		]);
+	});
 
 	//
 	// Sub-chip request
 	//
 
-	let newSubChipRequest;
-
-	$: subChipContextList = newSubChipRequest
-		? [
-				...(newSubChipRequest.fromType && newSubChipRequest.fromType.definitionKind === 'function'
-					? [newEventChipFromType(newSubChipRequest.fromType)]
-					: []),
-				...Object.values(newSubChipRequest.chip.customChipClasses),
-			]
-		: [];
+	let newSubChipRequest = $state();
 
 	function newEventChipFromType(functionType) {
 		const ports = functionType.argumentsTypes.map((t, i) => ({
@@ -97,10 +98,37 @@
 	function handleSelectionChange(e) {
 		selectedChips = e.detail.chips.slice();
 	}
+	//
+	// Data
+	//
+
+	$effect(() => {
+		if (!source) {
+			return;
+		}
+		const sourceValue = source;
+		untrack(() => {
+			try {
+				updateChipEditor(JSON.parse(sourceValue));
+			} catch (err) {
+				console.error('Unable to parse source JSON', err);
+			}
+		});
+	});
+	let subChipContextList = $derived(
+		newSubChipRequest
+			? [
+					...(newSubChipRequest.fromType && newSubChipRequest.fromType.definitionKind === 'function'
+						? [newEventChipFromType(newSubChipRequest.fromType)]
+						: []),
+					...Object.values(newSubChipRequest.chip.customChipClasses),
+				]
+			: [],
+	);
 </script>
 
 {#if sourceChip}
-	<div class="PromaFile" {id} on:keydown={dispatchShortcut}>
+	<div class="PromaFile" {id} onkeydown={dispatchShortcut}>
 		<ChipBoardView
 			chip={sourceChip}
 			edit={chipEditor}
@@ -109,7 +137,7 @@
 			on:selection:change={handleSelectionChange}
 		/>
 
-		<slot chip={sourceChip} edit={chipEditor} {actionTarget} {selectedChips} />
+		{@render children?.({ chip: sourceChip, edit: chipEditor, actionTarget, selectedChips })}
 
 		{#if newSubChipRequest}
 			<Overlay

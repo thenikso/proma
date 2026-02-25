@@ -3,33 +3,52 @@
 	import { getBoard, setChip, INPUT, OUTPUT } from './context';
 	import { shortUID } from './utils';
 
-	export let id = shortUID();
-	export let selected = false;
-	export let x = 0;
-	export let y = 0;
-	export let kind = 'default';
-	export let icon = null;
-	export let title = 'Chip';
-	export let subtitle = '';
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [id]
+	 * @property {boolean} [selected]
+	 * @property {number} [x]
+	 * @property {number} [y]
+	 * @property {string} [kind]
+	 * @property {any} [icon]
+	 * @property {string} [title]
+	 * @property {string} [subtitle]
+	 * @property {import('svelte').Snippet} [children]
+	 */
 
-	let chipEl;
-	let rawX;
-	let rawY;
-	let inputContainerEl;
-	let outputContainerEl;
-	let headerOutputContainerEl;
+	/** @type {Props} */
+	let {
+		id = shortUID(),
+		selected = $bindable(false),
+		x = $bindable(0),
+		y = $bindable(0),
+		kind = 'default',
+		icon = null,
+		title = 'Chip',
+		subtitle = '',
+		children,
+	} = $props();
 
-	let inputExtrasContainerEl;
-	let outputExtrasContainerEl;
-	let inputExtrasEls = [];
-	let outputExtrasEls = [];
+	let chipEl = $state();
+	let rawX = $state();
+	let rawY = $state();
+	let inputContainerEl = $state();
+	let outputContainerEl = $state();
+	let headerOutputContainerEl = $state();
+
+	let inputExtrasContainerEl = $state();
+	let outputExtrasContainerEl = $state();
+	let inputExtrasEls = $state([]);
+	let outputExtrasEls = $state([]);
 
 	const board = getBoard();
 
 	const chip = setChip({
 		type: 'chip',
 		board,
-		id,
+		get id() {
+			return id;
+		},
 		get eventDetails() {
 			return {
 				chip: id,
@@ -158,18 +177,6 @@
 		board && board.deselectChip(chip);
 	});
 
-	$: if (selected) {
-		board && board.selectChip(chip);
-	} else {
-		board && board.deselectChip(chip);
-		rawX = 0;
-		rawY = 0;
-	}
-
-	$: hasPortExtras = inputExtrasEls.length > 0 || outputExtrasEls.length > 0;
-	$: syncChildrens(inputExtrasContainerEl, inputExtrasEls);
-	$: syncChildrens(outputExtrasContainerEl, outputExtrasEls);
-
 	function syncChildrens(container, els) {
 		if (!container) return;
 		const children = Array.from(container.children);
@@ -183,6 +190,22 @@
 			ref = el;
 		}
 	}
+	$effect(() => {
+		if (selected) {
+			board && board.selectChip(chip);
+		} else {
+			board && board.deselectChip(chip);
+			rawX = 0;
+			rawY = 0;
+		}
+	});
+	let hasPortExtras = $derived(inputExtrasEls.length > 0 || outputExtrasEls.length > 0);
+	$effect(() => {
+		syncChildrens(inputExtrasContainerEl, inputExtrasEls);
+	});
+	$effect(() => {
+		syncChildrens(outputExtrasContainerEl, outputExtrasEls);
+	});
 </script>
 
 <div
@@ -194,7 +217,8 @@
 	<div class="ChipBody">
 		<div class="ChipHeader">
 			{#if icon}
-				<svelte:component this={icon} />
+				{@const SvelteComponent = icon}
+				<SvelteComponent />
 			{/if}
 			<div class="ChipHeaderTitle">
 				<div class="title">{title}</div>
@@ -202,22 +226,22 @@
 					<div class="subtitle">{subtitle}</div>
 				{/if}
 			</div>
-			<div class="ChipHeaderPorts ChipOutputPorts" bind:this={headerOutputContainerEl} />
+			<div class="ChipHeaderPorts ChipOutputPorts" bind:this={headerOutputContainerEl}></div>
 		</div>
 		<div class="ChipPortsContainer">
 			<div class="ChipPorts">
-				<div class="ChipInputPorts" bind:this={inputContainerEl} />
-				<div class="ChipOutputPorts" bind:this={outputContainerEl} />
+				<div class="ChipInputPorts" bind:this={inputContainerEl}></div>
+				<div class="ChipOutputPorts" bind:this={outputContainerEl}></div>
 			</div>
 			{#if hasPortExtras}
 				<div class="ChipPorts ChpPortsExtras">
-					<div class="ChipInputPorts" bind:this={inputExtrasContainerEl} />
-					<div class="ChipOutputPorts" bind:this={outputExtrasContainerEl} />
+					<div class="ChipInputPorts" bind:this={inputExtrasContainerEl}></div>
+					<div class="ChipOutputPorts" bind:this={outputExtrasContainerEl}></div>
 				</div>
 			{/if}
 		</div>
 		<div class="ChipExtra">
-			<slot />
+			{@render children?.()}
 		</div>
 	</div>
 </div>

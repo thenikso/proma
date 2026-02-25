@@ -2,29 +2,15 @@
 	import { onDestroy } from 'svelte';
 	import { StringInput, PortValueInput } from '../inputs';
 
-	export let chip;
-	export let edit;
-	export let subChipId;
+	let { chip, edit, subChipId = $bindable() } = $props();
 
 	// Stable chip
 
 	let stableChip;
 
-	$: if (chip !== stableChip) {
-		stableChip = chip;
-	}
-
 	// Edit
 
 	let oldEdit;
-
-	$: if (edit !== oldEdit) {
-		if (oldEdit) {
-			editDestroy(oldEdit);
-		}
-		oldEdit = edit;
-		editMount(edit);
-	}
 
 	onDestroy(() => {
 		if (oldEdit) {
@@ -52,20 +38,34 @@
 		}
 	}
 
+	$effect(() => {
+		stableChip = chip;
+	});
+	$effect(() => {
+		if (edit !== oldEdit) {
+			if (oldEdit) {
+				editDestroy(oldEdit);
+			}
+			oldEdit = edit;
+			editMount(edit);
+		}
+	});
 	// Data
 
 	// TODO interface if there is no edit
 
-	$: subChip = edit.getChip(subChipId);
-	$: subChipInputPorts = Array.from(subChip.in)
-		.filter((port) => port.isData)
-		.map((port) => port.variadic || port)
-		.flat()
-		.map((port) => ({
-			port,
-			isConnected: edit.hasConnections(port),
-		}));
-	$: variadicPort = Array.from(subChip.in).find((port) => port.variadic);
+	let subChip = $derived(edit.getChip(subChipId));
+	let subChipInputPorts = $derived(
+		Array.from(subChip.in)
+			.filter((port) => port.isData)
+			.map((port) => port.variadic || port)
+			.flat()
+			.map((port) => ({
+				port,
+				isConnected: edit.hasConnections(port),
+			})),
+	);
+	let variadicPort = $derived(Array.from(subChip.in).find((port) => port.variadic));
 </script>
 
 <div class="Chip-Id">
@@ -93,10 +93,10 @@
 			</div>
 		{/each}
 		{#if variadicPort}
-			<button type="button" on:click={() => edit.setPortVariadicCount(variadicPort, '+1')}>
+			<button type="button" onclick={() => edit.setPortVariadicCount(variadicPort, '+1')}>
 				Add
 			</button>
-			<button type="button" on:click={() => edit.setPortVariadicCount(variadicPort, '-1')}>
+			<button type="button" onclick={() => edit.setPortVariadicCount(variadicPort, '-1')}>
 				Remove
 			</button>
 		{/if}

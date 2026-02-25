@@ -1,9 +1,15 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 
-	export let placeholder = '';
-	export let value = '';
-	export let validate = (v) => v;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [placeholder]
+	 * @property {string} [value]
+	 * @property {any} [validate]
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let { placeholder = '', value = $bindable(''), validate = (v) => v, ...rest } = $props();
 
 	//
 	// Events
@@ -19,27 +25,26 @@
 	// Implementation
 	//
 
-	let internalValue;
-	let error;
-	let updatingValue = false;
+	let internalValue = $state();
+	let error = $state();
 
-	$: if (!updatingValue) {
+	$effect(() => {
 		internalValue = value;
 		error = null;
-	} else {
-		updatingValue = false;
-	}
+	});
 
-	$: internalValue &&
-		validate &&
-		Promise.resolve()
-			.then(() => validate(internalValue))
-			.then(() => {
-				error = null;
-			})
-			.catch((e) => {
-				error = e;
-			});
+	$effect(() => {
+		internalValue &&
+			validate &&
+			Promise.resolve()
+				.then(() => validate(internalValue))
+				.then(() => {
+					error = null;
+				})
+				.catch((e) => {
+					error = e;
+				});
+	});
 
 	function confirmValue() {
 		try {
@@ -47,12 +52,10 @@
 				validate(internalValue);
 			}
 			if (internalValue !== value) {
-				updatingValue = true;
 				value = internalValue;
 				dispatchInput({ value });
 			}
 		} catch (e) {
-			updatingValue = true;
 			error = e;
 			internalValue = value;
 		}
@@ -86,9 +89,9 @@
 		type="text"
 		bind:value={internalValue}
 		{placeholder}
-		on:keydown={handleKeydown}
-		on:blur={handleBlur}
-		{...$$restProps}
+		onkeydown={handleKeydown}
+		onblur={handleBlur}
+		{...rest}
 	/>
 	{#if error}
 		<div class="error">{error.message}</div>

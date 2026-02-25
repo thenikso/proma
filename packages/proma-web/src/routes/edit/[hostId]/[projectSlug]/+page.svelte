@@ -6,7 +6,14 @@
 	import PromaFileEditor from '$lib/PromaFileEditor.svelte';
 
 	// TODO this should probably be in a store
-	let getCurrentProjectToSave;
+	let getCurrentProjectToSave = $derived(
+		editor &&
+			function projectToSave() {
+				const selectedFileContent = btoa(editor.getEditedSource());
+				project.files[selectedFilePath] = selectedFileContent;
+				return project;
+			},
+	);
 	let savingPromise;
 
 	action.provide('CurrentProject.save', async () => {
@@ -23,55 +30,29 @@
 		return savingPromise;
 	});
 
-	$: hostId = $page.params.hostId;
-	$: projectSlug = $page.params.projectSlug;
-
-	let projectPromise;
-	let project;
-	let selectedFilePath;
-	let currentProjectKey;
-
-	$: {
-		const nextKey = `${hostId || ''}/${projectSlug || ''}`;
-		if (nextKey && nextKey !== currentProjectKey) {
-			currentProjectKey = nextKey;
-			loadProject(hostId, projectSlug);
-		}
-	}
+	let projectPromise = $state();
+	let project = $state();
+	let selectedFilePath = $state();
+	let currentProjectKey = $state();
 
 	function loadProject(hostId, projectSlug) {
 		project = null;
 		selectedFilePath = '';
 		projectPromise = fetchApi(`/project/${hostId}/${projectSlug}`).then((res) => {
 			project = res;
-			selectedFilePath = $page.url.searchParams.get('file') ?? Object.keys(project?.files)[0];
+			selectedFilePath = $page.url.searchParams.get('file') ?? Object.keys(project?.files ?? {})[0];
 			return res;
 		});
 	}
 
-	$: selectedFileName = (selectedFilePath || '').split(/(\\|\/)/g).pop();
-	$: selectedFileExt = ((selectedFilePath || '').match(/\.(.+)$/) || [])[1];
-	$: selectedFileSource = atob(project?.files?.[selectedFilePath] ?? '');
 	// $: selectedFileRunUrl =
 	//   project &&
 	//   `${BACKEND_ENDPOINT}/run/${project.ownerHostId}/${project.projectSlug}/${selectedFileName}`;
 
-	let editor;
-
-	//
-	// Saving
-	//
-
-	$: getCurrentProjectToSave =
-		editor &&
-		function projectToSave() {
-			const selectedFileContent = btoa(editor.getEditedSource());
-			project.files[selectedFilePath] = selectedFileContent;
-			return project;
-		};
+	let editor = $state();
 
 	const save = action('CurrentProject.save');
-	let isSaving;
+	let isSaving = $state();
 
 	function handleSaveClick() {
 		if (isSaving) return;
@@ -95,6 +76,21 @@
 			action('PromaFile.runRemote')({ target: editor });
 		}
 	}
+	let hostId = $derived($page.params.hostId);
+	let projectSlug = $derived($page.params.projectSlug);
+	$effect(() => {
+		const nextKey = `${hostId || ''}/${projectSlug || ''}`;
+		if (nextKey && nextKey !== currentProjectKey) {
+			currentProjectKey = nextKey;
+			loadProject(hostId, projectSlug);
+		}
+	});
+	let selectedFileName = $derived((selectedFilePath || '').split(/(\\|\/)/g).pop());
+	let selectedFileExt = $derived(((selectedFilePath || '').match(/\.(.+)$/) || [])[1]);
+	let selectedFileSource = $derived(atob(project?.files?.[selectedFilePath] ?? ''));
+	//
+	// Saving
+	//
 </script>
 
 {#await projectPromise}
@@ -111,10 +107,10 @@
 			<div class="Breadcrumbs">
 				<div class="current">{selectedFilePath}</div>
 			</div>
-			<div class="Spacer" />
+			<div class="Spacer"></div>
 			<div class="Tools">
 				<!-- TODO switch by selectedFileExt -->
-				<button type="button" class="Tools-Run" on:click={handleRun}>
+				<button type="button" class="Tools-Run" onclick={handleRun}>
 					{#if $keyMods.metaKey && $keyMods.shiftKey && $keyMods.altKey}
 						<span>Test</span> <small>compiled</small>
 					{:else if $keyMods.metaKey && $keyMods.shiftKey}
@@ -124,7 +120,7 @@
 					{/if}
 				</button>
 
-				<button type="button" class="Tools-Save" on:click={handleSaveClick} disabled={isSaving}>
+				<button type="button" class="Tools-Save" onclick={handleSaveClick} disabled={isSaving}>
 					<img src="/images/save.svg" alt="save" />
 				</button>
 			</div>

@@ -1,9 +1,19 @@
+<script>
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props} */
+	let { children } = $props();
+</script>
+
 <main>
 	<nav>
 		<img src="/images/logo.webp" alt="Proma" style="width: 60px" />
 	</nav>
 	<section class="content">
-		<slot />
+		{@render children?.()}
 	</section>
 </main>
 

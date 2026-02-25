@@ -10,51 +10,74 @@
 	import 'codemirror/mode/markdown/markdown.js';
 
 	const dispatch = createEventDispatcher();
-	export let value = '';
-	export let readonly = false;
 	// export let errorLoc = null;
-	// export let flex = false;
-	export let lineNumbers = true;
-	export let tab = true;
-	export let cmdEnter = null;
-	export let ctrlEnter = null;
-	export let shiftEnter = null;
-	export let cmdPeriod = null;
-	export let ctrlPeriod = null;
-	export let cmdHiffen = null;
-	export let ctrlHiffen = null;
-	export let cmdEqual = null;
-	export let ctrlEqual = null;
-	export let cmdOpenSquareBracket = null;
-	export let ctrlOpenSquareBracket = null;
-	export let cmdCloseSquareBracket = null;
-	export let ctrlCloseSquareBracket = null;
-	export let cmdForwardSlash = null;
-	export let ctrlForwardSlash = null;
-	export let useAutocomplete = null;
-	export let snippets = null;
-	let editor;
-	let w;
-	let h;
+
+	let editor = $state();
 	let mode;
 	let theme;
-	const refs = {};
+	let textareaEl = $state();
 	let updating_externally = false;
 	let marker;
 	let error_line;
 	let destroyed = false;
 	let previous_error_line;
 
-	export let options;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [value]
+	 * @property {boolean} [readonly]
+	 * @property {boolean} [lineNumbers] - export let flex = false;
+	 * @property {boolean} [tab]
+	 * @property {any} [cmdEnter]
+	 * @property {any} [ctrlEnter]
+	 * @property {any} [shiftEnter]
+	 * @property {any} [cmdPeriod]
+	 * @property {any} [ctrlPeriod]
+	 * @property {any} [cmdHiffen]
+	 * @property {any} [ctrlHiffen]
+	 * @property {any} [cmdEqual]
+	 * @property {any} [ctrlEqual]
+	 * @property {any} [cmdOpenSquareBracket]
+	 * @property {any} [ctrlOpenSquareBracket]
+	 * @property {any} [cmdCloseSquareBracket]
+	 * @property {any} [ctrlCloseSquareBracket]
+	 * @property {any} [cmdForwardSlash]
+	 * @property {any} [ctrlForwardSlash]
+	 * @property {any} [useAutocomplete]
+	 * @property {any} [snippets]
+	 * @property {any} options
+	 */
+
+	/** @type {Props} */
+	let {
+		value = $bindable(''),
+		readonly = false,
+		lineNumbers = true,
+		tab = true,
+		cmdEnter = null,
+		ctrlEnter = null,
+		shiftEnter = null,
+		cmdPeriod = null,
+		ctrlPeriod = null,
+		cmdHiffen = null,
+		ctrlHiffen = null,
+		cmdEqual = null,
+		ctrlEqual = null,
+		cmdOpenSquareBracket = null,
+		ctrlOpenSquareBracket = null,
+		cmdCloseSquareBracket = null,
+		ctrlCloseSquareBracket = null,
+		cmdForwardSlash = null,
+		ctrlForwardSlash = null,
+		useAutocomplete = null,
+		snippets = null,
+		options,
+	} = $props();
 
 	const MODE_MAP = {
 		html: 'htmlmixed',
 		md: 'markdown',
 	};
-
-	$: if (options) {
-		set(options.value || '', MODE_MAP[options.mode] || options.mode, options.theme);
-	}
 
 	export function getEditedSource() {
 		if (editor) {
@@ -249,9 +272,6 @@
 			base: 'text/html',
 		},
 	};
-	$: if (editor && w && h) {
-		editor.refresh();
-	}
 	// $: {
 	//   if (marker) marker.clear();
 	//   if (errorLoc) {
@@ -279,18 +299,27 @@
 	//   }
 	// }
 	onMount(() => {
-		// createEditor(mode || 'svelte', theme).then(() => {
-		//   if (editor) editor.setValue(value || '');
-		// });
 		return () => {
 			destroyed = true;
-			if (editor) editor.toTextArea();
+			destroyEditor();
 		};
 	});
 	let first = true;
+
+	function destroyEditor() {
+		if (!editor) return;
+		const wrapper = editor.getWrapperElement?.();
+		// CodeMirror's toTextArea assumes wrapper is still mounted.
+		// Skip teardown call if already detached to avoid removeChild(null) crashes.
+		if (wrapper?.parentNode) {
+			editor.toTextArea();
+		}
+		editor = null;
+	}
+
 	async function createEditor(mode, theme) {
 		if (destroyed || !CodeMirror) return;
-		if (editor) editor.toTextArea();
+		destroyEditor();
 		// console.log("createEditor:", theme);
 		const opts = {
 			lineNumbers,
@@ -338,7 +367,7 @@
 		// the main thread for a moment. This helps reduce jank
 		if (first) await sleep(50);
 		if (destroyed) return;
-		editor = CodeMirror.fromTextArea(refs.editor, opts);
+		editor = CodeMirror.fromTextArea(textareaEl, opts);
 		editor.on('change', (instance, changeObj) => {
 			if (!updating_externally) {
 				// const value = instance.getValue();
@@ -378,9 +407,14 @@
 	function sleep(ms) {
 		return new Promise((fulfil) => setTimeout(fulfil, ms));
 	}
+	$effect(() => {
+		if (options) {
+			set(options.value || '', MODE_MAP[options.mode] || options.mode, options.theme);
+		}
+	});
 </script>
 
-<textarea {value} tabindex="0" bind:this={refs.editor} readonly />
+<textarea {value} tabindex="0" bind:this={textareaEl} readonly></textarea>
 {#if !CodeMirror}
 	<pre>{value}</pre>
 {/if}

@@ -1,27 +1,45 @@
 <script>
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { onMount } from 'svelte';
 	import { getChipWithSide, INPUT, OUTPUT } from './context';
 	import PortOutlet from './PortOutlet.svelte';
 
-	export let name;
-	export let type = 'any';
-	export let connected = false;
-	export let outlet = PortOutlet;
-	export let hideName = false;
-	export let showOnHeader = false;
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} name
+	 * @property {string} [type]
+	 * @property {boolean} [connected]
+	 * @property {any} [outlet]
+	 * @property {boolean} [hideName]
+	 * @property {boolean} [showOnHeader]
+	 * @property {import('svelte').Snippet} [children]
+	 */
 
-	let portEl;
-	let connectionCount = 0;
+	/** @type {Props} */
+	let {
+		name,
+		type = 'any',
+		connected = false,
+		outlet = PortOutlet,
+		hideName = false,
+		showOnHeader = false,
+		children,
+	} = $props();
 
-	$: isConnected = connected || connectionCount > 0;
+	let portEl = $state();
+	let connectionCount = $state(0);
+
+	let isConnected = $derived(connected || connectionCount > 0);
 
 	const { chip, side } = getChipWithSide(INPUT, OUTPUT);
-	const port = {
+	const port = $state({
 		type: 'port',
 		chip,
 		side,
-		name,
-		dataType: type,
+		name: '',
+		dataType: 'any',
 		get eventDetails() {
 			return {
 				chip: chip.id,
@@ -41,10 +59,14 @@
 		set connectionCount(value) {
 			connectionCount = value;
 		},
-	};
+	});
 
-	$: port.name = name;
-	$: port.dataType = type;
+	$effect(() => {
+		port.name = name;
+	});
+	$effect(() => {
+		port.dataType = type;
+	});
 
 	onMount(() => {
 		const parentEl = portEl.parentElement;
@@ -60,18 +82,19 @@
 	});
 </script>
 
-<div class="Port Port-{name} Port-type-{type} {side}" bind:this={portEl} on:click>
+<div class="Port Port-{name} Port-type-{type} {side}" bind:this={portEl} onclick={bubble('click')}>
 	{#if outlet}
+		{@const SvelteComponent = outlet}
 		<div class="PortOutlet">
-			<svelte:component this={outlet} {type} connected={isConnected} />
+			<SvelteComponent {type} connected={isConnected} />
 		</div>
 	{/if}
 	{#if !hideName}
 		<div class="PortLabel">{name}</div>
 	{/if}
-	{#if $$slots.default}
+	{#if children}
 		<div class="PortInput">
-			<slot />
+			{@render children?.()}
 		</div>
 	{/if}
 </div>

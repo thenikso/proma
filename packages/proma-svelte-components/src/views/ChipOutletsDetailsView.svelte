@@ -2,32 +2,17 @@
 	import { onDestroy } from 'svelte';
 	import { StringInput } from '../inputs';
 
-	export let chip;
-	export let edit;
+	let { chip, edit } = $props();
 
 	//
 	// Init chip editing
 	//
 
 	let stableChip;
-	let inputOutlets;
-	let outputOutlets;
-
-	$: if (stableChip !== chip) {
-		stableChip = chip;
-		inputOutlets = stableChip.inputOutlets;
-		outputOutlets = stableChip.outputOutlets;
-	}
+	let inputOutlets = $state();
+	let outputOutlets = $state();
 
 	let oldEdit;
-
-	$: if (edit !== oldEdit) {
-		if (oldEdit) {
-			editDestroy(oldEdit);
-		}
-		oldEdit = edit;
-		editMount(edit);
-	}
 
 	onDestroy(() => {
 		if (oldEdit) {
@@ -47,6 +32,22 @@
 		inputOutlets = stableChip.inputOutlets;
 		outputOutlets = stableChip.outputOutlets;
 	}
+	$effect(() => {
+		if (stableChip !== chip) {
+			stableChip = chip;
+			inputOutlets = stableChip.inputOutlets;
+			outputOutlets = stableChip.outputOutlets;
+		}
+	});
+	$effect(() => {
+		if (edit !== oldEdit) {
+			if (oldEdit) {
+				editDestroy(oldEdit);
+			}
+			oldEdit = edit;
+			editMount(edit);
+		}
+	});
 </script>
 
 <section>

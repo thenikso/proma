@@ -3,14 +3,12 @@
 	import { JsonInput, StringInput, PortOutlet } from '@proma/svelte-components';
 	const dispatch = createEventDispatcher();
 
-	export let chip;
-
-	export let instance = undefined;
-	let instanceInputs = {};
-	let instanceOutputs = {};
-	let outputLogs = [];
-	let outputErrors = [];
-	let selectedFlow;
+	let { chip, instance = $bindable(undefined) } = $props();
+	let instanceInputs = $state({});
+	let instanceOutputs = $state({});
+	let outputLogs = $state([]);
+	let outputErrors = $state([]);
+	let selectedFlow = $state();
 
 	function dispatchTestChange(data, flow) {
 		dispatch('testChange', {
@@ -23,36 +21,6 @@
 			instance,
 		});
 	}
-
-	$: metadataTest = chip?.metadata?.tests?.[0];
-
-	$: inputDatas = chip.inputOutlets.filter((i) => !i.isFlow);
-	$: inputFlows = chip.inputOutlets.filter((i) => i.isFlow);
-	$: outputDatas = chip.outputOutlets.filter((i) => !i.isFlow);
-
-	// Reset instance on chip class change or flow reset
-	$: if (chip) {
-		if (metadataTest) {
-			instanceInputs = { ...(metadataTest.data || {}) };
-			if (metadataTest.flow) {
-				runFlow(metadataTest.flow);
-			}
-		} else {
-			instance = null;
-			selectedFlow = '';
-			instanceInputs = {};
-		}
-		instanceOutputs = {};
-		outputLogs = [];
-		outputErrors = [];
-	}
-
-	$: if (!selectedFlow) {
-		instance = null;
-	}
-
-	$: dispatchTestChange(instanceInputs, selectedFlow);
-	$: dispatchInstanceChange(instance);
 
 	function setInput(name, value) {
 		if (instance) {
@@ -147,6 +115,39 @@
 			};
 		};
 	}
+	let metadataTest = $derived(chip?.metadata?.tests?.[0]);
+	let inputDatas = $derived(chip.inputOutlets.filter((i) => !i.isFlow));
+	let inputFlows = $derived(chip.inputOutlets.filter((i) => i.isFlow));
+	let outputDatas = $derived(chip.outputOutlets.filter((i) => !i.isFlow));
+	// Reset instance on chip class change or flow reset
+	$effect(() => {
+		if (chip) {
+			if (metadataTest) {
+				instanceInputs = { ...(metadataTest.data || {}) };
+				if (metadataTest.flow) {
+					runFlow(metadataTest.flow);
+				}
+			} else {
+				instance = null;
+				selectedFlow = '';
+				instanceInputs = {};
+			}
+			instanceOutputs = {};
+			outputLogs = [];
+			outputErrors = [];
+		}
+	});
+	$effect(() => {
+		if (!selectedFlow) {
+			instance = null;
+		}
+	});
+	$effect(() => {
+		dispatchTestChange(instanceInputs, selectedFlow);
+	});
+	$effect(() => {
+		dispatchInstanceChange(instance);
+	});
 </script>
 
 <div class="PromaRunEditor">
@@ -157,9 +158,9 @@
 					type="button"
 					class="back button outline"
 					title="Change input values"
-					on:click={() => (selectedFlow = '')}>◀</button
+					onclick={() => (selectedFlow = '')}>◀</button
 				>
-				<button type="button" class="flow button" on:click={() => runFlow(selectedFlow)}>
+				<button type="button" class="flow button" onclick={() => runFlow(selectedFlow)}>
 					Re-run "{selectedFlow}"
 				</button>
 			</div>
@@ -217,7 +218,7 @@
 
 			{#each inputFlows as inputFlow}
 				<div class="flow-input">
-					<button type="button" class="flow button" on:click={() => runFlow(inputFlow.name)}>
+					<button type="button" class="flow button" onclick={() => runFlow(inputFlow.name)}>
 						Run "{inputFlow.name}"
 					</button>
 				</div>

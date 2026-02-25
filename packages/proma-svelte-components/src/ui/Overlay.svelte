@@ -1,4 +1,4 @@
-<script context="module">
+<script module>
 	const overlayContainerEl = document.createElement('div');
 	overlayContainerEl.className = 'OverlayContainer';
 	overlayContainerEl.style.position = 'fixed';
@@ -42,9 +42,12 @@
 </script>
 
 <script>
+	import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { onMount, createEventDispatcher } from 'svelte';
 
-	export let anchor = undefined;
+	let { anchor = undefined, children } = $props();
 
 	const dispatch = createEventDispatcher();
 
@@ -52,10 +55,10 @@
 		dispatch('dismiss');
 	}
 
-	$: overlayPositionStyle = anchor ? `top: ${anchor.y}px; left: ${anchor.x}px;` : '';
+	let overlayPositionStyle = $derived(anchor ? `top: ${anchor.y}px; left: ${anchor.x}px;` : '');
 
-	let overlayEl;
-	let overlayFixStyle = '';
+	let overlayEl = $state();
+	let overlayFixStyle = $state('');
 
 	onMount(() => {
 		showOverlay(overlayEl, dispatchDismiss);
@@ -75,12 +78,12 @@
 	bind:this={overlayEl}
 	class="Overlay"
 	style={overlayPositionStyle + overlayFixStyle}
-	on:mousewheel|stopPropagation
-	on:mousedown|stopPropagation
-	on:mouseup|stopPropagation
-	on:click|stopPropagation
+	onmousewheel={stopPropagation(bubble('mousewheel'))}
+	onmousedown={stopPropagation(bubble('mousedown'))}
+	onmouseup={stopPropagation(bubble('mouseup'))}
+	onclick={stopPropagation(bubble('click'))}
 >
-	<slot dismiss={dispatchDismiss} />
+	{@render children?.({ dismiss: dispatchDismiss })}
 </div>
 
 <style>

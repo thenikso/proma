@@ -1,11 +1,11 @@
 <script>
-	export let text;
-	export let matches = undefined;
-	export let matchesKey = undefined;
+	let { text, matches = undefined, matchesKey = undefined } = $props();
 
-	$: relevantMatches = matchesKey ? matches.filter(({ key }) => key === matchesKey) : matches;
+	let relevantMatches = $derived(
+		matchesKey ? matches.filter(({ key }) => key === matchesKey) : matches,
+	);
 
-	$: workingParts =
+	let workingParts = $derived(
 		!relevantMatches || relevantMatches.length === 0
 			? [{ score: 0, text }]
 			: relevantMatches[0].indices.reduce(
@@ -18,14 +18,15 @@
 						return res;
 					},
 					{ array: [], lastIndex: 0 },
-				);
+				),
+	);
 
-	$: textParts = [
+	let textParts = $derived([
 		...workingParts.array,
 		...(workingParts.lastIndex < text.length
 			? [{ score: 0, text: text.substr(workingParts.lastIndex) }]
 			: []),
-	];
+	]);
 </script>
 
 {#each textParts as { text, score }}

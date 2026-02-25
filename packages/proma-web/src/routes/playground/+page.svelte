@@ -1,4 +1,4 @@
-<script context="module">
+<script module>
 	import { action } from '@proma/svelte-components';
 
 	let saveCurrentPlayground;
@@ -24,29 +24,16 @@
 	import Select from 'svelte-select';
 
 	//
-	// Project Selection
-	//
-
-	$: selectedProjectName = $page.url.searchParams.get('project');
-	$: selectedProjectDataString =
-		selectedProjectName && localStorage.getItem('project-' + selectedProjectName);
-
-	//
 	// Project Load
 	//
 
-	let files;
-	$: if (selectedProjectDataString) {
-		files = JSON.parse(selectedProjectDataString);
-	} else {
-		files = makeBaseProject();
-	}
+	let files = $state({});
 
 	//
 	// Projects List
 	//
 
-	let projectsOptions = [];
+	let projectsOptions = $state([]);
 
 	function updateProjectsOptions() {
 		const options = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i))
@@ -68,11 +55,6 @@
 	}
 
 	updateProjectsOptions();
-
-	$: selectedProjectOption = selectedProjectName && {
-		label: selectedProjectName,
-		value: 'project-' + selectedProjectName,
-	};
 
 	function handleProjectOptionSelect({ detail }) {
 		if (detail.label === selectedProjectName) return;
@@ -111,18 +93,6 @@
 		label: text,
 	});
 
-	$: projectSelectPlaceholder =
-		projectsOptions.length < 2 ? 'Save as...' : 'Select project or save as...';
-
-	//
-	// File Selection
-	//
-
-	$: selectedFilePath = $page.url.searchParams.get('file');
-
-	$: selectedFileContent = selectedFilePath && files[selectedFilePath];
-	$: selectedFileExt = selectedFileContent && getFileExt(selectedFilePath);
-
 	function getFileExt(fileName = '') {
 		return (fileName.match(/\.(.+)$/) || [])[1];
 	}
@@ -131,7 +101,7 @@
 	// File saving
 	//
 
-	let selectedEditor;
+	let selectedEditor = $state();
 
 	saveCurrentPlayground = function savePlayground() {
 		if (!selectedEditor || !selectedFilePath || !selectedProjectName) return;
@@ -142,14 +112,6 @@
 			console.error('Could not save', e);
 		}
 	};
-
-	//
-	// File explorer
-	//
-
-	$: fileNames = Object.keys(files);
-
-	$: expandedFolders = selectedFilePath ? [selectedFilePath] : [];
 
 	function handleFileSelect(e) {
 		const { file, folder } = e.detail;
@@ -171,17 +133,11 @@
 	// Tool selection
 	//
 
-	let promaChipInstance;
+	let promaChipInstance = $state();
 
 	const VALID_TOOLS = {
 		proma: ['info', 'test'],
 	};
-
-	$: selectedTool = (VALID_TOOLS[selectedFileExt] || []).includes(
-		($page.url.hash || '').replace(/^#/, ''),
-	)
-		? ($page.url.hash || '').replace(/^#/, '')
-		: '';
 
 	async function updateUrl({
 		project = selectedProjectName,
@@ -204,7 +160,7 @@
 	// Download project
 	//
 
-	let currentDownload;
+	let currentDownload = $state();
 
 	async function download(files) {
 		action('Playground.save')();
@@ -268,12 +224,54 @@
 			currentDownload = null;
 		});
 	}
+	//
+	// Project Selection
+	//
+
+	let selectedProjectName = $derived($page.url.searchParams.get('project'));
+	let selectedProjectDataString = $derived(
+		selectedProjectName && localStorage.getItem('project-' + selectedProjectName),
+	);
+	$effect(() => {
+		if (selectedProjectDataString) {
+			files = JSON.parse(selectedProjectDataString);
+		} else {
+			files = makeBaseProject();
+		}
+	});
+	let selectedProjectOption = $derived(
+		selectedProjectName && {
+			label: selectedProjectName,
+			value: 'project-' + selectedProjectName,
+		},
+	);
+	let projectSelectPlaceholder = $derived(
+		projectsOptions.length < 2 ? 'Save as...' : 'Select project or save as...',
+	);
+	//
+	// File Selection
+	//
+
+	let selectedFilePath = $derived($page.url.searchParams.get('file'));
+	let selectedFileContent = $derived(selectedFilePath && files?.[selectedFilePath]);
+	let selectedFileExt = $derived(selectedFileContent && getFileExt(selectedFilePath));
+	//
+	// File explorer
+	//
+
+	let fileNames = $derived(Object.keys(files ?? {}));
+	let expandedFolders = $derived(selectedFilePath ? [selectedFilePath] : []);
+	let selectedTool = $derived(
+		(VALID_TOOLS[selectedFileExt] || []).includes(($page.url.hash || '').replace(/^#/, ''))
+			? ($page.url.hash || '').replace(/^#/, '')
+			: '',
+	);
 </script>
 
 <main>
 	<div class="Sidebar">
 		<div class="PreviewTitle">
-			<div class="spacer" />
+			<div class="spacer"></div>
 			<h1>Proma <span class="sub">Experiment</span></h1>
 		</div>
 		<div class="ProjectsExplorer">
@@ -300,7 +298,7 @@
 			<button
 				type="button"
 				class="button"
-				on:click={handleDownloadClick}
+				onclick={handleDownloadClick}
 				disabled={!!currentDownload}
 			>
 				Build &amp; Download
@@ -314,42 +312,46 @@
 				bind:this={selectedEditor}
 				source={selectedFileContent}
 				instance={promaChipInstance}
-				let:chip
-				let:selectedChips
 			>
-				{#if selectedTool}
-					<div class="ToolsPanel">
-						<div class="ToolsTabs">
-							<button type="button" on:click={() => updateUrl({ fragment: 'info' })}> info </button>
-							<button type="button" on:click={() => updateUrl({ fragment: 'test' })}> test </button>
-						</div>
-						<div class="ToolsBody">
-							{#if selectedTool === 'info'}
-								{#if selectedChips.length > 0}
-									<div>TODO sub-chip info here</div>
-								{:else}
-									<PromaBoardDetails {chip} />
+				{#snippet children({ chip, selectedChips })}
+					{#if selectedTool}
+						<div class="ToolsPanel">
+							<div class="ToolsTabs">
+								<button type="button" onclick={() => updateUrl({ fragment: 'info' })}>
+									info
+								</button>
+								<button type="button" onclick={() => updateUrl({ fragment: 'test' })}>
+									test
+								</button>
+							</div>
+							<div class="ToolsBody">
+								{#if selectedTool === 'info'}
+									{#if selectedChips.length > 0}
+										<div>TODO sub-chip info here</div>
+									{:else}
+										<PromaBoardDetails {chip} />
+									{/if}
+								{:else if selectedTool === 'test'}
+									<PromaRunEditor
+										{chip}
+										bind:instance={promaChipInstance}
+										on:testChange={(e) => {
+											chip.metadata = {
+												...chip.metadata,
+												tests: [e.detail.test],
+											};
+										}}
+									/>
 								{/if}
-							{:else if selectedTool === 'test'}
-								<PromaRunEditor
-									{chip}
-									bind:instance={promaChipInstance}
-									on:testChange={(e) => {
-										chip.metadata = {
-											...chip.metadata,
-											tests: [e.detail.test],
-										};
-									}}
-								/>
-							{/if}
+							</div>
 						</div>
-					</div>
-				{/if}
-				<button
-					type="button"
-					class="RunButton button primary"
-					on:click={() => updateUrl({ fragment: 'test' })}>Test</button
-				>
+					{/if}
+					<button
+						type="button"
+						class="RunButton button primary"
+						onclick={() => updateUrl({ fragment: 'test' })}>Test</button
+					>
+				{/snippet}
 			</PromaFileEditor>
 		{:else if selectedFileExt}
 			<CodeMirror

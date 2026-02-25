@@ -3,11 +3,7 @@
 	import { getBoard } from './context';
 	import WirePath from './WirePath.svelte';
 
-	export let outputChip;
-	export let outputPort;
-	export let inputChip;
-	export let inputPort;
-	export let path = WirePath;
+	let { outputChip, outputPort, inputChip, inputPort, path = WirePath } = $props();
 
 	const board = getBoard();
 

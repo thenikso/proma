@@ -1,10 +1,10 @@
 <script>
+	import FileTree from './FileTree.svelte';
 	import { createEventDispatcher } from 'svelte';
 
-	export let root = undefined;
-	export let files = [];
-	export let expand = [];
-	export let selected = undefined;
+	let { root = undefined, files = [], expand = [], selected = undefined } = $props();
+	let safeFiles = $derived(Array.isArray(files) ? files : []);
+	let safeExpand = $derived(Array.isArray(expand) ? expand : []);
 
 	const dispatch = createEventDispatcher();
 
@@ -17,47 +17,51 @@
 		dispatch('select', { folder });
 	}
 
-	$: filePaths = files
-		.sort((a, b) => {
-			const aFolder = a.indexOf('/') >= 0;
-			const bFolder = b.indexOf('/') >= 0;
-			if (aFolder !== bFolder) return bFolder - aFolder;
-			a = a.toLowerCase();
-			b = b.toLowerCase();
-			if (a > b) return 1;
-			if (a < b) return -1;
-			return 0;
-		})
-		.map((f) => f.split('/'));
+	let filePaths = $derived(
+		safeFiles
+			.sort((a, b) => {
+				const aFolder = a.indexOf('/') >= 0;
+				const bFolder = b.indexOf('/') >= 0;
+				if (aFolder !== bFolder) return bFolder - aFolder;
+				a = a.toLowerCase();
+				b = b.toLowerCase();
+				if (a > b) return 1;
+				if (a < b) return -1;
+				return 0;
+			})
+			.map((f) => f.split('/')),
+	);
 
-	$: items = filePaths.reduce((acc, path) => {
-		const firstPath = path[0];
-		if (path.length === 1) {
-			acc.push(firstPath);
-		} else {
-			const folder = acc[acc.length - 1];
-			if (!folder || folder.folder !== firstPath) {
-				const expandFolder = (expand || [])
-					.filter((s) => s && s.startsWith(firstPath + '/'))
-					.map((s) => s.substr(firstPath.length + 1));
-				if (expand.some((s) => s && s.startsWith(firstPath))) {
-					expandFolder.unshift('.');
+	let items = $derived(
+		filePaths.reduce((acc, path) => {
+			const firstPath = path[0];
+			if (path.length === 1) {
+				acc.push(firstPath);
+			} else {
+				const folder = acc[acc.length - 1];
+				if (!folder || folder.folder !== firstPath) {
+					const expandFolder = safeExpand
+						.filter((s) => s && s.startsWith(firstPath + '/'))
+						.map((s) => s.substr(firstPath.length + 1));
+					if (safeExpand.some((s) => s && s.startsWith(firstPath))) {
+						expandFolder.unshift('.');
+					}
+					acc.push({
+						folder: firstPath,
+						files: filePaths.filter((p) => p[0] === firstPath).map((p) => p.slice(1).join('/')),
+						expand: expandFolder,
+						selected:
+							selected &&
+							selected.startsWith(firstPath + '/') &&
+							selected.substr(firstPath.length + 1),
+					});
 				}
-				acc.push({
-					folder: firstPath,
-					files: filePaths.filter((p) => p[0] === firstPath).map((p) => p.slice(1).join('/')),
-					expand: expandFolder,
-					selected:
-						selected &&
-						selected.startsWith(firstPath + '/') &&
-						selected.substr(firstPath.length + 1),
-				});
 			}
-		}
-		return acc;
-	}, []);
+			return acc;
+		}, []),
+	);
 
-	$: showFolderFiles = expand.length || !root;
+	let showFolderFiles = $derived(safeExpand.length || !root);
 
 	function handleChildSelect(e, parentItem) {
 		const { file, folder } = e.detail;
@@ -72,7 +76,7 @@
 </script>
 
 {#if root}
-	<div class="item-name" on:click={() => dispatchSelectFolder(root)}>
+	<div class="item-name" onclick={() => dispatchSelectFolder(root)}>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			width="16"
@@ -114,9 +118,9 @@
 				<li
 					class="item-name"
 					class:selected={selected === item}
-					on:click={() => dispatchSelectFile(item)}
+					onclick={() => dispatchSelectFile(item)}
 				>
-					<div class="spacer" />
+					<div class="spacer"></div>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -135,7 +139,7 @@
 				</li>
 			{:else}
 				<li>
-					<svelte:self
+					<FileTree
 						root={item.folder}
 						files={item.files}
 						expand={item.expand}

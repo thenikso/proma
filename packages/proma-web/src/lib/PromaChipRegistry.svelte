@@ -5,8 +5,7 @@
 	import TextWithMatches from '$lib/components/TextWithMatches.svelte';
 	const dispatch = createEventDispatcher();
 
-	export let registry;
-	export let contextChips = [];
+	let { registry, contextChips = [] } = $props();
 
 	function dispatchClose() {
 		dispatch('close');
@@ -20,62 +19,21 @@
 	// Search box init
 	//
 
-	let searchInputEl;
-	let searchValue;
-
-	$: searchInputEl && searchInputEl.focus();
-
-	//
-	// Build context chip list
-	//
-
-	$: contextGroupList =
-		contextChips && contextChips.length && chipListToGroupListOptions(contextChips);
+	let searchInputEl = $state();
+	let searchValue = $state();
 
 	//
 	// Build registry list
 	//
 
-	// TODO should update on registry use change
-	let registryGroupList = chipListToGroupListOptions(registry.chipList);
-
-	//
-	// Build list for display
-	//
-
-	$: fullGroupList = contextGroupList
-		? [...contextGroupList, { header: 'From Libraries' }, ...registryGroupList]
-		: registryGroupList;
-
-	$: registryFuse = new Fuse(
-		fullGroupList.flat().filter((i) => !i.groupStart && !i.header),
-		{
-			keys: ['text'],
-			includeMatches: true,
-		},
-	);
-
-	$: groupListOptions = searchValue
-		? {
-				items: registryFuse?.search(searchValue),
-				getItemOptions: (x) => x.item,
-			}
-		: { items: fullGroupList };
+	const registryGroupList = $derived(chipListToGroupListOptions(registry.chipList));
 
 	//
 	// Selection
 	//
 
-	let resultListEl;
-	let highlightedEl;
-	$: if (groupListOptions && resultListEl) {
-		setTimeout(() => {
-			highlightedEl = null;
-			highlightNext();
-		});
-	}
-
-	$: highlightedEl?.scrollIntoViewIfNeeded();
+	let resultListEl = $state();
+	let highlightedEl = $state();
 
 	function highlightNext() {
 		if (!resultListEl) return;
@@ -220,9 +178,56 @@
 			.map((k) => itemsFromEntry(registryMap, k))
 			.flat(1);
 	}
+	$effect(() => {
+		searchInputEl && searchInputEl.focus();
+	});
+	//
+	// Build context chip list
+	//
+
+	let contextGroupList = $derived(
+		contextChips && contextChips.length && chipListToGroupListOptions(contextChips),
+	);
+	//
+	// Build list for display
+	//
+
+	let fullGroupList = $derived(
+		contextGroupList
+			? [...contextGroupList, { header: 'From Libraries' }, ...registryGroupList]
+			: registryGroupList,
+	);
+	let registryFuse = $derived(
+		new Fuse(
+			fullGroupList.flat().filter((i) => !i.groupStart && !i.header),
+			{
+				keys: ['text'],
+				includeMatches: true,
+			},
+		),
+	);
+	let groupListOptions = $derived(
+		searchValue
+			? {
+					items: registryFuse?.search(searchValue),
+					getItemOptions: (x) => x.item,
+				}
+			: { items: fullGroupList },
+	);
+	$effect(() => {
+		if (groupListOptions && resultListEl) {
+			setTimeout(() => {
+				highlightedEl = null;
+				highlightNext();
+			});
+		}
+	});
+	$effect(() => {
+		highlightedEl?.scrollIntoViewIfNeeded();
+	});
 </script>
 
-<svelte:window on:keydown|capture={handleKeyDown} />
+<svelte:window onkeydowncapture={handleKeyDown} />
 
 <div class="PromaChipRegistry">
 	<div class="search-bar">
@@ -243,7 +248,7 @@
 		</svg>
 		<input type="text" placeholder="Search" bind:this={searchInputEl} bind:value={searchValue} />
 		{#if searchValue}
-			<div class="search-clear-button" on:click={handleClearClick}>
+			<div class="search-clear-button" onclick={handleClearClick}>
 				<svg
 					class="clear-icon"
 					xmlns="http://www.w3.org/2000/svg"
@@ -267,35 +272,32 @@
 	{:else}
 		<div class="result-list" bind:this={resultListEl}>
 			<GroupList items={groupListOptions.items} getItemOptions={groupListOptions.getItemOptions}>
-				<div
-					slot="groupStart"
-					id={options.text}
-					class="library-path"
-					class:highlighted={highlightedEl && highlightedEl.id === options.text}
-					let:item
-					let:options
-					let:toggle
-					let:collapsed
-					on:click={toggle}
-				>
-					<span>{options.text}</span>
-					<svg
-						class="indicator"
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						style="transform: rotate({collapsed ? '0' : '180deg'})"
+				{#snippet groupStart({ item, options, toggle, collapsed })}
+					<div
+						id={options.text}
+						class="library-path"
+						class:highlighted={highlightedEl && highlightedEl.id === options.text}
+						onclick={toggle}
 					>
-						<path d="M6 9l6 6 6-6" />
-					</svg>
-				</div>
-				<svelte:fragment slot="item" let:item let:options>
+						<span>{options.text}</span>
+						<svg
+							class="indicator"
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							style="transform: rotate({collapsed ? '0' : '180deg'})"
+						>
+							<path d="M6 9l6 6 6-6" />
+						</svg>
+					</div>
+				{/snippet}
+				{#snippet item({ item, options })}
 					{#if item.header}
 						<div class="library-header">{item.header}</div>
 					{:else}
@@ -303,7 +305,7 @@
 							id={options.id}
 							class="library-item"
 							class:highlighted={highlightedEl && highlightedEl.id === options.id}
-							on:click={() => dispatchSelect(options.chip)}
+							onclick={() => dispatchSelect(options.chip)}
 						>
 							<div class="library-item-bg">
 								<div class="library-item-title">
@@ -316,7 +318,7 @@
 							</div>
 						</div>
 					{/if}
-				</svelte:fragment>
+				{/snippet}
 			</GroupList>
 		</div>
 	{/if}

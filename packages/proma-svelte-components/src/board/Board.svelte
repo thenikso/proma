@@ -5,22 +5,46 @@
 	import { shortUID } from './utils';
 	import WirePath from './WirePath.svelte';
 
-	export let panX = 0;
-	export let panY = 0;
-	export let zoom = 1;
-	export let minZoom = 0.1;
-	export let maxZoom = 1;
-	export let snap = 5;
-	export let newWirePath = WirePath;
-	// IDs of the selected chips. Double-bindable.
-	export let selectedChips = [];
-	export let refreshKey = undefined;
+	/**
+	 * @typedef {Object} Props
+	 * @property {number} [panX]
+	 * @property {number} [panY]
+	 * @property {number} [zoom]
+	 * @property {number} [minZoom]
+	 * @property {number} [maxZoom]
+	 * @property {number} [snap]
+	 * @property {any} [newWirePath]
+	 * @property {any} [selectedChips] - IDs of the selected chips. Double-bindable.
+	 * @property {any} [refreshKey]
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props} */
+	let {
+		panX = $bindable(0),
+		panY = $bindable(0),
+		zoom = $bindable(1),
+		minZoom = 0.1,
+		maxZoom = 1,
+		snap = 5,
+		newWirePath = WirePath,
+		selectedChips = $bindable([]),
+		refreshKey = undefined,
+		children,
+	} = $props();
 
 	//
 	// Dispatchers
 	//
 
 	const dispatch = createEventDispatcher();
+
+	function getEventPath(event) {
+		if (event?.composedPath) {
+			return event.composedPath();
+		}
+		return event?.path || [];
+	}
 
 	function dispatchWireStart(detail) {
 		dispatch('wire:start', detail);
@@ -72,18 +96,6 @@
 		if (!eqArray(newSelection, selectedChips)) {
 			selectedChips = newSelection;
 		}
-	}
-
-	$: if (boardContentEl && selectedChips && !eqArray(selectedChips, selectedChipsIdArray())) {
-		deselectAllChips();
-		selectedChipsSet.clear();
-		for (const el of boardContentEl.children) {
-			if (el.$promaChip && selectedChips.includes(el.$promaChip.id)) {
-				selectedChipsSet.add(el.$promaChip);
-				el.$promaChip.select();
-			}
-		}
-		updateSelectedChips();
 	}
 
 	//
@@ -143,6 +155,9 @@
 						...wirePoints({ outputPort, inputPort }),
 					},
 				];
+				// In Svelte 5, mount timing can leave outlets unresolved on first pass.
+				// Trigger a deferred re-measure so initial wires become visible.
+				board.updateWires();
 				outputPort.connectionCount++;
 				inputPort.connectionCount++;
 				return id;
@@ -213,9 +228,9 @@
 	// Selection
 	//
 
-	let boardContentEl;
-	let selectionEl;
-	let selectionRect;
+	let boardContentEl = $state();
+	let selectionEl = $state();
+	let selectionRect = $state();
 
 	const selection = {
 		type: 'selection',
@@ -240,21 +255,14 @@
 	// Wires
 	//
 
-	let wires = [];
-	let wiresEl;
+	let wires = $state([]);
+	let wiresEl = $state();
 	let updateWiresTimer;
 	let updateWiresLimit;
-	let newWireFromPort;
+	let newWireFromPort = $state();
 	// Used in `board.probeNewWire` to store the last probed element and send a new
 	// event if it changes.
 	let newWireProbeEnd;
-
-	$: wiresViewBox = `${(-(boardWidth || 0) / 2 - panX) / zoom} ${
-		(-(boardHeight || 0) / 2 - panY) / zoom
-	} ${(boardWidth || 0) / zoom} ${(boardHeight || 0) / zoom}`;
-	$: newWireFromPoint = newWireFromPort && getElementCenter(newWireFromPort.outletElement);
-
-	$: refreshKey && board.updateWires();
 
 	function updateWiresPoints() {
 		for (const wire of wires) {
@@ -295,25 +303,10 @@
 	// Styling
 	//
 
-	let boardEl;
-	let boardWidth;
-	let boardHeight;
-	let grab = false;
-
-	$: style = `
-  background-position: ${boardWidth / 2 + panX}px ${boardHeight / 2 + panY}px;
-  background-size: ${zoom * 100}px;
-  cursor: ${grab ? (dragging ? 'grabbing' : 'grab') : 'default'};
-  `;
-
-	$: wrapperStyle = `
-  transform: translate3d(${panX}px, ${panY}px, 0) scale(${zoom});
-  `;
-
-	$: if (boardEl) {
-		// Fix for Chrome not updating height correctly
-		requestAnimationFrame(() => (boardHeight = boardEl.getBoundingClientRect().height));
-	}
+	let boardEl = $state();
+	let boardWidth = $state();
+	let boardHeight = $state();
+	let grab = $state(false);
 
 	//
 	// Shortctus and event handling
@@ -321,7 +314,7 @@
 
 	let draggingEventTargets;
 	let draggingStart;
-	let dragging;
+	let dragging = $state();
 	let zoomRaw = zoom;
 	let newWireWhenDraggingFromPort;
 	let wasTouchPad = 0;
@@ -336,7 +329,7 @@
 			},
 			{
 				id: 'chip',
-				select: (e) => e.path.filter((p) => p.$promaChip).map((p) => p.$promaChip)[0],
+				select: (e) => getEventPath(e).find((p) => p.$promaChip)?.$promaChip,
 				present: (c) => c.eventDetails,
 			},
 			{
@@ -350,7 +343,7 @@
 			},
 			{
 				id: 'port',
-				select: (e) => e.path.filter((p) => p.$promaPort).map((p) => p.$promaPort)[0],
+				select: (e) => getEventPath(e).find((p) => p.$promaPort)?.$promaPort,
 				present: (c) => c.eventDetails,
 			},
 		],
@@ -544,6 +537,19 @@
 		dispatchShortcuts(event);
 	}
 
+	function handleBoardMousewheel(event) {
+		event.preventDefault();
+		dispatchShortcuts(event);
+	}
+
+	function handleBoardDragstart(event) {
+		event.preventDefault();
+	}
+
+	function handleBoardContextmenu(event) {
+		event.preventDefault();
+	}
+
 	//
 	// Utils
 	//
@@ -564,6 +570,44 @@
 		if (a.length !== b.length) return false;
 		return !a.some((x, i) => x !== b[i]);
 	}
+	$effect(() => {
+		if (boardContentEl && selectedChips && !eqArray(selectedChips, selectedChipsIdArray())) {
+			deselectAllChips();
+			selectedChipsSet.clear();
+			for (const el of boardContentEl.children) {
+				if (el.$promaChip && selectedChips.includes(el.$promaChip.id)) {
+					selectedChipsSet.add(el.$promaChip);
+					el.$promaChip.select();
+				}
+			}
+			updateSelectedChips();
+		}
+	});
+	$effect(() => {
+		if (boardEl) {
+			// Fix for Chrome not updating height correctly
+			requestAnimationFrame(() => (boardHeight = boardEl.getBoundingClientRect().height));
+		}
+	});
+	let wiresViewBox = $derived(
+		`${(-(boardWidth || 0) / 2 - panX) / zoom} ${
+			(-(boardHeight || 0) / 2 - panY) / zoom
+		} ${(boardWidth || 0) / zoom} ${(boardHeight || 0) / zoom}`,
+	);
+	let newWireFromPoint = $derived(
+		newWireFromPort && getElementCenter(newWireFromPort.outletElement),
+	);
+	$effect(() => {
+		refreshKey && board.updateWires();
+	});
+	let style = $derived(`
+  background-position: ${boardWidth / 2 + panX}px ${boardHeight / 2 + panY}px;
+  background-size: ${zoom * 100}px;
+  cursor: ${grab ? (dragging ? 'grabbing' : 'grab') : 'default'};
+  `);
+	let wrapperStyle = $derived(`
+  transform: translate3d(${panX}px, ${panY}px, 0) scale(${zoom});
+  `);
 </script>
 
 <div
@@ -576,15 +620,15 @@
 	bind:this={boardEl}
 	bind:offsetWidth={boardWidth}
 	bind:offsetHeight={boardHeight}
-	on:mousedown={handleMousedown}
-	on:mouseup={handleMouseup}
-	on:mouseleave={dispatchShortcuts}
-	on:mousewheel|preventDefault={dispatchShortcuts}
-	on:dragstart|preventDefault
-	on:keydown={dispatchShortcuts}
-	on:keyup={dispatchShortcuts}
-	on:contextmenu|preventDefault
-	on:click={dispatchShortcuts}
+	onmousedown={handleMousedown}
+	onmouseup={handleMouseup}
+	onmouseleave={dispatchShortcuts}
+	onmousewheel={handleBoardMousewheel}
+	ondragstart={handleBoardDragstart}
+	onkeydown={dispatchShortcuts}
+	onkeyup={dispatchShortcuts}
+	oncontextmenu={handleBoardContextmenu}
+	onclick={dispatchShortcuts}
 >
 	<svg
 		bind:this={wiresEl}
@@ -657,11 +701,12 @@
 			</linearGradient>
 		</defs>
 		{#each wires as { id, wirePath, fromPoint, toPoint, type } (id)}
-			<svelte:component this={wirePath} {fromPoint} {toPoint} {type} />
+			{@const SvelteComponent = wirePath}
+			<SvelteComponent {fromPoint} {toPoint} {type} />
 		{/each}
 		{#if newWireFromPoint && dragging}
-			<svelte:component
-				this={newWirePath}
+			{@const SvelteComponent_1 = newWirePath}
+			<SvelteComponent_1
 				fromPoint={newWireFromPort.side === OUTPUT
 					? newWireFromPoint
 					: clientPointToBoardPoint(dragging)}
@@ -674,7 +719,7 @@
 	</svg>
 	<div class="BoardWrapper" style={wrapperStyle}>
 		<div class="BoardContent" bind:this={boardContentEl}>
-			<slot />
+			{@render children?.()}
 		</div>
 		{#if selectionRect}
 			<div
@@ -682,7 +727,7 @@
 				class="BoardSelection"
 				style="transform: translate({selectionRect.x}px, {selectionRect.y}px);
         width: {selectionRect.width}px; height: {selectionRect.height}px"
-			/>
+			></div>
 		{/if}
 	</div>
 </div>

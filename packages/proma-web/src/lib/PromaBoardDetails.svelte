@@ -2,11 +2,11 @@
 	import { StringInput, PortOutlet } from '@proma/svelte-components';
 	import { edit as promaEdit } from '@proma/core';
 
-	export let chip;
+	let { chip } = $props();
 
-	$: edit = chip && promaEdit(chip);
-	$: inputOutlets = chip.inputOutlets;
-	$: outputOutlets = chip.outputOutlets;
+	let edit = $derived(chip && promaEdit(chip));
+	let inputOutlets = $derived(chip.inputOutlets);
+	let outputOutlets = $derived(chip.outputOutlets);
 </script>
 
 <div>input</div>

@@ -4,9 +4,7 @@
 	import Overlay from '../ui/Overlay.svelte';
 	import CodeMirror from '../views/CodeMirror.svelte';
 
-	export let placeholder = undefined;
-	export let value = undefined;
-	export let validate = (v) => v;
+	let { placeholder = undefined, value = $bindable(undefined), validate = (v) => v } = $props();
 
 	//
 	// Events
@@ -18,33 +16,8 @@
 		dispatch('input', details);
 	}
 
-	//
-	// Value handling
-	//
-
-	$: placeholderString = typeof placeholder === 'string' ? placeholder : JSON.stringify(value);
-	$: valueString = typeof value === 'string' ? `"${value}"` : JSON.stringify(value, null, 2);
-
-	let internalStringValue;
-	let error;
-	let updatingValue = false;
-
-	$: if (!updatingValue) {
-		internalStringValue = valueString;
-		error = null;
-	} else {
-		updatingValue = false;
-	}
-
-	$: internalStringValue &&
-		Promise.resolve()
-			.then(() => validateJson(internalStringValue))
-			.then(() => {
-				error = null;
-			})
-			.catch((e) => {
-				error = e;
-			});
+	let internalStringValue = $state();
+	let error = $state();
 
 	function validateJson(value) {
 		let v;
@@ -71,12 +44,10 @@
 			showEditor = false;
 			const newValue = internalStringValue.trim() ? validateJson(internalStringValue) : undefined;
 			if (!eq(newValue, value)) {
-				updatingValue = true;
 				value = newValue;
 				dispatchInput({ value });
 			}
 		} catch (e) {
-			updatingValue = true;
 			internalStringValue = valueString;
 			if (!valueString) {
 				error = e;
@@ -90,22 +61,16 @@
 	// Editor
 	//
 
-	let showEditor = false;
-	let codeEditor;
+	let showEditor = $state(false);
+	let codeEditor = $state();
 
-	let containerEl;
-	let containerBoundingBox;
+	let containerEl = $state();
+	let containerBoundingBox = $state();
 
 	function openEditor() {
 		containerBoundingBox = containerEl.getBoundingClientRect();
 		showEditor = true;
 	}
-
-	$: if (containerEl) {
-		containerBoundingBox = containerEl.getBoundingClientRect();
-	}
-
-	$: editorStyles = containerBoundingBox ? `width: ${containerBoundingBox.width + 1}px;` : '';
 
 	//
 	// Handlers
@@ -146,6 +111,39 @@
 			});
 		};
 	}
+	//
+	// Value handling
+	//
+
+	let placeholderString = $derived(
+		typeof placeholder === 'string' ? placeholder : JSON.stringify(value),
+	);
+	let valueString = $derived(
+		typeof value === 'string' ? `"${value}"` : JSON.stringify(value, null, 2),
+	);
+	$effect(() => {
+		internalStringValue = valueString;
+		error = null;
+	});
+	$effect(() => {
+		internalStringValue &&
+			Promise.resolve()
+				.then(() => validateJson(internalStringValue))
+				.then(() => {
+					error = null;
+				})
+				.catch((e) => {
+					error = e;
+				});
+	});
+	$effect(() => {
+		if (containerEl) {
+			containerBoundingBox = containerEl.getBoundingClientRect();
+		}
+	});
+	let editorStyles = $derived(
+		containerBoundingBox ? `width: ${containerBoundingBox.width + 1}px;` : '',
+	);
 </script>
 
 <div
@@ -153,15 +151,15 @@
 	class="JsonInput"
 	class:error
 	tabindex="0"
-	on:keydown={handleKeydown}
-	on:click={openEditor}
+	onkeydown={handleKeydown}
+	onclick={openEditor}
 >
 	<div class="value" class:placeholder={typeof valueString === 'undefined'}>
 		{valueString || (error && error.message) || placeholderString}
 	</div>
 	{#if showEditor}
 		<Overlay anchor={containerBoundingBox} on:dismiss={confirmValue}>
-			<div class="editor" class:error style={editorStyles} on:keydown={handleKeydown}>
+			<div class="editor" class:error style={editorStyles} onkeydown={handleKeydown}>
 				<CodeMirror
 					bind:this={codeEditor}
 					options={{
@@ -175,7 +173,7 @@
 						});
 					}}
 					on:change={debounce(() => {
-						if (updatingValue || !codeEditor) return;
+						if (!codeEditor) return;
 						internalStringValue = codeEditor.getValue();
 					}, 500)}
 				/>

@@ -1,4 +1,14 @@
-<button class="AddPortButton" type="button" on:click>
+<script>
+	/**
+	 * @typedef {Object} Props
+	 * @property {(event: MouseEvent) => void} [onclick]
+	 */
+
+	/** @type {Props} */
+	let { onclick } = $props();
+</script>
+
+<button class="AddPortButton" type="button" {onclick}>
 	<div class="AddPortButton-icon">
 		<svg
 			width="14px"

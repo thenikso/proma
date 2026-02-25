@@ -1,17 +1,23 @@
 <script>
-	export let fromPoint;
-	export let toPoint;
-	export let type = 'any';
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} fromPoint
+	 * @property {any} toPoint
+	 * @property {string} [type]
+	 */
+
+	/** @type {Props} */
+	let { fromPoint, toPoint, type = 'any' } = $props();
 
 	// SVG do not render gradients for elements with 0 with or height. When
 	// a path is straight, it has 0 height. This workaround tweaks the path
 	// endpoint a little to make it not exactly staright so that the gradient
 	// can work as intended
-	$: shouldWorkaroundStraightLine = type && type.indexOf('-') >= 0;
+	let shouldWorkaroundStraightLine = $derived(type && type.indexOf('-') >= 0);
 
 	// If the end of the path is before the start in the X coordinate, we add
 	// an "inverted" class to make the gradient reversed if present.
-	let inverted = false;
+	let inverted = $state(false);
 
 	function connectionMakePath(fromPoint, toPoint) {
 		const { x: x1, y: y1 } = toPoint;
@@ -40,7 +46,7 @@
 		return d;
 	}
 
-	$: d = (fromPoint && toPoint && connectionMakePath(fromPoint, toPoint)) || '';
+	let d = $derived((fromPoint && toPoint && connectionMakePath(fromPoint, toPoint)) || '');
 </script>
 
 <path
