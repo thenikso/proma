@@ -8,9 +8,8 @@ import {
   OutputDataSourcePortInfo,
   InputDataSinkPortInfo,
   OutputFlowSinkPortInfo,
-  INPUT,
-  OUTPUT,
 } from './ports.mjs';
+import { INPUT, OUTPUT } from './constants.mjs';
 import { serializeChipInfo, serializeChipInstance } from './serialize.mjs';
 import { PlaceholderChip, PlaceholderPort } from './placeholder.mjs';
 

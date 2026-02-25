@@ -2,7 +2,7 @@ import recast from '../vendor/recast.mjs';
 import { info, context, assert, assertInfo } from './utils.mjs';
 import ClassWrapper from './wrappers/ClassWrapper.mjs';
 import { literalCompiler, makeAstBuilder } from './compile-utils.mjs';
-import { INPUT, OUTPUT } from './ports.mjs';
+import { INPUT, OUTPUT } from './constants.mjs';
 
 const {
   prettyPrint,

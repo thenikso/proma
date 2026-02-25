@@ -1,6 +1,6 @@
 import { Chip } from './chip.mjs';
 import { info, assert } from './utils.mjs';
-import { INPUT, OUTPUT } from './ports.mjs';
+import { INPUT, OUTPUT } from './constants.mjs';
 
 export function debug(instance) {
   assert(instance instanceof Chip, 'debug() requires a chip instance');

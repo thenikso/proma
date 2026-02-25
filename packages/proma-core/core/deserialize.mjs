@@ -1,4 +1,4 @@
-import { INPUT, OUTPUT } from './ports.mjs';
+import { INPUT, OUTPUT } from './constants.mjs';
 import { edit } from './edit.mjs';
 
 export async function fromJSON(chip, data, { registry, withErrors } = {}) {

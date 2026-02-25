@@ -1,5 +1,5 @@
 import { info } from './utils.mjs';
-import { INPUT, OUTPUT } from './ports.mjs';
+import { INPUT, OUTPUT } from './constants.mjs';
 
 let placeholderCount = 0;
 
