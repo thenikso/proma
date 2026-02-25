@@ -4,8 +4,8 @@ import { info, assert } from './utils.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';
 
 /**
- * @typedef {{ name: string, side: 'in' | 'out', kind: 'flow' | 'data', value: any, type?: string }} PortDebugDescriptor
- * @typedef {{ [path: string]: any }} PortValueMap
+ * @typedef {{ name: string, side: 'in' | 'out', kind: 'flow' | 'data', value: unknown, type?: string }} PortDebugDescriptor
+ * @typedef {{ [path: string]: unknown }} PortValueMap
  */
 
 /**
@@ -30,26 +30,29 @@ class ChipDebugger {
 
   /**
    * @param {string} chipId
-   * @param {string} [portSide]
+   * @param {'in' | 'out'} [portSide]
    * @param {string} [portName]
-   * @returns {any}
+   * @returns {unknown}
    */
   runValue(chipId, portSide, portName) {
     if (!portSide) {
       const parts = chipId.split('.');
-      chipId = parts[0];
-      portSide = parts[1];
-      portName = parts[2];
+      chipId = parts[0] || chipId;
+      portSide = parts[1] === 'in' || parts[1] === 'out' ? parts[1] : undefined;
+      portName = parts[2] || portName;
     }
     // TODO validate args
-    let c;
-    if (chipId === /** @type {any} */ (this.chip).id || chipId === '$') {
-      c = this.chip;
+    /** @type {Chip | null} */
+    let chipInstance = null;
+    const rootChipId = /** @type {{ id?: string }} */ (this.chip).id;
+    if (chipId === rootChipId || chipId === '$') {
+      chipInstance = this.chip;
     } else {
       const chipInfo = info(this.chip);
-      c = chipInfo.getChip(chipId);
+      chipInstance = chipInfo.getChip(chipId);
     }
-    return c[portSide][portName].$runValue;
+    if (!chipInstance || !portSide || !portName) return undefined;
+    return chipInstance[portSide][portName].$runValue;
   }
 
   /**

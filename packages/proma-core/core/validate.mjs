@@ -4,6 +4,10 @@ import { Chip, ChipInfo } from './chip.mjs';
 import { Port, PortInfo } from './ports.mjs';
 
 /**
+ * @typedef {ChipInfo | Chip | Function | object} ValidatableChip
+ */
+
+/**
  * @typedef {{
  *   level: 'error' | 'warning',
  *   code: string,
@@ -14,10 +18,12 @@ import { Port, PortInfo } from './ports.mjs';
 
 /**
  * Validates a chip definition and returns an array of diagnostic messages.
- * @param {Function|object} chipClassOrInstance - A chip class, chip instance, or ChipInfo to validate
+ *
+ * @param {ValidatableChip} chipClassOrInstance - A chip class, chip instance, or ChipInfo to validate
  * @returns {ValidationDiagnostic[]}
  */
 export function validate(chipClassOrInstance) {
+  /** @type {ChipInfo | null} */
   let chipInfo;
   if (chipClassOrInstance instanceof ChipInfo) {
     chipInfo = chipClassOrInstance;
@@ -61,7 +67,11 @@ export function validate(chipClassOrInstance) {
  * @param {ValidationDiagnostic[]} diagnostics
  */
 function checkDisconnectedInputs(chipInfo, diagnostics) {
-  // Collect all ports that appear as sinks in sinkConnection
+  /**
+   * Collect all ports that appear as sinks in sinkConnection.
+   *
+   * @type {Set<Port | PortInfo>}
+   */
   const connectedSinks = new Set(chipInfo.sinkConnection.keys());
 
   for (const subChip of chipInfo.chips) {
@@ -105,7 +115,11 @@ function checkDisconnectedInputs(chipInfo, diagnostics) {
  * @param {ValidationDiagnostic[]} diagnostics
  */
 function checkUnreachableChips(chipInfo, diagnostics) {
-  // Collect all chips referenced in any connection
+  /**
+   * Collect all chips referenced in any connection.
+   *
+   * @type {Set<Chip>}
+   */
   const connectedChips = new Set();
 
   for (const [sink, source] of chipInfo.sinkConnection.entries()) {
@@ -152,8 +166,12 @@ function checkUnreachableChips(chipInfo, diagnostics) {
 function checkDanglingFlowOutputs(chipInfo, diagnostics) {
   if (chipInfo.isFlowless) return;
 
-  // Collect all output flow sink ports (sub-chip out flow) that ARE connected
-  // These appear as keys in sinkConnection
+  /**
+   * Collect all connected output flow sink ports for sub-chips.
+   * These appear as keys in sinkConnection.
+   *
+   * @type {Set<Port | PortInfo>}
+   */
   const connectedOutputFlowSinks = new Set(chipInfo.sinkConnection.keys());
 
   for (const subChip of chipInfo.chips) {
@@ -197,8 +215,12 @@ function checkMissingFlowEntry(chipInfo, diagnostics) {
   const inputFlowOutlets = chipInfo.inputFlowPorts;
   if (inputFlowOutlets.length === 0) return;
 
-  // Check if any input flow outlet is connected
-  // Input flow outlets as PortInfo objects appear as keys in sinkConnection
+  /**
+   * Track connected sink endpoints.
+   * Input flow outlets as PortInfo objects appear as keys in sinkConnection.
+   *
+   * @type {Set<Port | PortInfo>}
+   */
   const connectedSinks = new Set(chipInfo.sinkConnection.keys());
 
   let anyConnected = false;
@@ -242,13 +264,19 @@ function checkDataCycles(chipInfo, diagnostics) {
    * Only for data ports (output data source → input data sink)
    *
    */
+  /** @type {Map<Port, Port[]>} */
   const dataAdj = new Map();
 
   for (const [source, sinks] of chipInfo.sourceConnections.entries()) {
     // Only care about Port instances (not PortInfo outlets) with isData
     if (!(source instanceof Port) || !source.isData) continue;
     const dataSinks = sinks.filter(
-      /** @param {any} s */
+      /**
+       * Keep only runtime data port sinks.
+       *
+       * @param {Port | PortInfo} s
+       * @returns {s is Port}
+       */
       (s) => s instanceof Port && s.isData,
     );
     if (dataSinks.length > 0) {

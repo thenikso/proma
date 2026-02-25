@@ -159,8 +159,11 @@ export class ChipInfo {
    * @param {any} [registry]
    */
   constructor(URI, makeLabel, registry) {
-    // TODO validate name, qualifiedName instead?
-    /** @type {string} */
+    /**
+     * TODO validate name, qualifiedName instead?
+     *
+     * @type {string}
+     */
     this.URI = URI || 'local/' + shortUID();
     /** @type {Array<Chip | PlaceholderChip>} */
     this.chips = [];
@@ -168,28 +171,42 @@ export class ChipInfo {
     this.inputs = [];
     /** @type {any[]} */
     this.outputs = [];
-    // If specified, the registry to use to serialize this chip.
-    // Serialization may need a registry to produce fully qualified URIs.
-    /** @type {any} */
+    /**
+     * If specified, the registry to use to serialize this chip.
+     * Serialization may need a registry to produce fully qualified URIs.
+     *
+     * @type {any}
+     */
     this.registry = registry;
-    // Wire map from source -> [sink]. Souces can have multiple sinks.
-    // Also forwards PortOutlet sinks to [sinks] by saving their PortOutlet.
-    // TODO should map to a Set
-    /** @type {Map<ChipConnectionEndpoint, ChipConnectionEndpoint[]>} */
+    /**
+     * Wire map from source -> [sink]. Sources can have multiple sinks.
+     * Also forwards PortOutlet sinks to [sinks] by saving their PortOutlet.
+     * TODO should map to a Set.
+     *
+     * @type {Map<ChipConnectionEndpoint, ChipConnectionEndpoint[]>}
+     */
     this.sourceConnections = new Map();
-    // Wire map from sink -> source. Sink can only have one source.
-    // Also forwards PortOutlet source to source by saving their PortOutlet.
-    /** @type {Map<ChipConnectionEndpoint, ChipConnectionEndpoint>} */
+    /**
+     * Wire map from sink -> source. Sink can only have one source.
+     * Also forwards PortOutlet source to source by saving their PortOutlet.
+     *
+     * @type {Map<ChipConnectionEndpoint, ChipConnectionEndpoint>}
+     */
     this.sinkConnection = new Map();
 
-    // PlaceholderChip to promises that will replace the placeholder with
-    // the actual chip when done
-    /** @type {Map<PlaceholderChip, Promise<void>>} */
+    /**
+     * Map placeholder chips to loaders that replace them when resolved.
+     *
+     * @type {Map<PlaceholderChip, Promise<void>>}
+     */
     this.chipLoaders = new Map();
 
     let idCount = 0;
-    // TODO generate JS usable name
-    /** @type {() => string} */
+    /**
+     * TODO generate JS usable name.
+     *
+     * @type {() => string}
+     */
     this.makeChipId = () => {
       return `${this.name}_${++idCount}`;
     };
