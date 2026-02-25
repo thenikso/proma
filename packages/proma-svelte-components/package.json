@@ -7,12 +7,12 @@
 	],
 	"main": "./dist/index.js",
 	"module": "./dist/index.js",
-	"svelte": "./src/index.js",
+	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"svelte": "./src/index.js",
+			"svelte": "./dist/index.js",
 			"import": "./dist/index.js",
 			"require": "./dist/index.js",
 			"default": "./dist/index.js"
