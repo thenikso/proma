@@ -21,8 +21,13 @@
 	let selectedChips = $state([]);
 
 	function getEventPath(event) {
-		if (event?.composedPath) {
-			return event.composedPath();
+		const composedPath = event?.composedPath;
+		if (typeof composedPath === 'function') {
+			try {
+				return composedPath.call(event);
+			} catch {
+				// Some synthetic/proxied events expose composedPath but fail with illegal invocation.
+			}
 		}
 		return event?.path || [];
 	}

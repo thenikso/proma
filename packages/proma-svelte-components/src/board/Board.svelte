@@ -528,7 +528,11 @@
 			const e = new Proxy(event, {
 				get(target, key) {
 					if (key === 'type') return 'positionclick';
-					return Reflect.get(target, key);
+					const value = Reflect.get(target, key);
+					if (key === 'composedPath' && typeof value === 'function') {
+						return value.bind(target);
+					}
+					return value;
 				},
 			});
 			dispatchShortcuts(e);
