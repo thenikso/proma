@@ -3,16 +3,28 @@ import { INPUT, OUTPUT } from './constants.mjs';
 import { edit } from './edit.mjs';
 
 /**
+ * @typedef {{
+ *   URI: string,
+ *   metadata?: any,
+ *   use?: string[],
+ *   chips?: Array<{ chipURI: string, args?: any[], id?: string, label?: string }>,
+ *   connections?: Array<{ source: string, sink: string }>,
+ *   [INPUT]?: Array<any>,
+ *   [OUTPUT]?: Array<any>
+ * }} SerializedChip
+ */
+
+/**
  * @param {any} chip
- * @param {any} data
+ * @param {SerializedChip | string} data
  * @param {{ registry?: any, withErrors?: (errors: unknown[]) => void }} [options]
+ * @returns {Promise<any>}
  */
 export async function fromJSON(chip, data, { registry, withErrors } = {}) {
-  if (typeof data === 'string') {
-    data = JSON.parse(data);
-  }
-  const ChipClass = await deserializeChip(chip, data, registry, withErrors);
-  ChipClass.metadata = data.metadata;
+  /** @type {SerializedChip} */
+  const chipData = typeof data === 'string' ? JSON.parse(data) : data;
+  const ChipClass = await deserializeChip(chip, chipData, registry, withErrors);
+  ChipClass.metadata = chipData.metadata;
   return ChipClass;
 }
 
@@ -20,6 +32,13 @@ export async function fromJSON(chip, data, { registry, withErrors } = {}) {
 // Deserialization
 //
 
+/**
+ * @param {any} chip
+ * @param {SerializedChip} data
+ * @param {any} registry
+ * @param {((errors: unknown[]) => void) | undefined} withErrors
+ * @returns {Promise<any>}
+ */
 async function deserializeChip(chip, data, registry, withErrors) {
   // TODO validate `data`
   const res = chip(data.URI, null, { editable: true });
@@ -28,7 +47,9 @@ async function deserializeChip(chip, data, registry, withErrors) {
   const useSet = new Set(data.use);
   useSet.add('proma/std');
   await Promise.all([...useSet].map((u) => build.addUse(u)));
+  /** @type {unknown[]} */
   const errors = [];
+  /** @type {Array<{name: string, execute?: string, compute?: string}>} */
   const portsToCompile = [];
   for (const port of data[INPUT] || []) {
     try {
@@ -55,8 +76,8 @@ async function deserializeChip(chip, data, registry, withErrors) {
         build.addOutputFlowOutlet(port.name);
       } else {
         build.addOutputDataOutlet(port.name, {
-          computeOn: (port.computeOn || []).map((portPath) =>
-            build.getPort(portPath, 'out'),
+          computeOn: (port.computeOn || []).map(
+            (/** @type {string} */ portPath) => build.getPort(portPath, 'out'),
           ),
           inline: port.inline,
           allowSideEffects: port.allowSideEffects,

@@ -3,12 +3,22 @@ import { Chip } from './chip.mjs';
 import { info, assert } from './utils.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';
 
+/**
+ * @typedef {{ name: string, side: 'in' | 'out', kind: 'flow' | 'data', value: any, type?: string }} PortDebugDescriptor
+ * @typedef {{ [path: string]: any }} PortValueMap
+ */
+
+/**
+ * @param {Chip} instance
+ * @returns {ChipDebugger}
+ */
 export function debug(instance) {
   assert(instance instanceof Chip, 'debug() requires a chip instance');
   return new ChipDebugger(instance);
 }
 
 class ChipDebugger {
+  /** @param {Chip} instance */
   constructor(instance) {
     this.chip = instance;
   }
@@ -18,6 +28,12 @@ class ChipDebugger {
     return chipInfo.chips.map((c) => c.id);
   }
 
+  /**
+   * @param {string} chipId
+   * @param {string} [portSide]
+   * @param {string} [portName]
+   * @returns {any}
+   */
   runValue(chipId, portSide, portName) {
     if (!portSide) {
       const parts = chipId.split('.');
@@ -27,7 +43,7 @@ class ChipDebugger {
     }
     // TODO validate args
     let c;
-    if (chipId === this.chip.id || chipId === '$') {
+    if (chipId === /** @type {any} */ (this.chip).id || chipId === '$') {
       c = this.chip;
     } else {
       const chipInfo = info(this.chip);
@@ -39,8 +55,12 @@ class ChipDebugger {
   // Returns a snapshot of all data port $runValues for all chips.
   // The result is an object keyed by chip id (root chip uses '$'),
   // where each value is an object of 'in.portName' / 'out.portName' -> value.
+  /**
+   * @returns {Record<string, PortValueMap>}
+   */
   snapshot() {
     const chipInfo = info(this.chip);
+    /** @type {Record<string, PortValueMap>} */
     const result = {};
     result['$'] = chipPortValues(this.chip);
     for (const subChip of chipInfo.chips) {
@@ -52,6 +72,10 @@ class ChipDebugger {
   // Returns an array of port descriptors for the given chip (by id).
   // Use '$' or omit chipId to inspect the root chip.
   // Each descriptor has: { name, side, kind, value, type }
+  /**
+   * @param {string} [chipId]
+   * @returns {PortDebugDescriptor[] | null}
+   */
   ports(chipId) {
     let chipInstance;
     if (!chipId || chipId === '$') {
@@ -63,6 +87,7 @@ class ChipDebugger {
     if (!chipInstance) return null;
 
     const chipInfo = info(chipInstance);
+    /** @type {PortDebugDescriptor[]} */
     const result = [];
 
     for (const outlet of chipInfo.inputs) {
@@ -95,7 +120,12 @@ class ChipDebugger {
   // Captures the current values of the given port paths before execution,
   // then provides a capture() method to record the after values.
   // portPaths use the same dot-separated format as runValue: 'ChipId.in.portName'
+  /**
+   * @param {string[]} portPaths
+   * @returns {{ before: PortValueMap, capture: () => { before: PortValueMap, after: PortValueMap } }}
+   */
   watch(portPaths) {
+    /** @type {PortValueMap} */
     const before = {};
     for (const path of portPaths) {
       before[path] = this.runValue(path);
@@ -104,6 +134,7 @@ class ChipDebugger {
     return {
       before,
       capture: () => {
+        /** @type {PortValueMap} */
         const after = {};
         for (const path of portPaths) {
           after[path] = this.runValue(path);
@@ -114,8 +145,13 @@ class ChipDebugger {
   }
 }
 
+/**
+ * @param {Chip} chipInstance
+ * @returns {PortValueMap}
+ */
 function chipPortValues(chipInstance) {
   const chipInfo = info(chipInstance);
+  /** @type {PortValueMap} */
   const values = {};
   for (const outlet of chipInfo.inputs) {
     const portInfo = info(outlet);
