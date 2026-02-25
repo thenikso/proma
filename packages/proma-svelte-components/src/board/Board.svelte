@@ -180,13 +180,16 @@
 			return wire;
 		},
 		updateWires(limitChip) {
-			cancelAnimationFrame(updateWiresTimer);
-			if (limitChip) {
-				updateWiresLimit = [...(updateWiresLimit || []), limitChip];
-			} else {
-				updateWiresLimit = null;
+			if (updateWiresLimit) {
+				if (limitChip) {
+					updateWiresLimit.add(limitChip);
+				} else {
+					updateWiresLimit = null;
+				}
 			}
-			updateWiresTimer = requestAnimationFrame(updateWiresPoints);
+			if (!updateWiresTimer) {
+				updateWiresTimer = requestAnimationFrame(updateWiresPoints);
+			}
 		},
 		//
 		startNewWire(port) {
@@ -258,45 +261,47 @@
 	let wires = $state([]);
 	let wiresEl = $state();
 	let updateWiresTimer;
-	let updateWiresLimit;
+	let updateWiresLimit = new Set();
 	let newWireFromPort = $state();
 	// Used in `board.probeNewWire` to store the last probed element and send a new
 	// event if it changes.
 	let newWireProbeEnd;
 
 	function updateWiresPoints() {
+		updateWiresTimer = null;
+		const boardRect = boardEl?.getBoundingClientRect();
 		for (const wire of wires) {
 			if (
 				!updateWiresLimit ||
-				updateWiresLimit.includes(wire.inputChip) ||
-				updateWiresLimit.includes(wire.outputChip)
+				updateWiresLimit.has(wire.inputChip) ||
+				updateWiresLimit.has(wire.outputChip)
 			) {
-				Object.assign(wire, wirePoints(wire));
+				Object.assign(wire, wirePoints(wire, boardRect));
 			}
 		}
-		updateWiresLimit = null;
+		updateWiresLimit = new Set();
 		// To force redraw
 		// TODO make more efficient
 		wires = [...wires];
 	}
 
-	function wirePoints(wire) {
-		const fromPoint = getElementCenter(wire.outputPort.outletElement);
-		const toPoint = getElementCenter(wire.inputPort.outletElement);
+	function wirePoints(wire, boardRect) {
+		const fromPoint = getElementCenter(wire.outputPort.outletElement, boardRect);
+		const toPoint = getElementCenter(wire.inputPort.outletElement, boardRect);
 		return {
 			fromPoint,
 			toPoint,
 		};
 	}
 
-	function getElementCenter(el) {
+	function getElementCenter(el, boardRect) {
 		if (!el) {
 			return null;
 		}
 		const bbox = el.getBoundingClientRect();
 		const x = bbox.x + bbox.width / 6; // not exactly the center
 		const y = bbox.y + bbox.height / 2;
-		return clientPointToBoardPoint(x, y);
+		return clientPointToBoardPoint(x, y, boardRect);
 	}
 
 	//
@@ -558,12 +563,12 @@
 	// Utils
 	//
 
-	function clientPointToBoardPoint(x, y) {
+	function clientPointToBoardPoint(x, y, boardRect) {
 		if (typeof x === 'object') {
 			y = x.y;
 			x = x.x;
 		}
-		const { x: boardX, y: boardY, width, height } = boardEl.getBoundingClientRect();
+		const { x: boardX, y: boardY, width, height } = boardRect || boardEl.getBoundingClientRect();
 		return {
 			x: (x - boardX - width / 2 - panX) / zoom,
 			y: (y - boardY - height / 2 - panY) / zoom,
