@@ -9,11 +9,11 @@ import { INPUT, OUTPUT } from './constants.mjs';
  * @typedef {import('./ports.mjs').Port} Port
  * @typedef {import('./ports.mjs').PortInfo} PortInfo
  * @typedef {{
- *   selectPorts: (chip: any) => Port[] | undefined
+ *   selectPorts: (chip: unknown) => Port[] | undefined
  * }} CompilationHook
  * @typedef {{ [label: string]: CompilationHook }} CompilationHooks
- * @typedef {any[]} CompilationScope
- * @typedef {(portInstance: Port, scope: CompilationScope, codeWrapper: any, tools?: any) => any} PortCompiler
+ * @typedef {unknown[]} CompilationScope
+ * @typedef {(portInstance: Port, scope: CompilationScope, codeWrapper: unknown, tools?: unknown) => unknown} PortCompiler
  */
 
 const {
@@ -27,10 +27,10 @@ const {
 export class Compilation {
   /**
    * @param {ChipInfo} rootChipInfo
-   * @param {any} rootChip
+   * @param {unknown} rootChip
    */
   constructor(rootChipInfo, rootChip) {
-    /** @type {any} */
+    /** @type {unknown} */
     this.rootChip = rootChip;
     /** @type {ChipInfo} */
     this.rootChipInfo = rootChipInfo;
@@ -39,7 +39,7 @@ export class Compilation {
   /**
    * Compiles the root chip with the provided wrapper and optional hooks.
    *
-   * @param {any} [codeWrapper]
+   * @param {unknown} [codeWrapper]
    * @param {CompilationHooks} [hooks]
    * @returns {string}
    */
@@ -55,17 +55,17 @@ export class Compilation {
     const rootChip = this.rootChip || makeChipInstanceMock(this.rootChipInfo);
     /** @type {CompilationScope} */
     const scope = [rootChip];
-    /** @type {{ [name: string]: any }} */
+    /** @type {{ [name: string]: unknown }} */
     const outputBlocksByPort = {};
-    /** @type {{ [name: string]: any }} */
+    /** @type {{ [name: string]: unknown }} */
     const executeBlocksByPort = {};
     /**
      * A map of hook label to array of compiled blocks for the hook
      *
-     * @type {{ [label: string]: any[] }}
+     * @type {{ [label: string]: unknown[] }}
      */
     const hooksBlocksByLabel = {};
-    /** @type {{ [name: string]: any[] }} */
+    /** @type {{ [name: string]: unknown[] }} */
     const updateBlocksByPort = {};
 
     if (codeWrapper.compileBegin) {
@@ -194,8 +194,8 @@ export class Compilation {
 /**
  * Recursively collects hook-eligible output flow ports from child chips.
  *
- * @param {any} chip
- * @param {(chip: any) => Port[] | undefined} selectPorts
+ * @param {unknown} chip
+ * @param {(chip: unknown) => Port[] | undefined} selectPorts
  * @param {CompilationScope} [scope]
  * @returns {Array<{ port: Port, scope: CompilationScope }>}
  */
@@ -231,7 +231,7 @@ function getHookPorts(chip, selectPorts, scope) {
 }
 
 /**
- * @param {any} port
+ * @param {unknown} port
  * @param {CompilationScope} scope
  * @returns {boolean}
  */
@@ -242,32 +242,32 @@ function isOutlet(port, scope) {
 
 /**
  * @param {ChipInfo} chipInfo
- * @returns {any}
+ * @returns {unknown}
  */
 function makeChipInstanceMock(chipInfo) {
-  /** @type {{ [name: string]: any }} */
+  /** @type {{ [name: string]: unknown }} */
   const input = chipInfo.inputs.reduce(
     /**
-     * @param {{ [name: string]: any }} acc
-     * @param {any} outlet
+     * @param {{ [name: string]: unknown }} acc
+     * @param {{ name: string }} outlet
      */
     (acc, outlet) => {
       acc[outlet.name] = outlet;
       return acc;
     },
-    /** @type {{ [name: string]: any }} */ ({}),
+    /** @type {{ [name: string]: unknown }} */ ({}),
   );
-  /** @type {{ [name: string]: any }} */
+  /** @type {{ [name: string]: unknown }} */
   const output = chipInfo.outputs.reduce(
     /**
-     * @param {{ [name: string]: any }} acc
-     * @param {any} outlet
+     * @param {{ [name: string]: unknown }} acc
+     * @param {{ name: string }} outlet
      */
     (acc, outlet) => {
       acc[outlet.name] = outlet;
       return acc;
     },
-    /** @type {{ [name: string]: any }} */ ({}),
+    /** @type {{ [name: string]: unknown }} */ ({}),
   );
 
   return info(
@@ -284,9 +284,9 @@ function makeChipInstanceMock(chipInfo) {
  * When using `compile` from a custom compilation function, we allow users
  * to use the local outlet to refer to the chip instance port.
  *
- * @param {any} port
+ * @param {unknown} port
  * @param {CompilationScope} scope
- * @returns {{ port: any, chip: any, parentChip: any }}
+ * @returns {{ port: unknown, chip: unknown, parentChip: unknown }}
  */
 function getPortAndChipInstance(port, scope) {
   const [chip, parentChip] = scope;
@@ -297,9 +297,9 @@ function getPortAndChipInstance(port, scope) {
 }
 
 /**
- * @param {any} port
+ * @param {unknown} port
  * @param {CompilationScope} scope
- * @returns {any[]}
+ * @returns {unknown[]}
  */
 function getConnectedPorts(port, scope) {
   const { port: resolvedPort, parentChip } = getPortAndChipInstance(
@@ -325,10 +325,10 @@ const CUSTOM_COMPILER_TOOLS = {
 /**
  * Compiles a port instance in a specific chip scope.
  *
- * @param {any} port
+ * @param {unknown} port
  * @param {CompilationScope} scope
- * @param {any} codeWrapper
- * @returns {any}
+ * @param {unknown} codeWrapper
+ * @returns {unknown}
  */
 function compile(port, scope, codeWrapper) {
   const { port: resolvedPort } = getPortAndChipInstance(port, scope);
@@ -381,9 +381,9 @@ function computeCompiler(
   const astBuilder = makeAstBuilder(portInfo, prop);
 
   portInfo[compilerProp] = function compileCompute(
-    /** @type {any} */ portInstance,
+    /** @type {unknown} */ portInstance,
     /** @type {CompilationScope} */ outterScope,
-    /** @type {any} */ codeWrapper,
+    /** @type {unknown} */ codeWrapper,
   ) {
     const [chip, ...scope] = outterScope;
     assertInfo(chip, portInfo.chipInfo);
@@ -401,7 +401,7 @@ function computeCompiler(
       // This should not happen
       compileOutputData(
         /** @type {string} */ portName,
-        /** @type {any} */ assignExpressionBlock,
+        /** @type {unknown} */ assignExpressionBlock,
       ) {
         throw new Error('Can not use output data ports in a compute');
       },
@@ -429,9 +429,9 @@ function executeCompiler(
   const astBuilder = makeAstBuilder(portInfo, prop);
 
   portInfo[compilerProp] = function compileExecute(
-    /** @type {any} */ portInstance,
+    /** @type {unknown} */ portInstance,
     /** @type {CompilationScope} */ outterScope,
-    /** @type {any} */ codeWrapper,
+    /** @type {unknown} */ codeWrapper,
   ) {
     const [chip, ...scope] = outterScope;
     assertInfo(chip, portInfo.chipInfo);
@@ -458,7 +458,7 @@ function executeCompiler(
        */
       compileOutputData(
         /** @type {string} */ portName,
-        /** @type {any} */ assignExpressionBlock,
+        /** @type {unknown} */ assignExpressionBlock,
       ) {
         const port = chip.out[portName];
         const portInfo = info(port);
@@ -488,7 +488,7 @@ function executeCompiler(
           `Can not assign to "${
             port.fullName
           }" as it is computed on [${portInfo.computeOn
-            .map((/** @type {any} */ p) => p.name)
+            .map((/** @type {{ name: string }} */ p) => p.name)
             .join(', ')}]`,
         );
 
