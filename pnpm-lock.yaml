@@ -210,9 +210,6 @@ importers:
       file-saver:
         specifier: 2.0.5
         version: 2.0.5
-      fuse.js:
-        specifier: 6.4.6
-        version: 6.4.6
       globals:
         specifier: ^17.3.0
         version: 17.3.0
@@ -2223,10 +2220,6 @@ packages:
 
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
-
-  fuse.js@6.4.6:
-    resolution: {integrity: sha512-/gYxR/0VpXmWSfZOIPS3rWwU8SHgsRTwWuXhyb2O6s7aRuVtHtxCkR33bNYu3wyLyNx/Wpv0vU7FZy8Vj53VNw==}
-    engines: {node: '>=10'}
 
   generator-function@2.0.1:
     resolution: {integrity: sha512-SFdFmIJi+ybC0vjlHN0ZGVGHc3lgE0DxPAT0djjVg+kjOnSqclqmj0KQ7ykTOLP6YxoqOvuAODGdcHJn+43q3g==}
@@ -5957,8 +5950,6 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  fuse.js@6.4.6: {}
-
   generator-function@2.0.1: {}
 
   get-assigned-identifiers@1.2.0: {}
@@ -7405,7 +7396,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.10.13
-      '@vitest/browser-playwright': 4.0.18(playwright@1.58.2)(vite@6.4.1(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0))(vitest@4.0.18)
+      '@vitest/browser-playwright': 4.0.18(playwright@1.58.2)(vite@7.3.1(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0))(vitest@4.0.18)
     transitivePeerDependencies:
       - jiti
       - less
