@@ -7,7 +7,7 @@
 
 	let { registry, contextChips = [] } = $props();
 
-	let searchInputEl = $state();
+	let searchInputEl = $state(null);
 	let searchValue = $state('');
 
 	function dispatchClose() {
