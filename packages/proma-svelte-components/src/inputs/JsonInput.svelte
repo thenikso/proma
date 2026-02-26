@@ -194,9 +194,9 @@
 <style>
 	.JsonInput {
 		position: relative;
-		color: var(--proma-input--color, white);
-		background-color: var(--proma-input--background, #57575773);
-		border: 1px solid var(--proma-input--border-color, #383839);
+		color: var(--proma-input--color, var(--foreground, #111827));
+		background-color: var(--proma-input--background, var(--muted, #f4f4f5));
+		border: 1px solid var(--proma-input--border-color, var(--border, #d4d4d8));
 		border-radius: 5px;
 		padding: 4px 6px;
 		font-family: var(
@@ -220,8 +220,8 @@
 	}
 
 	.JsonInput:focus {
-		background-color: var(--proma-input--focus--background, #575757);
-		border-color: var(--proma-input--focus--border-color, #257bfb);
+		background-color: var(--proma-input--focus--background, var(--background, #ffffff));
+		border-color: var(--proma-input--focus--border-color, var(--ring, #71717a));
 	}
 
 	.value {
@@ -233,7 +233,7 @@
 	}
 
 	.value.placeholder {
-		color: #a9a9a9;
+		color: var(--muted-foreground, #71717a);
 	}
 
 	.editor {
@@ -245,12 +245,12 @@
 		height: 100px;
 		overflow: hidden;
 
-		border: 1px solid var(--proma-input--focus--border-color, #257bfb);
+		border: 1px solid var(--proma-input--focus--border-color, var(--ring, #71717a));
 		border-radius: 5px;
 	}
 
 	.editor.error,
 	.JsonInput.error {
-		border-color: var(--proma-input--error--border-color, #ff0000);
+		border-color: var(--proma-input--error--border-color, var(--destructive, #ef4444));
 	}
 </style>

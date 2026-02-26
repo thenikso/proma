@@ -2,7 +2,8 @@
 	import * as proma from '@proma/core';
 	import eq from 'fast-deep-equal';
 	import { untrack } from 'svelte';
-	import { ChipBoardView, Overlay, createShortcutDispatcher } from '@proma/svelte-components';
+	import { ChipBoardView, createShortcutDispatcher } from '@proma/svelte-components';
+	import Overlay from '$lib/components/Overlay.svelte';
 	import PromaChipRegistry from './PromaChipRegistry.svelte';
 
 	/**
@@ -135,7 +136,7 @@
 <svelte:window onkeydowncapture={dispatchShortcut} />
 
 {#if sourceChip}
-	<div class="PromaFile" {id}>
+	<div class="relative h-full" {id}>
 		<ChipBoardView
 			chip={sourceChip}
 			edit={chipEditor}
@@ -168,10 +169,3 @@
 		{/if}
 	</div>
 {/if}
-
-<style>
-	.PromaFile {
-		position: relative;
-		height: 100%;
-	}
-</style>

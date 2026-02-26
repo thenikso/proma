@@ -252,14 +252,14 @@
 		box-sizing: border-box;
 
 		font-size: 14px;
-		color: var(--proma-board--chip--color, white);
-		background-color: var(--proma-board--chip--background-color, rgba(62, 62, 62, 0.7));
-		box-shadow: var(--proma-board--chip--shadow, 0 2px 1px rgba(29, 29, 29, 0.8));
+		color: var(--proma-board--chip--color, var(--card-foreground, #111827));
+		background-color: var(--proma-board--chip--background-color, color-mix(in srgb, var(--card, #ffffff) 85%, transparent));
+		box-shadow: var(--proma-board--chip--shadow, 0 1px 2px color-mix(in srgb, var(--foreground, #111827) 15%, transparent));
 
 		border-radius: var(--proma-board--chip--border-radius, 5px);
 		border-style: solid;
 		border-width: var(--proma-board--chip--border-width, 1px);
-		border-color: var(--proma-board--chip--border-color, rgba(29, 29, 29, 0.7));
+		border-color: var(--proma-board--chip--border-color, var(--border, #d4d4d8));
 		font-family: var(
 			--proma-board-font-family,
 			-apple-system,
@@ -302,20 +302,20 @@
 		right: -6px;
 		bottom: -6px;
 
-		box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+		box-shadow: 0 0 3px color-mix(in srgb, var(--foreground, #111827) 30%, transparent);
 
 		border: 5px solid transparent;
 		border-radius: 10px;
 		background:
 			linear-gradient(
 				to right,
-				var(--proma-board--chip-selected--background-color, #3e3e3e),
-				var(--proma-board--chip-selected--background-color, #3e3e3e)
+				var(--proma-board--chip-selected--background-color, var(--card, #ffffff)),
+				var(--proma-board--chip-selected--background-color, var(--card, #ffffff))
 			),
 			linear-gradient(
 				15deg,
-				var(--proma-board--chip-selected--gradient-from, #f17814),
-				var(--proma-board--chip-selected--gradient-to, #e9b03d)
+				var(--proma-board--chip-selected--gradient-from, var(--ring, #71717a)),
+				var(--proma-board--chip-selected--gradient-to, var(--primary, #18181b))
 			);
 		background-clip: padding-box, border-box;
 		background-origin: padding-box, border-box;
@@ -329,13 +329,13 @@
 		display: flex;
 		align-items: center;
 
-		color: var(--proma-board--chip-header--color, white);
+		color: var(--proma-board--chip-header--color, var(--card-foreground, #111827));
 		font-size: 1em;
 		padding: var(--proma-board--chip-header--padding, 3px 2px);
 
 		border-top-left-radius: calc(var(--proma-board--chip--border-radius, 5px) - 1px);
 		border-top-right-radius: calc(var(--proma-board--chip--border-radius, 5px) - 1px);
-		border-bottom: var(--proma-board--chip-header--border-bottom, 1px solid #343434);
+		border-bottom: var(--proma-board--chip-header--border-bottom, 1px solid var(--border, #d4d4d8));
 
 		transition-property:
 			color, background-color, border-top-left-radius, border-top-right-radius, border-bottom;
@@ -344,19 +344,19 @@
 	}
 
 	.ChipKind-default .ChipHeader {
-		background: var(--proma-board--chip--kind-default, #3a764f);
+		background: var(--proma-board--chip--kind-default, color-mix(in srgb, var(--primary, #18181b) 20%, var(--card, #ffffff)));
 	}
 
 	.ChipKind-outlet .ChipHeader {
-		background: var(--proma-board--chip--kind-outlet, #446c8f);
+		background: var(--proma-board--chip--kind-outlet, color-mix(in srgb, var(--chart-2, #0891b2) 30%, var(--card, #ffffff)));
 	}
 
 	.ChipKind-delegate .ChipHeader {
-		background: var(--proma-board--chip--kind-delegate, #b63434);
+		background: var(--proma-board--chip--kind-delegate, color-mix(in srgb, var(--destructive, #ef4444) 25%, var(--card, #ffffff)));
 	}
 
 	.ChipKind-control .ChipHeader {
-		background: var(--proma-board--chip--kind-control, #8d8d8d);
+		background: var(--proma-board--chip--kind-control, color-mix(in srgb, var(--muted, #f4f4f5) 60%, var(--card, #ffffff)));
 	}
 
 	.ChipHeader > div {

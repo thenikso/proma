@@ -355,30 +355,69 @@ shortcuts.unregister(handlerFunction);
 
 ## Styling
 
-Components come with default styles but can be customized using CSS variables:
+`@proma/svelte-components` stays CSS-variable driven so it can be themed by any host app.
+The library does not require Tailwind or shadcn, but it can consume the same design tokens.
+
+### Core theming variables
+
+Board and chip visuals:
 
 ```css
 :root {
-	/* Board colors */
-	--board-bg: #1e1e1e;
-	--board-grid: #2a2a2a;
+	--proma-board-font-family: Inter, sans-serif;
 
-	/* Chip colors */
-	--chip-bg: #2d2d2d;
-	--chip-border: #404040;
-	--chip-selected: #0078d4;
+	--proma-board--canvas--color: #111827;
+	--proma-board--canvas--background-color: #ffffff;
+	--proma-board--canvas--grid-minor-color: color-mix(in srgb, #d4d4d8 14%, transparent);
+	--proma-board--canvas--grid-major-color: color-mix(in srgb, #d4d4d8 28%, transparent);
 
-	/* Port colors */
-	--port-flow: #ffffff;
-	--port-data: #4fc3f7;
+	--proma-board--chip--background-color: rgba(255, 255, 255, 0.85);
+	--proma-board--chip--border-color: #d4d4d8;
+	--proma-board--chip--color: #111827;
+	--proma-board--chip-selected--gradient-from: #71717a;
+	--proma-board--chip-selected--gradient-to: #18181b;
 
-	/* Wire colors */
-	--wire-default: #888888;
-	--wire-number: #4fc3f7;
-	--wire-string: #81c784;
-	--wire-boolean: #ba68c8;
+	--proma-board--type-any: #0ea5e9;
+	--proma-board--type-string: #22c55e;
+	--proma-board--type-number: #3b82f6;
+	--proma-board--type-boolean: #f59e0b;
 }
 ```
+
+Input visuals (`StringInput`, `JsonInput`):
+
+```css
+:root {
+	--proma-input--color: #111827;
+	--proma-input--background: #f4f4f5;
+	--proma-input--border-color: #d4d4d8;
+	--proma-input--focus--background: #ffffff;
+	--proma-input--focus--border-color: #71717a;
+	--proma-input--error--border-color: #ef4444;
+}
+```
+
+### Shadcn token bridge
+
+If your app already defines shadcn variables, map Proma variables to them:
+
+```css
+:root {
+	--proma-board--canvas--color: var(--foreground);
+	--proma-board--canvas--background-color: var(--background);
+	--proma-board--chip--background-color: color-mix(in srgb, var(--card) 85%, transparent);
+	--proma-board--chip--border-color: var(--border);
+	--proma-board--chip--color: var(--card-foreground);
+
+	--proma-input--color: var(--foreground);
+	--proma-input--background: var(--muted);
+	--proma-input--border-color: var(--border);
+	--proma-input--focus--background: var(--background);
+	--proma-input--focus--border-color: var(--ring);
+}
+```
+
+For dark mode, define the same variables under `.dark` (or your theme root) and switch classes in your host app.
 
 ## Development
 

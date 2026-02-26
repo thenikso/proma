@@ -107,9 +107,9 @@
 <style>
 	.StringInput {
 		position: relative;
-		color: var(--proma-input--color, white);
-		background-color: var(--proma-input--background, #57575773);
-		border: 1px solid var(--proma-input--border-color, #383839);
+		color: var(--proma-input--color, var(--foreground, #111827));
+		background-color: var(--proma-input--background, var(--muted, #f4f4f5));
+		border: 1px solid var(--proma-input--border-color, var(--border, #d4d4d8));
 		border-radius: 5px;
 		padding: 4px 6px;
 		font-family: var(
@@ -131,8 +131,8 @@
 	}
 
 	.StringInput:focus-within {
-		background-color: var(--proma-input--focus--background, #575757);
-		border-color: var(--proma-input--focus--border-color, #257bfb);
+		background-color: var(--proma-input--focus--background, var(--background, #ffffff));
+		border-color: var(--proma-input--focus--border-color, var(--ring, #71717a));
 	}
 
 	input {
@@ -153,10 +153,10 @@
 
 	.error {
 		position: absolute;
-		background-color: #fff2f2;
-		color: #af5f66;
+		background-color: color-mix(in srgb, var(--destructive, #ef4444) 10%, var(--background, #ffffff));
+		color: var(--destructive, #b91c1c);
 		padding: 2px 5px;
-		border: 1px solid #af5f66;
+		border: 1px solid color-mix(in srgb, var(--destructive, #ef4444) 50%, transparent);
 		border-radius: 4px;
 		top: 1px;
 		right: 1px;

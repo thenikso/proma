@@ -1,6 +1,9 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { JsonInput, StringInput, PortOutlet } from '@proma/svelte-components';
+	import { PortOutlet } from '@proma/svelte-components';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
 	const dispatch = createEventDispatcher();
 
 	let { chip, instance = $bindable(undefined) } = $props();
@@ -9,6 +12,7 @@
 	let outputLogs = $state([]);
 	let outputErrors = $state([]);
 	let selectedFlow = $state();
+	let inputDrafts = $state({});
 
 	function dispatchTestChange(data, flow) {
 		dispatch('testChange', {
@@ -30,6 +34,23 @@
 			...instanceInputs,
 			[name]: value,
 		};
+	}
+
+	function getInputDraft(name) {
+		if (Object.hasOwn(inputDrafts, name)) return inputDrafts[name];
+		const value = instanceInputs[name];
+		return typeof value === 'undefined' ? '' : JSON.stringify(value, null, 2);
+	}
+
+	function setJsonDraft(name, rawValue) {
+		inputDrafts = { ...inputDrafts, [name]: rawValue };
+		const raw = rawValue.trim();
+		try {
+			const parsed = raw ? JSON.parse(raw) : undefined;
+			setInput(name, parsed);
+		} catch {
+			// Keep draft while JSON is being edited and invalid.
+		}
 	}
 
 	function getInstance() {
@@ -115,6 +136,23 @@
 			};
 		};
 	}
+
+	function formatOutput(value) {
+		if (value instanceof Error) {
+			return value.stack || value.message;
+		}
+		if (Array.isArray(value)) {
+			return value.map((item) => formatOutput(item)).join(' ');
+		}
+		if (typeof value === 'object' && value !== null) {
+			try {
+				return JSON.stringify(value, null, 2);
+			} catch {
+				return String(value);
+			}
+		}
+		return String(value);
+	}
 	let metadataTest = $derived(chip?.metadata?.tests?.[0]);
 	let inputDatas = $derived(chip.inputOutlets.filter((i) => !i.isFlow));
 	let inputFlows = $derived(chip.inputOutlets.filter((i) => i.isFlow));
@@ -135,6 +173,7 @@
 			instanceOutputs = {};
 			outputLogs = [];
 			outputErrors = [];
+			inputDrafts = {};
 		}
 	});
 	$effect(() => {
@@ -150,66 +189,84 @@
 	});
 </script>
 
-<div class="PromaRunEditor">
+<div>
 	{#if selectedFlow}
-		<div class="Outputs">
-			<div class="flow-input">
-				<button
+		<div>
+			<div class="flex">
+				<Button
 					type="button"
-					class="back button outline"
+					variant="outline"
+					size="icon"
+					class="mr-2"
+					disabled={false}
 					title="Change input values"
-					onclick={() => (selectedFlow = '')}>◀</button
+					onclick={() => (selectedFlow = '')}
 				>
-				<button type="button" class="flow button" onclick={() => runFlow(selectedFlow)}>
+					◀
+				</Button>
+				<Button
+					type="button"
+					class="w-full justify-start"
+					disabled={false}
+					onclick={() => runFlow(selectedFlow)}
+				>
 					Re-run "{selectedFlow}"
-				</button>
+				</Button>
 			</div>
 
 			{#each outputDatas as outputData}
-				<div class="output">
-					<div class="label">
-						<span class="name">{outputData.name}</span>
+				<div class="my-2">
+					<div>
+						<span class="text-sm font-medium">{outputData.name}</span>
 					</div>
-					<div class="value">
+					<div class="border-border rounded-md border p-2 font-mono text-sm">
 						{instanceOutputs[outputData.name] || 'undefined'}
 					</div>
 				</div>
 			{/each}
 		</div>
 		{#if outputLogs.length > 0}
-			<div class="Logs">
+			<div class="border-border bg-card text-card-foreground rounded-md border p-2 font-mono text-sm">
 				{#each outputLogs as log}
-					<div class="log">
-						{log}
+					<div class="whitespace-pre-wrap">
+						{formatOutput(log)}
 					</div>
 				{/each}
 			</div>
 		{/if}
 		{#if outputErrors.length > 0}
-			<div class="Errors">
-				{outputErrors}
+			<div class="border-destructive/40 bg-destructive/10 text-destructive mt-2 rounded-md border p-2">
+				{#each outputErrors as outputError}
+					<div class="whitespace-pre-wrap font-mono text-xs">
+						{formatOutput(outputError)}
+					</div>
+				{/each}
 			</div>
 		{/if}
 	{:else}
-		<div class="Inputs">
+		<div>
 			{#each inputDatas as inputData}
-				<div class="input">
-					<div class="label">
+				<div class="my-2">
+					<div class="mb-1 flex items-center text-sm font-medium">
 						<PortOutlet type={inputData.type.definitionKinds[0]} />
-						<span class="name">{inputData.name}</span>
+						<span class="pl-2">{inputData.name}</span>
 					</div>
-					<div class="value">
+					<div class="pl-5">
 						{#if inputData.type.definitionKinds[0] === 'string'}
-							<StringInput
+							<Input
+								type="text"
+								class=""
 								placeholder={inputData.defaultValue || 'undefined'}
-								value={instanceInputs[inputData.name]}
-								on:input={(e) => setInput(inputData.name, e.detail.value)}
+								value={instanceInputs[inputData.name] ?? ''}
+								oninput={(e) => setInput(inputData.name, e.currentTarget.value)}
 							/>
 						{:else}
-							<JsonInput
+							<Textarea
+								class=""
+								rows="3"
 								placeholder={inputData.defaultValue || 'undefined'}
-								value={instanceInputs[inputData.name]}
-								on:input={(e) => setInput(inputData.name, e.detail.value)}
+								value={getInputDraft(inputData.name)}
+								oninput={(e) => setJsonDraft(inputData.name, e.currentTarget.value)}
 							/>
 						{/if}
 					</div>
@@ -217,66 +274,17 @@
 			{/each}
 
 			{#each inputFlows as inputFlow}
-				<div class="flow-input">
-					<button type="button" class="flow button" onclick={() => runFlow(inputFlow.name)}>
+				<div class="flex">
+					<Button
+						type="button"
+						class="w-full justify-start"
+						disabled={false}
+						onclick={() => runFlow(inputFlow.name)}
+					>
 						Run "{inputFlow.name}"
-					</button>
+					</Button>
 				</div>
 			{/each}
 		</div>
 	{/if}
 </div>
-
-<style>
-	.input {
-		margin: 8px 0;
-	}
-
-	.input > .label {
-		display: flex;
-		align-items: center;
-		margin-bottom: 4px;
-	}
-
-	.input > .label > .name {
-		display: block;
-		padding-left: 8px;
-	}
-
-	.input > .value {
-		padding-left: 20px;
-	}
-
-	.flow-input {
-		display: flex;
-	}
-
-	.flow-input > .flow.button {
-		flex-grow: 1;
-		text-align: left;
-	}
-
-	.flow-input > .back.button {
-		margin-right: 8px;
-		padding-right: 12px;
-	}
-
-	.output {
-		margin: 8px 0;
-	}
-
-	.output > .value {
-		padding: 0.5rem;
-		font-family: monospace;
-		border-radius: 4px;
-		border: 1px solid #d8dee4;
-	}
-
-	.Logs {
-		padding: 0.5rem;
-		font-family: monospace;
-		color: #d8dee4;
-		background-color: #252629;
-		border-radius: 4px;
-	}
-</style>

@@ -618,8 +618,9 @@
 		refreshKey && board.updateWires();
 	});
 	let style = $derived(`
+  --proma-board-grid-major-size: ${zoom * 100}px;
+  --proma-board-grid-minor-size: ${zoom * 20}px;
   background-position: ${boardWidth / 2 + panX}px ${boardHeight / 2 + panY}px;
-  background-size: ${zoom * 100}px;
   cursor: ${grab ? (dragging ? 'grabbing' : 'grab') : 'default'};
   `);
 	let wrapperStyle = $derived(`
@@ -760,11 +761,53 @@
 		min-height: 200px;
 		overscroll-behavior: contain;
 
-		color: var(--proma-board--canvas--color, white);
-		background-color: var(--proma-board--canvas--background-color, #2a2a2a);
+		color: var(--proma-board--canvas--color, var(--foreground, #111827));
+		background-color: var(--proma-board--canvas--background-color, var(--background, #ffffff));
 		background-image: var(
 			--proma-board--canvas--background-image,
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%234d4d4d' fill-opacity='0.7'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+			linear-gradient(
+				to right,
+				var(
+					--proma-board--canvas--grid-minor-color,
+					color-mix(in srgb, var(--border, #d4d4d8) 14%, transparent)
+				)
+					1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				var(
+					--proma-board--canvas--grid-minor-color,
+					color-mix(in srgb, var(--border, #d4d4d8) 14%, transparent)
+				)
+					1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to right,
+				var(
+					--proma-board--canvas--grid-major-color,
+					color-mix(in srgb, var(--border, #d4d4d8) 28%, transparent)
+				)
+					1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				var(
+					--proma-board--canvas--grid-major-color,
+					color-mix(in srgb, var(--border, #d4d4d8) 28%, transparent)
+				)
+					1px,
+				transparent 1px
+			)
+		);
+		background-size: var(
+			--proma-board--canvas--background-size,
+			var(--proma-board-grid-minor-size) var(--proma-board-grid-minor-size),
+			var(--proma-board-grid-minor-size) var(--proma-board-grid-minor-size),
+			var(--proma-board-grid-major-size) var(--proma-board-grid-major-size),
+			var(--proma-board-grid-major-size) var(--proma-board-grid-major-size)
 		);
 		font-family: var(
 			--proma-board-font-family,
@@ -806,7 +849,7 @@
 
 	.BoardSelection {
 		position: absolute;
-		border: var(--proma-board--selection--border, 1px dashed white);
+		border: var(--proma-board--selection--border, 1px dashed var(--ring, #71717a));
 		border-radius: var(--proma-board--selection--border-radius, 0px);
 		z-index: 10;
 	}
