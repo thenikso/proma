@@ -2,7 +2,8 @@
 	import * as proma from '@proma/core';
 	import eq from 'fast-deep-equal';
 	import { untrack } from 'svelte';
-	import { ChipBoardView, Overlay, createShortcutDispatcher } from '@proma/svelte-components';
+	import { ChipBoardView, createShortcutDispatcher } from '@proma/svelte-components';
+	import Overlay from '$lib/components/Overlay.svelte';
 	import PromaChipRegistry from './PromaChipRegistry.svelte';
 
 	/**

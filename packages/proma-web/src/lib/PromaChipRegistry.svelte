@@ -342,8 +342,10 @@
 <style>
 	.PromaChipRegistry {
 		border-radius: 4px;
-		background-color: var(--proma-panel--background-color, #fbfdfe);
-		box-shadow: 0 0 3px #c2c3c4;
+		background-color: var(--card);
+		color: var(--card-foreground);
+		border: 1px solid var(--border);
+		box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground) 15%, transparent);
 		min-width: 400px;
 		font-size: 16px;
 	}
@@ -354,8 +356,8 @@
 
 	.search-bar {
 		position: relative;
-		color: #aaaaaa;
-		border-bottom: 1px solid #ececec;
+		color: var(--muted-foreground);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.search-bar svg.search-icon {
@@ -369,7 +371,7 @@
 		box-sizing: border-box;
 		width: 100%;
 		padding: 9px 30px 8px 30px;
-		color: var(--proma-input--color, white);
+		color: var(--foreground);
 
 		font-size: 1em;
 		font-weight: 500;
@@ -394,7 +396,7 @@
 	.result-empty {
 		text-align: center;
 		padding: 10px;
-		color: #6f6f70;
+		color: var(--muted-foreground);
 	}
 
 	.result-list {
@@ -407,7 +409,7 @@
 	.library-header {
 		padding: 5px 10px;
 		cursor: default;
-		color: #6f6f70;
+		color: var(--muted-foreground);
 	}
 
 	.library-path {
@@ -415,8 +417,8 @@
 		position: sticky;
 		top: 0;
 		border: none;
-		background: #f6f8f8;
-		color: #6f6f70;
+		background: var(--muted);
+		color: var(--muted-foreground);
 		text-align: left;
 		font-size: 1em;
 		font-family: inherit;
@@ -433,7 +435,7 @@
 	}
 
 	.library-path.highlighted .indicator {
-		background: #fe9e2846;
+		background: color-mix(in srgb, var(--accent) 55%, transparent);
 		border-radius: 4px;
 	}
 
@@ -457,12 +459,12 @@
 
 	.library-item.highlighted .library-item-bg,
 	.library-item:hover .library-item-bg {
-		background: #fe9e2846;
+		background: color-mix(in srgb, var(--accent) 55%, transparent);
 		border-radius: 4px;
 	}
 
 	.library-item-title :global(em) {
 		font-style: normal;
-		color: #a847fa;
+		color: var(--primary);
 	}
 </style>

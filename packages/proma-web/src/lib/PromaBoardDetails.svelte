@@ -1,6 +1,7 @@
 <script>
-	import { StringInput, PortOutlet } from '@proma/svelte-components';
+	import { PortOutlet } from '@proma/svelte-components';
 	import { edit as promaEdit } from '@proma/core';
+	import { Input } from '$lib/components/ui/input';
 
 	let { chip } = $props();
 
@@ -9,25 +10,26 @@
 	let outputOutlets = $derived(chip.outputOutlets);
 </script>
 
-<div>input</div>
-{#each inputOutlets as outlet, index}
+<div class="text-sm font-medium">Inputs</div>
+{#each inputOutlets as outlet}
 	<div class="port">
-		<StringInput
+		<Input
+			type="text"
+			class=""
 			placeholder="Port name"
 			value={outlet.name}
-			validate={(v) => edit.renameOutlet(outlet, v, true)}
-			on:input={(e) => edit.renameOutlet(outlet, e.detail.value)}
+			oninput={(e) => edit.renameOutlet(outlet, e.currentTarget.value)}
 		/>
 		<PortOutlet type={outlet.isFlow ? 'exec' : outlet.type.definitionKind} />
 		{#if outlet.isData}
-			<StringInput placeholder="type" value={outlet.type.signatureWithLabels} />
+			<Input type="text" class="" placeholder="type" value={outlet.type.signatureWithLabels} readonly />
 		{/if}
 	</div>
 {/each}
 
-<div>outputs</div>
+<div class="mt-3 text-sm font-medium">Outputs</div>
 {#each outputOutlets as outlet}
-	<div>{outlet.name}</div>
+	<div class="text-muted-foreground text-sm">{outlet.name}</div>
 {/each}
 
 <style>

@@ -1,6 +1,9 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { JsonInput, StringInput, PortOutlet } from '@proma/svelte-components';
+	import { PortOutlet } from '@proma/svelte-components';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
 	const dispatch = createEventDispatcher();
 
 	let { chip, instance = $bindable(undefined) } = $props();
@@ -9,6 +12,7 @@
 	let outputLogs = $state([]);
 	let outputErrors = $state([]);
 	let selectedFlow = $state();
+	let inputDrafts = $state({});
 
 	function dispatchTestChange(data, flow) {
 		dispatch('testChange', {
@@ -30,6 +34,23 @@
 			...instanceInputs,
 			[name]: value,
 		};
+	}
+
+	function getInputDraft(name) {
+		if (Object.hasOwn(inputDrafts, name)) return inputDrafts[name];
+		const value = instanceInputs[name];
+		return typeof value === 'undefined' ? '' : JSON.stringify(value, null, 2);
+	}
+
+	function setJsonDraft(name, rawValue) {
+		inputDrafts = { ...inputDrafts, [name]: rawValue };
+		const raw = rawValue.trim();
+		try {
+			const parsed = raw ? JSON.parse(raw) : undefined;
+			setInput(name, parsed);
+		} catch {
+			// Keep draft while JSON is being edited and invalid.
+		}
 	}
 
 	function getInstance() {
@@ -135,6 +156,7 @@
 			instanceOutputs = {};
 			outputLogs = [];
 			outputErrors = [];
+			inputDrafts = {};
 		}
 	});
 	$effect(() => {
@@ -154,15 +176,25 @@
 	{#if selectedFlow}
 		<div class="Outputs">
 			<div class="flow-input">
-				<button
+				<Button
 					type="button"
-					class="back button outline"
+					variant="outline"
+					size="icon"
+					class="mr-2"
+					disabled={false}
 					title="Change input values"
-					onclick={() => (selectedFlow = '')}>◀</button
+					onclick={() => (selectedFlow = '')}
 				>
-				<button type="button" class="flow button" onclick={() => runFlow(selectedFlow)}>
+					◀
+				</Button>
+				<Button
+					type="button"
+					class="w-full justify-start"
+					disabled={false}
+					onclick={() => runFlow(selectedFlow)}
+				>
 					Re-run "{selectedFlow}"
-				</button>
+				</Button>
 			</div>
 
 			{#each outputDatas as outputData}
@@ -194,22 +226,26 @@
 		<div class="Inputs">
 			{#each inputDatas as inputData}
 				<div class="input">
-					<div class="label">
+					<div class="label text-sm font-medium">
 						<PortOutlet type={inputData.type.definitionKinds[0]} />
 						<span class="name">{inputData.name}</span>
 					</div>
 					<div class="value">
 						{#if inputData.type.definitionKinds[0] === 'string'}
-							<StringInput
+							<Input
+								type="text"
+								class=""
 								placeholder={inputData.defaultValue || 'undefined'}
-								value={instanceInputs[inputData.name]}
-								on:input={(e) => setInput(inputData.name, e.detail.value)}
+								value={instanceInputs[inputData.name] ?? ''}
+								oninput={(e) => setInput(inputData.name, e.currentTarget.value)}
 							/>
 						{:else}
-							<JsonInput
+							<Textarea
+								class=""
+								rows="3"
 								placeholder={inputData.defaultValue || 'undefined'}
-								value={instanceInputs[inputData.name]}
-								on:input={(e) => setInput(inputData.name, e.detail.value)}
+								value={getInputDraft(inputData.name)}
+								oninput={(e) => setJsonDraft(inputData.name, e.currentTarget.value)}
 							/>
 						{/if}
 					</div>
@@ -218,9 +254,14 @@
 
 			{#each inputFlows as inputFlow}
 				<div class="flow-input">
-					<button type="button" class="flow button" onclick={() => runFlow(inputFlow.name)}>
+					<Button
+						type="button"
+						class="w-full justify-start"
+						disabled={false}
+						onclick={() => runFlow(inputFlow.name)}
+					>
 						Run "{inputFlow.name}"
-					</button>
+					</Button>
 				</div>
 			{/each}
 		</div>
@@ -251,16 +292,6 @@
 		display: flex;
 	}
 
-	.flow-input > .flow.button {
-		flex-grow: 1;
-		text-align: left;
-	}
-
-	.flow-input > .back.button {
-		margin-right: 8px;
-		padding-right: 12px;
-	}
-
 	.output {
 		margin: 8px 0;
 	}
@@ -269,14 +300,15 @@
 		padding: 0.5rem;
 		font-family: monospace;
 		border-radius: 4px;
-		border: 1px solid #d8dee4;
+		border: 1px solid var(--border);
 	}
 
 	.Logs {
 		padding: 0.5rem;
 		font-family: monospace;
-		color: #d8dee4;
-		background-color: #252629;
+		color: var(--card-foreground);
+		background-color: var(--card);
+		border: 1px solid var(--border);
 		border-radius: 4px;
 	}
 </style>

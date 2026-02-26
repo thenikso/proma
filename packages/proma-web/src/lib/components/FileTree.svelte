@@ -198,10 +198,11 @@
 	}
 
 	.item-name.selected {
-		background: #ecdff8;
+		background: var(--accent);
+		color: var(--accent-foreground);
 	}
 
 	.item-name:hover {
-		background: #f1f1f1;
+		background: color-mix(in oklab, var(--accent) 70%, transparent);
 	}
 </style>

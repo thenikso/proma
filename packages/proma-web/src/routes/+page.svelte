@@ -11,17 +11,25 @@
 
 <script>
 	import * as proma from '@proma/core';
-	import { CodeMirror } from '@proma/svelte-components';
+	import CodeMirror from '$lib/components/CodeMirror.svelte';
 	import jszip from 'jszip';
 	import { saveAs } from 'file-saver';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import FileTree from '$lib/components/FileTree.svelte';
+	import ProjectCombobox from '$lib/components/ProjectCombobox.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import PromaFileEditor from '$lib/PromaFileEditor.svelte';
 	import PromaRunEditor from '$lib/PromaRunEditor.svelte';
 	import PromaBoardDetails from '$lib/PromaBoardDetails.svelte';
 	import makeBaseProject from '$lib/playground-projects/base';
-	import Select from 'svelte-select';
+	import {
+		buildProjectsOptions,
+		projectSelectOptionLabel,
+		projectSelectCreateItem,
+	} from '$lib/project-options';
 
 	//
 	// Project Load
@@ -36,22 +44,10 @@
 	let projectsOptions = $state([]);
 
 	function updateProjectsOptions() {
-		const options = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i))
-			.filter((k) => k.startsWith('project-'))
-			.map((k) => k.substr(8))
-			.map((label) => ({
-				label,
-				value: 'project-' + label,
-			}));
-		const allOptions = [
-			{
-				label: '➕ New Project',
-				value: 'new',
-			},
-			...options,
-		];
+		const keys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+		const allOptions = buildProjectsOptions(keys);
 		projectsOptions = allOptions;
-		return allOptions;
+		return projectsOptions;
 	}
 
 	updateProjectsOptions();
@@ -84,14 +80,6 @@
 
 		updateUrl({ project: null, file: 'readme.md' });
 	}
-
-	const projectSelectOptionLabel = (option) =>
-		option.isCreator ? `Save as "${option.label}"` : option.label;
-
-	const projectSelectCreateItem = (text) => ({
-		value: 'saveas-' + text,
-		label: text,
-	});
 
 	function getFileExt(fileName = '') {
 		return (fileName.match(/\.(.+)$/) || [])[1];
@@ -268,44 +256,46 @@
 	);
 </script>
 
-<main>
-	<div class="Sidebar">
-		<div class="PreviewTitle">
-			<div class="spacer"></div>
-			<h1>Proma <span class="sub">Experiment</span></h1>
+<main class="bg-background text-foreground flex h-screen w-screen">
+	<aside class="bg-card flex w-80 shrink-0 flex-col border-r">
+		<div class="flex h-16 items-center px-4">
+			<h1 class="text-lg font-semibold">Proma <span class="text-muted-foreground font-normal">Experiment</span></h1>
 		</div>
-		<div class="ProjectsExplorer">
-			<Select
+		<div class="px-4 pb-3">
+			<ProjectCombobox
 				placeholder={projectSelectPlaceholder}
 				items={projectsOptions}
 				value={selectedProjectOption}
-				isCreatable
 				getOptionLabel={projectSelectOptionLabel}
 				createItem={projectSelectCreateItem}
 				on:select={handleProjectOptionSelect}
 				on:clear={handleProjectOptionClear}
 			/>
 		</div>
-		<div class="FileExplorer">
-			<FileTree
-				files={fileNames}
-				expand={expandedFolders}
-				selected={selectedFilePath}
-				on:select={handleFileSelect}
-			/>
+		<div class="min-h-0 flex-1 px-4 pb-4">
+			<Card class="flex h-full flex-col">
+				<CardHeader class="pb-2">
+					<CardTitle class="">Files</CardTitle>
+				</CardHeader>
+				<CardContent class="min-h-0 flex-1">
+					<ScrollArea class="h-full rounded-md border">
+						<FileTree
+							files={fileNames}
+							expand={expandedFolders}
+							selected={selectedFilePath}
+							on:select={handleFileSelect}
+						/>
+					</ScrollArea>
+				</CardContent>
+			</Card>
 		</div>
-		<div class="ProjectTools">
-			<button
-				type="button"
-				class="button"
-				onclick={handleDownloadClick}
-				disabled={!!currentDownload}
-			>
+		<div class="px-4 pb-4">
+			<Button type="button" class="w-full" onclick={handleDownloadClick} disabled={!!currentDownload}>
 				Build &amp; Download
-			</button>
+			</Button>
 		</div>
-	</div>
-	<div class="Editor">
+	</aside>
+	<section class="relative min-w-0 flex-1">
 		{#if selectedFileExt === 'proma'}
 			<PromaFileEditor
 				bind:this={selectedEditor}
@@ -314,14 +304,28 @@
 			>
 				{#snippet children({ chip, selectedChips })}
 					{#if selectedTool}
-						<div class="ToolsPanel">
-							<div class="ToolsTabs">
-								<button type="button" onclick={() => updateUrl({ fragment: 'info' })}>
+						<div class="ToolsPanel bg-card text-card-foreground rounded-lg border shadow-md">
+							<div class="ToolsTabs border-b px-2 py-2">
+								<Button
+									class=""
+									variant="ghost"
+									size="sm"
+									type="button"
+									disabled={false}
+									onclick={() => updateUrl({ fragment: 'info' })}
+								>
 									info
-								</button>
-								<button type="button" onclick={() => updateUrl({ fragment: 'test' })}>
+								</Button>
+								<Button
+									class=""
+									variant="ghost"
+									size="sm"
+									type="button"
+									disabled={false}
+									onclick={() => updateUrl({ fragment: 'test' })}
+								>
 									test
-								</button>
+								</Button>
 							</div>
 							<div class="ToolsBody">
 								{#if selectedTool === 'info'}
@@ -345,11 +349,14 @@
 							</div>
 						</div>
 					{/if}
-					<button
+					<Button
 						type="button"
-						class="RunButton button primary"
-						onclick={() => updateUrl({ fragment: 'test' })}>Test</button
+						class="absolute top-5 right-5 min-w-[140px]"
+						disabled={false}
+						onclick={() => updateUrl({ fragment: 'test' })}
 					>
+						Test
+					</Button>
 				{/snippet}
 			</PromaFileEditor>
 		{:else if selectedFileExt}
@@ -361,26 +368,15 @@
 				}}
 			/>
 		{:else}
-			<div>No File Selected</div>
+			<div class="text-muted-foreground grid h-full place-items-center text-sm">No File Selected</div>
 		{/if}
-	</div>
-	<div class="Logo">
+	</section>
+	<div class="Logo pointer-events-none">
 		<img src="/images/logo.webp" alt="Proma" style="height: 100%" />
 	</div>
 </main>
 
 <style>
-	main {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100vw;
-		height: 100vh;
-
-		display: flex;
-		flex-direction: row;
-	}
-
 	.Logo {
 		z-index: 10;
 		position: absolute;
@@ -388,84 +384,6 @@
 		left: 0;
 		padding: 8px;
 		height: 60px;
-	}
-
-	.Sidebar {
-		flex: 0 0 256px;
-
-		width: 256px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-
-		background-color: var(--proma-panel--background-color, #fbfdfe);
-		box-shadow: 1px 0 3px var(--proma-panel--shadow-color, #eaedf0);
-		z-index: 1;
-	}
-
-	.Editor {
-		flex-grow: 1;
-		font-size: 16px;
-	}
-
-	/* Sidebar contents */
-
-	.PreviewTitle {
-		display: flex;
-		align-items: center;
-
-		flex-shrink: 0;
-		width: 100%;
-		height: 60px;
-	}
-
-	.PreviewTitle .spacer {
-		width: 60px;
-	}
-
-	.PreviewTitle h1 {
-		margin: 0;
-		font-size: 22px;
-		font-weight: 500;
-	}
-
-	.PreviewTitle h1 .sub {
-		font-weight: 300;
-		font-size: 0.8em;
-	}
-
-	.ProjectsExplorer {
-		width: 100%;
-		padding: 0px 8px 8px 8px;
-	}
-
-	.FileExplorer {
-		flex-grow: 1;
-		overflow: auto;
-
-		box-sizing: border-box;
-		width: calc(100% - 16px);
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		border-radius: 4px;
-		background-color: white;
-	}
-
-	.ProjectTools {
-		width: 100%;
-		padding: 8px 8px 0 8px;
-
-		display: flex;
-		flex-direction: column;
-	}
-
-	/* Editor Proma */
-
-	.RunButton {
-		position: absolute;
-		right: 20px;
-		top: 20px;
-		margin: 0;
-		min-width: 140px;
 	}
 
 	.ToolsPanel {
@@ -481,12 +399,6 @@
 		height: 100%;
 		max-height: calc(100% - 100px);
 
-		background-color: var(--proma-board--chip-selected--background-color, #3e3e3e);
-		border-width: 2px;
-		border-style: solid;
-		border-color: var(--proma-board--chip--border-color, #1d1d1d);
-		border-radius: 5px;
-		box-shadow: var(--proma-board--chip--shadow, 0 2px 1px rgba(29, 29, 29, 0.8));
 	}
 
 	.ToolsBody {
