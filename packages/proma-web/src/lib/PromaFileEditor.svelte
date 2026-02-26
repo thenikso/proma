@@ -136,7 +136,7 @@
 <svelte:window onkeydowncapture={dispatchShortcut} />
 
 {#if sourceChip}
-	<div class="PromaFile" {id}>
+	<div class="relative h-full" {id}>
 		<ChipBoardView
 			chip={sourceChip}
 			edit={chipEditor}
@@ -169,10 +169,3 @@
 		{/if}
 	</div>
 {/if}
-
-<style>
-	.PromaFile {
-		position: relative;
-		height: 100%;
-	}
-</style>

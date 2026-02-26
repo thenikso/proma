@@ -1,8 +1,19 @@
 <script>
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import FileIcon from '@lucide/svelte/icons/file-text';
+	import FolderIcon from '@lucide/svelte/icons/folder';
 	import FileTree from './FileTree.svelte';
 	import { createEventDispatcher } from 'svelte';
+	import { cn } from '$lib/utils';
 
-	let { root = undefined, files = [], expand = [], selected = undefined } = $props();
+	let {
+		root = undefined,
+		files = [],
+		expand = [],
+		selected = undefined,
+		depth = 0,
+	} = $props();
+
 	let safeFiles = $derived(Array.isArray(files) ? files : []);
 	let safeExpand = $derived(Array.isArray(expand) ? expand : []);
 
@@ -17,192 +28,110 @@
 		dispatch('select', { folder });
 	}
 
-	let filePaths = $derived(
-		safeFiles
-			.sort((a, b) => {
-				const aFolder = a.indexOf('/') >= 0;
-				const bFolder = b.indexOf('/') >= 0;
-				if (aFolder !== bFolder) return bFolder - aFolder;
-				a = a.toLowerCase();
-				b = b.toLowerCase();
-				if (a > b) return 1;
-				if (a < b) return -1;
-				return 0;
-			})
-			.map((f) => f.split('/')),
-	);
-
-	let items = $derived(
-		filePaths.reduce((acc, path) => {
-			const firstPath = path[0];
-			if (path.length === 1) {
-				acc.push(firstPath);
-			} else {
-				const folder = acc[acc.length - 1];
-				if (!folder || folder.folder !== firstPath) {
-					const expandFolder = safeExpand
-						.filter((s) => s && s.startsWith(firstPath + '/'))
-						.map((s) => s.substr(firstPath.length + 1));
-					if (safeExpand.some((s) => s && s.startsWith(firstPath))) {
-						expandFolder.unshift('.');
-					}
-					acc.push({
-						folder: firstPath,
-						files: filePaths.filter((p) => p[0] === firstPath).map((p) => p.slice(1).join('/')),
-						expand: expandFolder,
-						selected:
-							selected &&
-							selected.startsWith(firstPath + '/') &&
-							selected.substr(firstPath.length + 1),
-					});
-				}
+	let treeData = $derived.by(() => {
+		/** @type {Map<string, string[]>} */
+		const folders = new Map();
+		/** @type {string[]} */
+		const leafFiles = [];
+		const ordered = [...safeFiles].sort((a, b) => a.localeCompare(b));
+		for (const fullPath of ordered) {
+			const [first, ...rest] = fullPath.split('/');
+			if (!first) continue;
+			if (rest.length === 0) {
+				leafFiles.push(first);
+				continue;
 			}
-			return acc;
-		}, []),
+			const current = folders.get(first) ?? [];
+			current.push(rest.join('/'));
+			folders.set(first, current);
+		}
+		return {
+			folderNames: [...folders.keys()].sort((a, b) => a.localeCompare(b)),
+			folders,
+			leafFiles,
+		};
+	});
+
+	let folderItems = $derived(
+		treeData.folderNames.map((name) => {
+			const childFiles = treeData.folders.get(name) ?? [];
+			const childExpand = safeExpand
+				.filter((entry) => entry && entry.startsWith(name + '/'))
+				.map((entry) => entry.slice(name.length + 1));
+			if (safeExpand.some((entry) => entry && (entry === name || entry.startsWith(name + '/')))) {
+				childExpand.unshift('.');
+			}
+			const childSelected =
+				selected && selected.startsWith(name + '/') ? selected.slice(name.length + 1) : undefined;
+			return {
+				name,
+				files: childFiles,
+				expand: childExpand,
+				selected: childSelected,
+			};
+		}),
 	);
 
-	let showFolderFiles = $derived(safeExpand.length || !root);
+	let showFolderFiles = $derived(safeExpand.length > 0 || !root);
+	let rowPadding = $derived(`${depth * 14 + 6}px`);
+	let filePadding = $derived(`${(root ? depth + 1 : depth) * 14 + 6}px`);
 
-	function handleChildSelect(e, parentItem) {
+	function handleChildSelect(e, parentFolder) {
 		const { file, folder } = e.detail;
 		if (file) {
-			dispatchSelectFile(parentItem.folder + '/' + file);
-		} else if (root) {
-			dispatchSelectFolder(root + '/' + folder);
-		} else {
-			dispatchSelectFolder(folder);
+			dispatchSelectFile(`${parentFolder}/${file}`);
+			return;
 		}
+		if (folder === '.') {
+			dispatchSelectFolder(parentFolder);
+			return;
+		}
+		dispatchSelectFolder(folder ? `${parentFolder}/${folder}` : parentFolder);
 	}
 </script>
 
-{#if root}
-	<button type="button" class="item-name" onclick={() => dispatchSelectFolder(root)}>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="16"
-			height="16"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
+<div class="space-y-0.5">
+	{#if root}
+		<button
+			type="button"
+			class={cn(
+				'hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm py-1 pr-2 text-left text-sm transition-colors',
+				showFolderFiles && 'bg-muted/60',
+			)}
+			style={`padding-left: ${rowPadding};`}
+			onclick={() => dispatchSelectFolder('.')}
 		>
-			{#if showFolderFiles}
-				<path d="M6 9l6 6 6-6" />
-			{:else}
-				<path d="M9 18l6-6-6-6" />
-			{/if}
-		</svg>
+			<ChevronRight class={cn('h-4 w-4 shrink-0 transition-transform', showFolderFiles && 'rotate-90')} />
+			<FolderIcon class="h-4 w-4 shrink-0" />
+			<span class="truncate">{root}</span>
+		</button>
+	{/if}
 
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="16"
-			height="16"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-		>
-			<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-		</svg>
-		{root}
-	</button>
-{/if}
-{#if showFolderFiles}
-	<ol>
-		{#each items as item}
-			{#if typeof item === 'string'}
-				<li>
-					<button
-						type="button"
-						class="item-name"
-						class:selected={selected === item}
-						onclick={() => dispatchSelectFile(item)}
-					>
-						<div class="spacer"></div>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-							<path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
-						</svg>
-						{item}
-					</button>
-				</li>
-			{:else}
-				<li>
-					<FileTree
-						root={item.folder}
-						files={item.files}
-						expand={item.expand}
-						selected={item.selected}
-						on:select={(e) => handleChildSelect(e, item)}
-					/>
-				</li>
-			{/if}
+	{#if showFolderFiles}
+		{#each folderItems as item (item.name)}
+			<FileTree
+				root={item.name}
+				files={item.files}
+				expand={item.expand}
+				selected={item.selected}
+				depth={root ? depth + 1 : depth}
+				on:select={(e) => handleChildSelect(e, item.name)}
+			/>
 		{/each}
-	</ol>
-{/if}
 
-<style>
-	ol {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-
-	.spacer {
-		display: inline-block;
-		width: 18px;
-	}
-
-	li > :global(ol > .item-name),
-	li > :global(ol > li > .item-name) {
-		padding-left: 16px;
-	}
-
-	li > :global(ol > li > ol > .item-name),
-	li > :global(ol > li > ol > li > .item-name) {
-		padding-left: 32px;
-	}
-
-	li > :global(ol > li > ol > li > ol > .item-name),
-	li > :global(ol > li > ol > li > ol > li > .item-name) {
-		padding-left: 48px;
-	}
-
-	.item-name {
-		display: block;
-		width: 100%;
-		border: none;
-		background: transparent;
-		text-align: left;
-		font-size: inherit;
-		font-family: inherit;
-		padding-top: 3px;
-		padding-bottom: 3px;
-		user-select: none;
-		cursor: pointer;
-		transition: background 0.25s ease;
-	}
-
-	.item-name.selected {
-		background: var(--accent);
-		color: var(--accent-foreground);
-	}
-
-	.item-name:hover {
-		background: color-mix(in oklab, var(--accent) 70%, transparent);
-	}
-</style>
+		{#each treeData.leafFiles as file (file)}
+			<button
+				type="button"
+				class={cn(
+					'hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm py-1 pr-2 text-left text-sm transition-colors',
+					selected === file && 'bg-accent text-accent-foreground',
+				)}
+				style={`padding-left: ${filePadding};`}
+				onclick={() => dispatchSelectFile(file)}
+			>
+				<FileIcon class="h-4 w-4 shrink-0" />
+				<span class="truncate">{file}</span>
+			</button>
+		{/each}
+	{/if}
+</div>

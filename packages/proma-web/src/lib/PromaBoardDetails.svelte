@@ -12,7 +12,7 @@
 
 <div class="text-sm font-medium">Inputs</div>
 {#each inputOutlets as outlet}
-	<div class="port">
+	<div class="my-2 grid grid-cols-[2fr_auto_1fr] items-center gap-2">
 		<Input
 			type="text"
 			class=""
@@ -31,14 +31,3 @@
 {#each outputOutlets as outlet}
 	<div class="text-muted-foreground text-sm">{outlet.name}</div>
 {/each}
-
-<style>
-	.port {
-		display: grid;
-		grid-template-columns: 2fr auto 1fr;
-		grid-template-rows: 1fr;
-		gap: 10px;
-		align-items: center;
-		margin: 8px 0;
-	}
-</style>

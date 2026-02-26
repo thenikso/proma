@@ -1,113 +1,85 @@
-<script module>
-	const overlayContainerEl = document.createElement('div');
-	overlayContainerEl.className = 'OverlayContainer';
-	overlayContainerEl.style.position = 'fixed';
-	overlayContainerEl.style.overflow = 'hidden';
-	overlayContainerEl.style.top = '0';
-	overlayContainerEl.style.left = '0';
-	overlayContainerEl.style.width = '100vw';
-	overlayContainerEl.style.height = '100vh';
-	overlayContainerEl.style.zIndex = '999';
-
-	let dismissFunction;
-	function isEventFromOverlay(event) {
-		const overlayEl = overlayContainerEl.firstChild;
-		if (!overlayEl) return false;
-		if (typeof event?.composedPath === 'function') {
-			const path = event.composedPath();
-			if (path.includes(overlayEl)) {
-				return true;
-			}
-		}
-		const target = event?.target;
-		return !!target && overlayEl.contains(target);
-	}
-
-	function handleDismissOverlay(e) {
-		if (isEventFromOverlay(e)) {
-			return;
-		}
-		e.preventDefault();
-		e.stopPropagation();
-		if (dismissFunction) {
-			dismissFunction();
-		}
-	}
-	overlayContainerEl.addEventListener('mousewheel', handleDismissOverlay);
-	overlayContainerEl.addEventListener('mousedown', handleDismissOverlay);
-	overlayContainerEl.addEventListener('mouseup', handleDismissOverlay);
-	overlayContainerEl.addEventListener('click', handleDismissOverlay);
-
-	function showOverlay(el, dismiss) {
-		if (overlayContainerEl.firstChild) {
-			overlayContainerEl.firstChild.remove();
-		}
-		dismissFunction = dismiss;
-		overlayContainerEl.appendChild(el);
-		if (!overlayContainerEl.parentNode) {
-			document.body.appendChild(overlayContainerEl);
-		}
-	}
-
-	function hideOverlay() {
-		if (overlayContainerEl.parentNode) {
-			overlayContainerEl.remove();
-		}
-		dismissFunction = null;
-	}
-</script>
-
 <script>
-	import { createBubbler, stopPropagation } from 'svelte/legacy';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 
-	const bubble = createBubbler();
-	import { onMount, createEventDispatcher } from 'svelte';
+	/**
+	 * @typedef {{ x?: number, y?: number, left?: number, top?: number }} Anchor
+	 */
 
+	/** @type {{ anchor?: Anchor, children?: import('svelte').Snippet<[any]> }} */
 	let { anchor = undefined, children } = $props();
 
 	const dispatch = createEventDispatcher();
+	const PADDING = 8;
+
+	let contentEl = $state();
+	let overlayEl = $state();
+	let contentLeft = $state(PADDING);
+	let contentTop = $state(PADDING);
 
 	function dispatchDismiss() {
 		dispatch('dismiss');
 	}
 
-	let overlayPositionStyle = $derived(anchor ? `top: ${anchor.y}px; left: ${anchor.x}px;` : '');
+	function resolveAnchor() {
+		if (!anchor) {
+			return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+		}
+		return {
+			x: anchor.x ?? anchor.left ?? PADDING,
+			y: anchor.y ?? anchor.top ?? PADDING,
+		};
+	}
 
-	let overlayEl = $state();
-	let overlayFixStyle = $state('');
+	async function updatePosition() {
+		if (!contentEl || typeof window === 'undefined') return;
+		await tick();
+		const rect = contentEl.getBoundingClientRect();
+		const { x, y } = resolveAnchor();
+		const maxLeft = Math.max(PADDING, window.innerWidth - rect.width - PADDING);
+		const maxTop = Math.max(PADDING, window.innerHeight - rect.height - PADDING);
+		contentLeft = Math.min(Math.max(x, PADDING), maxLeft);
+		contentTop = Math.min(Math.max(y, PADDING), maxTop);
+	}
+
+	function handleBackdropMousedown(event) {
+		if (event.currentTarget !== event.target) return;
+		dispatchDismiss();
+	}
+
+	function handleKeydown(event) {
+		if (event.key !== 'Escape') return;
+		event.preventDefault();
+		dispatchDismiss();
+	}
 
 	onMount(() => {
-		showOverlay(overlayEl, dispatchDismiss);
-		// Fix overlay position to keep it fully visible
-		const overlayRect = overlayEl.getBoundingClientRect();
-		const viewportHeight = document.documentElement.clientHeight;
-		if (overlayRect.bottom > viewportHeight) {
-			overlayFixStyle = `transform: translate(0, ${viewportHeight - overlayRect.bottom}px);`;
-		}
+		updatePosition();
+		overlayEl?.focus();
+		window.addEventListener('resize', updatePosition);
 		return () => {
-			hideOverlay();
+			window.removeEventListener('resize', updatePosition);
 		};
+	});
+
+	$effect(() => {
+		anchor;
+		updatePosition();
 	});
 </script>
 
 <div
 	bind:this={overlayEl}
-	class="Overlay"
-	style={overlayPositionStyle + overlayFixStyle}
-	onmousewheel={stopPropagation(bubble('mousewheel'))}
-	onmousedown={stopPropagation(bubble('mousedown'))}
-	onmouseup={stopPropagation(bubble('mouseup'))}
-	onclick={stopPropagation(bubble('click'))}
-	onkeydown={stopPropagation(bubble('keydown'))}
+	class="fixed inset-0 z-50 bg-black/5"
 	role="dialog"
-	tabindex="0"
+	tabindex="-1"
+	onmousedown={handleBackdropMousedown}
+	onkeydown={handleKeydown}
 >
-	{@render children?.({ dismiss: dispatchDismiss })}
+	<div
+		bind:this={contentEl}
+		class="absolute max-h-[calc(100vh-1rem)]"
+		style="left: {contentLeft}px; top: {contentTop}px;"
+	>
+		{@render children?.({ dismiss: dispatchDismiss })}
+	</div>
 </div>
-
-<style>
-	.Overlay {
-		position: absolute;
-		max-height: 100vh;
-	}
-</style>

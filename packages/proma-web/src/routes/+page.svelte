@@ -18,6 +18,7 @@
 	import { page } from '$app/stores';
 	import FileTree from '$lib/components/FileTree.svelte';
 	import ProjectCombobox from '$lib/components/ProjectCombobox.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
@@ -258,8 +259,14 @@
 
 <main class="bg-background text-foreground flex h-screen w-screen">
 	<aside class="bg-card flex w-80 shrink-0 flex-col border-r">
-		<div class="flex h-16 items-center px-4">
-			<h1 class="text-lg font-semibold">Proma <span class="text-muted-foreground font-normal">Experiment</span></h1>
+		<div class="flex h-16 items-center justify-between px-4">
+			<div class="flex items-center gap-2">
+				<img src="/images/logo.webp" alt="Proma" class="h-10 w-10 rounded-md" />
+				<h1 class="text-lg font-semibold">
+					Proma <span class="text-muted-foreground font-normal">Experiment</span>
+				</h1>
+			</div>
+			<ThemeToggle />
 		</div>
 		<div class="px-4 pb-3">
 			<ProjectCombobox
@@ -304,11 +311,13 @@
 			>
 				{#snippet children({ chip, selectedChips })}
 					{#if selectedTool}
-						<div class="ToolsPanel bg-card text-card-foreground rounded-lg border shadow-md">
-							<div class="ToolsTabs border-b px-2 py-2">
+						<div
+							class="bg-card text-card-foreground absolute top-20 right-5 flex h-[calc(100%-100px)] max-h-[calc(100%-100px)] w-[350px] flex-col rounded-lg border shadow-md"
+						>
+							<div class="border-b px-2 py-2">
 								<Button
 									class=""
-									variant="ghost"
+									variant={selectedTool === 'info' ? 'secondary' : 'ghost'}
 									size="sm"
 									type="button"
 									disabled={false}
@@ -318,7 +327,7 @@
 								</Button>
 								<Button
 									class=""
-									variant="ghost"
+									variant={selectedTool === 'test' ? 'secondary' : 'ghost'}
 									size="sm"
 									type="button"
 									disabled={false}
@@ -327,7 +336,7 @@
 									test
 								</Button>
 							</div>
-							<div class="ToolsBody">
+							<div class="flex-1 overflow-auto p-2">
 								{#if selectedTool === 'info'}
 									{#if selectedChips.length > 0}
 										<div>TODO sub-chip info here</div>
@@ -371,39 +380,4 @@
 			<div class="text-muted-foreground grid h-full place-items-center text-sm">No File Selected</div>
 		{/if}
 	</section>
-	<div class="Logo pointer-events-none">
-		<img src="/images/logo.webp" alt="Proma" style="height: 100%" />
-	</div>
 </main>
-
-<style>
-	.Logo {
-		z-index: 10;
-		position: absolute;
-		top: 0;
-		left: 0;
-		padding: 8px;
-		height: 60px;
-	}
-
-	.ToolsPanel {
-		box-sizing: border-box;
-
-		display: flex;
-		flex-direction: column;
-
-		position: absolute;
-		right: 20px;
-		top: 80px;
-		width: 350px;
-		height: 100%;
-		max-height: calc(100% - 100px);
-
-	}
-
-	.ToolsBody {
-		flex-grow: 1;
-		padding: 8px;
-		overflow: auto;
-	}
-</style>
