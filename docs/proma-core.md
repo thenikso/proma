@@ -11,7 +11,6 @@
 7. [Serialization](#7-serialization)
 8. [Standard Library](#8-standard-library)
 9. [Architecture Diagram](#9-architecture-diagram)
-10. [Current Limitations & Open Questions](#10-current-limitations--open-questions)
 
 ---
 
