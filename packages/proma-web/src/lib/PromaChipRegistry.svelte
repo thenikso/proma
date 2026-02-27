@@ -89,10 +89,12 @@
 						>
 							<div class="flex min-w-0 flex-1 flex-col">
 								<div class="truncate text-sm font-medium">{item.title}</div>
-								<div class="text-muted-foreground truncate text-xs">{item.path || 'Current project'}</div>
+								<div class="truncate text-xs text-muted-foreground">
+									{item.path || 'Current project'}
+								</div>
 							</div>
 							<span
-								class="bg-secondary text-secondary-foreground inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium"
+								class="inline-flex rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground"
 								>context</span
 							>
 						</Command.Item>
@@ -111,7 +113,9 @@
 					>
 						<div class="flex min-w-0 flex-1 flex-col">
 							<div class="truncate text-sm font-medium">{item.title}</div>
-							<div class="text-muted-foreground truncate text-xs">{item.path || 'Library root'}</div>
+							<div class="truncate text-xs text-muted-foreground">
+								{item.path || 'Library root'}
+							</div>
 						</div>
 					</Command.Item>
 				{/each}

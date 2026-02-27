@@ -33,7 +33,8 @@ export function initTheme() {
  * @returns {'light' | 'dark'}
  */
 export function toggleTheme() {
-	const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+	const isDark =
+		typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 	const next = isDark ? 'light' : 'dark';
 	applyTheme(next);
 	return next;

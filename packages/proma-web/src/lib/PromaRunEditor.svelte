@@ -219,14 +219,16 @@
 					<div>
 						<span class="text-sm font-medium">{outputData.name}</span>
 					</div>
-					<div class="border-border rounded-md border p-2 font-mono text-sm">
+					<div class="rounded-md border border-border p-2 font-mono text-sm">
 						{instanceOutputs[outputData.name] || 'undefined'}
 					</div>
 				</div>
 			{/each}
 		</div>
 		{#if outputLogs.length > 0}
-			<div class="border-border bg-card text-card-foreground rounded-md border p-2 font-mono text-sm">
+			<div
+				class="rounded-md border border-border bg-card p-2 font-mono text-sm text-card-foreground"
+			>
 				{#each outputLogs as log}
 					<div class="whitespace-pre-wrap">
 						{formatOutput(log)}
@@ -235,9 +237,11 @@
 			</div>
 		{/if}
 		{#if outputErrors.length > 0}
-			<div class="border-destructive/40 bg-destructive/10 text-destructive mt-2 rounded-md border p-2">
+			<div
+				class="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-destructive"
+			>
 				{#each outputErrors as outputError}
-					<div class="whitespace-pre-wrap font-mono text-xs">
+					<div class="font-mono text-xs whitespace-pre-wrap">
 						{formatOutput(outputError)}
 					</div>
 				{/each}

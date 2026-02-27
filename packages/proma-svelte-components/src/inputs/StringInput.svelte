@@ -153,7 +153,11 @@
 
 	.error {
 		position: absolute;
-		background-color: color-mix(in srgb, var(--destructive, #ef4444) 10%, var(--background, #ffffff));
+		background-color: color-mix(
+			in srgb,
+			var(--destructive, #ef4444) 10%,
+			var(--background, #ffffff)
+		);
 		color: var(--destructive, #b91c1c);
 		padding: 2px 5px;
 		border: 1px solid color-mix(in srgb, var(--destructive, #ef4444) 50%, transparent);

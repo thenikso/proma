@@ -768,36 +768,36 @@
 			linear-gradient(
 				to right,
 				var(
-					--proma-board--canvas--grid-minor-color,
-					color-mix(in srgb, var(--border, #d4d4d8) 14%, transparent)
-				)
+						--proma-board--canvas--grid-minor-color,
+						color-mix(in srgb, var(--border, #d4d4d8) 14%, transparent)
+					)
 					1px,
 				transparent 1px
 			),
 			linear-gradient(
 				to bottom,
 				var(
-					--proma-board--canvas--grid-minor-color,
-					color-mix(in srgb, var(--border, #d4d4d8) 14%, transparent)
-				)
+						--proma-board--canvas--grid-minor-color,
+						color-mix(in srgb, var(--border, #d4d4d8) 14%, transparent)
+					)
 					1px,
 				transparent 1px
 			),
 			linear-gradient(
 				to right,
 				var(
-					--proma-board--canvas--grid-major-color,
-					color-mix(in srgb, var(--border, #d4d4d8) 28%, transparent)
-				)
+						--proma-board--canvas--grid-major-color,
+						color-mix(in srgb, var(--border, #d4d4d8) 28%, transparent)
+					)
 					1px,
 				transparent 1px
 			),
 			linear-gradient(
 				to bottom,
 				var(
-					--proma-board--canvas--grid-major-color,
-					color-mix(in srgb, var(--border, #d4d4d8) 28%, transparent)
-				)
+						--proma-board--canvas--grid-major-color,
+						color-mix(in srgb, var(--border, #d4d4d8) 28%, transparent)
+					)
 					1px,
 				transparent 1px
 			)

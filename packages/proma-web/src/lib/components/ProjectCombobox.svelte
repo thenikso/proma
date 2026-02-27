@@ -105,7 +105,9 @@
 				oninput={() => (open = true)}
 				onkeydown={handleKeydown}
 			/>
-			<ChevronsUpDown class="text-muted-foreground pointer-events-none absolute top-2.5 right-2 h-4 w-4" />
+			<ChevronsUpDown
+				class="pointer-events-none absolute top-2.5 right-2 h-4 w-4 text-muted-foreground"
+			/>
 		</div>
 		<Button
 			class=""
@@ -129,7 +131,7 @@
 		>
 			<ScrollArea class="max-h-64 p-1">
 				{#if filteredItems.length === 0}
-					<div class="text-muted-foreground px-3 py-2 text-sm">No projects found</div>
+					<div class="px-3 py-2 text-sm text-muted-foreground">No projects found</div>
 				{:else}
 					{#each filteredItems as item, index}
 						<button

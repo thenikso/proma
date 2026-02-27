@@ -6,13 +6,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { cn } from '$lib/utils';
 
-	let {
-		root = undefined,
-		files = [],
-		expand = [],
-		selected = undefined,
-		depth = 0,
-	} = $props();
+	let { root = undefined, files = [], expand = [], selected = undefined, depth = 0 } = $props();
 
 	let safeFiles = $derived(Array.isArray(files) ? files : []);
 	let safeExpand = $derived(Array.isArray(expand) ? expand : []);
@@ -95,13 +89,15 @@
 		<button
 			type="button"
 			class={cn(
-				'hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm py-1 pr-2 text-left text-sm transition-colors',
+				'flex w-full items-center gap-2 rounded-sm py-1 pr-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground',
 				showFolderFiles && 'bg-muted/60',
 			)}
 			style={`padding-left: ${rowPadding};`}
 			onclick={() => dispatchSelectFolder('.')}
 		>
-			<ChevronRight class={cn('h-4 w-4 shrink-0 transition-transform', showFolderFiles && 'rotate-90')} />
+			<ChevronRight
+				class={cn('h-4 w-4 shrink-0 transition-transform', showFolderFiles && 'rotate-90')}
+			/>
 			<FolderIcon class="h-4 w-4 shrink-0" />
 			<span class="truncate">{root}</span>
 		</button>
@@ -123,7 +119,7 @@
 			<button
 				type="button"
 				class={cn(
-					'hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm py-1 pr-2 text-left text-sm transition-colors',
+					'flex w-full items-center gap-2 rounded-sm py-1 pr-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground',
 					selected === file && 'bg-accent text-accent-foreground',
 				)}
 				style={`padding-left: ${filePadding};`}

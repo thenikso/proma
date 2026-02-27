@@ -257,13 +257,13 @@
 	);
 </script>
 
-<main class="bg-background text-foreground flex h-screen w-screen">
-	<aside class="bg-card flex w-80 shrink-0 flex-col border-r">
+<main class="flex h-screen w-screen bg-background text-foreground">
+	<aside class="flex w-80 shrink-0 flex-col border-r bg-card">
 		<div class="flex h-16 items-center justify-between px-4">
 			<div class="flex items-center gap-2">
 				<img src="/images/logo.webp" alt="Proma" class="h-10 w-10 rounded-md" />
 				<h1 class="text-lg font-semibold">
-					Proma <span class="text-muted-foreground font-normal">Experiment</span>
+					Proma <span class="font-normal text-muted-foreground">Experiment</span>
 				</h1>
 			</div>
 			<ThemeToggle />
@@ -280,24 +280,22 @@
 			/>
 		</div>
 		<div class="min-h-0 flex-1 px-4 pb-4">
-			<Card class="flex h-full flex-col">
-				<CardHeader class="pb-2">
-					<CardTitle class="">Files</CardTitle>
-				</CardHeader>
-				<CardContent class="min-h-0 flex-1">
-					<ScrollArea class="h-full rounded-md border">
-						<FileTree
-							files={fileNames}
-							expand={expandedFolders}
-							selected={selectedFilePath}
-							on:select={handleFileSelect}
-						/>
-					</ScrollArea>
-				</CardContent>
-			</Card>
+			<ScrollArea class="h-full rounded-md border">
+				<FileTree
+					files={fileNames}
+					expand={expandedFolders}
+					selected={selectedFilePath}
+					on:select={handleFileSelect}
+				/>
+			</ScrollArea>
 		</div>
 		<div class="px-4 pb-4">
-			<Button type="button" class="w-full" onclick={handleDownloadClick} disabled={!!currentDownload}>
+			<Button
+				type="button"
+				class="w-full"
+				onclick={handleDownloadClick}
+				disabled={!!currentDownload}
+			>
 				Build &amp; Download
 			</Button>
 		</div>
@@ -312,7 +310,7 @@
 				{#snippet children({ chip, selectedChips })}
 					{#if selectedTool}
 						<div
-							class="bg-card text-card-foreground absolute top-20 right-5 flex h-[calc(100%-100px)] max-h-[calc(100%-100px)] w-[350px] flex-col rounded-lg border shadow-md"
+							class="absolute top-20 right-5 flex h-[calc(100%-100px)] max-h-[calc(100%-100px)] w-[350px] flex-col rounded-lg border bg-card text-card-foreground shadow-md"
 						>
 							<div class="border-b px-2 py-2">
 								<Button
@@ -377,7 +375,9 @@
 				}}
 			/>
 		{:else}
-			<div class="text-muted-foreground grid h-full place-items-center text-sm">No File Selected</div>
+			<div class="grid h-full place-items-center text-sm text-muted-foreground">
+				No File Selected
+			</div>
 		{/if}
 	</section>
 </main>

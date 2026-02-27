@@ -13,8 +13,8 @@ let setShortcuts;
 /** @type {ShortcutsStore} */
 export const shortcuts = /** @type {ShortcutsStore} */ (
 	readable({}, (set) => {
-	setShortcuts = set;
-})
+		setShortcuts = set;
+	})
 );
 
 const resolvedGlobalShortcuts = new Map();

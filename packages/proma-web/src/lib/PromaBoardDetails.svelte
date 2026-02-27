@@ -22,12 +22,18 @@
 		/>
 		<PortOutlet type={outlet.isFlow ? 'exec' : outlet.type.definitionKind} />
 		{#if outlet.isData}
-			<Input type="text" class="" placeholder="type" value={outlet.type.signatureWithLabels} readonly />
+			<Input
+				type="text"
+				class=""
+				placeholder="type"
+				value={outlet.type.signatureWithLabels}
+				readonly
+			/>
 		{/if}
 	</div>
 {/each}
 
 <div class="mt-3 text-sm font-medium">Outputs</div>
 {#each outputOutlets as outlet}
-	<div class="text-muted-foreground text-sm">{outlet.name}</div>
+	<div class="text-sm text-muted-foreground">{outlet.name}</div>
 {/each}

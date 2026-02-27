@@ -253,8 +253,14 @@
 
 		font-size: 14px;
 		color: var(--proma-board--chip--color, var(--card-foreground, #111827));
-		background-color: var(--proma-board--chip--background-color, color-mix(in srgb, var(--card, #ffffff) 85%, transparent));
-		box-shadow: var(--proma-board--chip--shadow, 0 1px 2px color-mix(in srgb, var(--foreground, #111827) 15%, transparent));
+		background-color: var(
+			--proma-board--chip--background-color,
+			color-mix(in srgb, var(--card, #ffffff) 85%, transparent)
+		);
+		box-shadow: var(
+			--proma-board--chip--shadow,
+			0 1px 2px color-mix(in srgb, var(--foreground, #111827) 15%, transparent)
+		);
 
 		border-radius: var(--proma-board--chip--border-radius, 5px);
 		border-style: solid;
@@ -344,19 +350,31 @@
 	}
 
 	.ChipKind-default .ChipHeader {
-		background: var(--proma-board--chip--kind-default, color-mix(in srgb, var(--primary, #18181b) 20%, var(--card, #ffffff)));
+		background: var(
+			--proma-board--chip--kind-default,
+			color-mix(in srgb, var(--primary, #18181b) 20%, var(--card, #ffffff))
+		);
 	}
 
 	.ChipKind-outlet .ChipHeader {
-		background: var(--proma-board--chip--kind-outlet, color-mix(in srgb, var(--chart-2, #0891b2) 30%, var(--card, #ffffff)));
+		background: var(
+			--proma-board--chip--kind-outlet,
+			color-mix(in srgb, var(--chart-2, #0891b2) 30%, var(--card, #ffffff))
+		);
 	}
 
 	.ChipKind-delegate .ChipHeader {
-		background: var(--proma-board--chip--kind-delegate, color-mix(in srgb, var(--destructive, #ef4444) 25%, var(--card, #ffffff)));
+		background: var(
+			--proma-board--chip--kind-delegate,
+			color-mix(in srgb, var(--destructive, #ef4444) 25%, var(--card, #ffffff))
+		);
 	}
 
 	.ChipKind-control .ChipHeader {
-		background: var(--proma-board--chip--kind-control, color-mix(in srgb, var(--muted, #f4f4f5) 60%, var(--card, #ffffff)));
+		background: var(
+			--proma-board--chip--kind-control,
+			color-mix(in srgb, var(--muted, #f4f4f5) 60%, var(--card, #ffffff))
+		);
 	}
 
 	.ChipHeader > div {
