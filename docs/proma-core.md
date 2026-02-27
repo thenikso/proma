@@ -354,7 +354,7 @@ flowchart TD
 
 **Step 1: Port Compilation**
 
-Each port type has a compiler factory (`core/compile.mjs`):
+Each port type has a compiler factory (`core/compile-port-compilers.mjs`):
 
 | Port Type | Compiler | Behavior |
 |-----------|----------|----------|
@@ -828,7 +828,9 @@ graph TB
     end
 
     subgraph "Compilation"
-        COMPILE[compile.mjs<br/>Compilation]
+        COMPILE[compile.mjs<br/>Compilation, compile&#40;&#41;, compiler&#40;&#41;]
+        COMPHELPERS[compile-helpers.mjs<br/>isOutlet, getHookPorts,<br/>getPortAndChipInstance, etc.]
+        COMPILERS[compile-port-compilers.mjs<br/>make&#42;Compiler factories,<br/>computeCompiler, executeCompiler]
         COMPUTILS[compile-utils.mjs<br/>makeAstBuilder, literalCompiler]
         WRAPPER[wrappers/ClassWrapper.mjs<br/>ClassWrapper]
         RECAST[vendor/recast.mjs]
@@ -876,10 +878,15 @@ graph TB
     PORTS --> SERIALIZE
     PORTS --> TYPES
 
-    COMPILE --> COMPUTILS
+    COMPILE --> COMPHELPERS
+    COMPILE --> COMPILERS
     COMPILE --> WRAPPER
     COMPILE --> RECAST
     COMPILE --> UTILS
+    COMPILERS --> COMPUTILS
+    COMPILERS --> UTILS
+    COMPILERS --> RECAST
+    COMPHELPERS --> UTILS
     COMPUTILS --> RECAST
     WRAPPER --> RECAST
     WRAPPER --> COMPUTILS
