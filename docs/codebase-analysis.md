@@ -12,11 +12,11 @@ Proma is a sophisticated visual programming language with a well-designed core m
 
 ### Critical
 
-#### 1. `compile.mjs` is a monolith with high regression risk
-- ~1k lines mixing graph traversal, scope resolution, AST generation, compiler caching, and wrapper adaptation
-- Nested compiler factories share mutable state and implicit invariants
-- Small edits can cause hard-to-trace regressions
-- **Suggestion**: Extract into phases — `compile-traverse.mjs`, `compile-scope.mjs`, `compile-codegen.mjs` — with clear interfaces between them
+#### 1. ~~`compile.mjs` is a monolith with high regression risk~~ ✅ Resolved
+- **Resolved in PR #53**: Split into three focused modules:
+  - `compile-helpers.mjs` — graph traversal/scope helpers (`isOutlet`, `getHookPorts`, etc.)
+  - `compile-port-compilers.mjs` — all six port compiler factories with dependency injection via `ctx`
+  - `compile.mjs` — public `Compilation` class + `compile()`/`compiler()` dispatch (~220 lines)
 
 #### 2. Ports extend Function — fragile and hard to type
 - `class Port extends Function` with runtime properties via `Object.defineProperties`
@@ -96,7 +96,7 @@ Proma is a sophisticated visual programming language with a well-designed core m
 
 ### High Priority
 
-1. **Break up `compile.mjs`** — This is the single highest-risk file. Splitting it into focused modules with clear phase boundaries will reduce regression risk and improve onboarding.
+1. ~~**Break up `compile.mjs`**~~ ✅ Done (PR #53) — Split into `compile-helpers.mjs`, `compile-port-compilers.mjs`, and a reduced `compile.mjs`.
 
 2. **Formalize the `.proma` schema** — A single schema definition (even as a TypeScript type + runtime validator) would prevent serialize/deserialize drift and serve as documentation.
 
@@ -154,7 +154,9 @@ Large files that may benefit from splitting:
 
 | File | ~Lines | Concern |
 |------|--------|---------|
-| `core/compile.mjs` | 1,000 | Monolithic compilation |
+| `core/compile.mjs` | ~220 | Orchestration only (split in PR #53) |
+| `core/compile-port-compilers.mjs` | ~520 | Port compiler factories |
+| `core/compile-helpers.mjs` | ~120 | Graph/scope helpers |
 | `core/edit.mjs` | 800+ | Mixed concerns (editing, validation, events) |
 | `core/ports.mjs` | 600+ | Port classes + metadata + runtime |
 | `core/types.mjs` | 600+ | Parser + matcher + checker |

@@ -701,7 +701,9 @@ proma-core/
 │   ├── api.mjs              # Public API
 │   ├── chip.mjs             # Chip class and ChipInfo
 │   ├── ports.mjs            # Port classes
-│   ├── compile.mjs          # Compiler
+│   ├── compile.mjs          # Compiler entry point (Compilation class, dispatch)
+│   ├── compile-helpers.mjs  # Graph/scope traversal helpers
+│   ├── compile-port-compilers.mjs  # Port compiler factories
 │   ├── run.mjs              # Runtime
 │   ├── types.mjs            # Type system
 │   ├── registry.mjs         # Chip registry
