@@ -1,5 +1,5 @@
 import recast from '../vendor/recast.mjs';
-import { info, context, assert, assertInfo } from './utils.mjs';
+import { info } from './utils.mjs';
 import ClassWrapper from './wrappers/ClassWrapper.mjs';
 import {
   getHookPorts,
@@ -9,8 +9,6 @@ import {
   getConnectedPorts,
 } from './compile-helpers.mjs';
 import {
-  computeCompiler,
-  executeCompiler,
   makeOutputFlowSinkCompiler,
   makeInputFlowSourceCompiler,
   makeInputDataSinkCompiler,

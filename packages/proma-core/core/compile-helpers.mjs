@@ -1,4 +1,4 @@
-import { info, assert, assertInfo } from './utils.mjs';
+import { info } from './utils.mjs';
 import { INPUT, OUTPUT } from './constants.mjs';
 
 /**
